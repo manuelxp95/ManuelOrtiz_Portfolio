@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {Text,useColorModeValue} from '@chakra-ui/react'
+import {Text,useColorModeValue,Img} from '@chakra-ui/react'
 import styled from '@emotion/styled'
 
 const LogoBox= styled.span`
@@ -17,14 +17,14 @@ padding: 10 px;
 }
 `
 
-// ----Faltaria img personalizadas ---${useColorModeValue('','-dark')}
+
 const Logo =()=>{
-    const footPrintImg=`/images/footprint.png`
+    const bugImg=`/bug${useColorModeValue('-dark','')}.png`
     return(
         <Link href="/">
             <a>
                 <LogoBox>
-                    <Image src={footPrintImg} width={20} height={20} alt="logo"/>
+                    <Image src={bugImg} width={20} height={20} alt="logo"/>
                     <Text color={useColorModeValue('gray.800','whiteAlpha.900')}
                         fontFamily='M plus Rounded 1c'
                         fontWeight="bold"
