@@ -3,11 +3,13 @@ import { Button,Container,Box,Heading,Image,Link,useColorModeValue } from "@chak
 import Section from "../components/section"
 import Paragraph from "../components/paragraph"
 import {ChevronRightIcon} from '@chakra-ui/icons'
+import Layout from '../components/layouts/article'
 import { BioSection,BioYear } from '../components/bio'
 
 const Page = () =>{
     return (
-        <Container>
+        <Layout>
+            <Container>
             <Box borderRadius="lg" bg ={useColorModeValue('whiteAlpha.500','whiteAlpha.200')} p="3" mb={6} align="center">
             Hello, I'm a trainee game developer based in Argentina
             </Box>
@@ -31,7 +33,7 @@ const Page = () =>{
             </Box>
             <Section delay={0.1}>
                 <Heading as="h3" variant="section-title">
-                    Work
+                    Works
                 </Heading>
                 <Paragraph>
                 I am an advanced student of the Information Systems Engineering career.
@@ -67,7 +69,8 @@ const Page = () =>{
                     Currently I am studying the latest years of the carrer Ingenieria en Sistemas de Informacion at National Technological University locate in Resistencia, Argentina.
                 </BioSection>
             </Section>
-        </Container>
+            </Container>
+        </Layout>
     )
 }
 

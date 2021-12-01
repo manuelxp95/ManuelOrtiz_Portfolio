@@ -17,6 +17,7 @@ import{
 
 import { HamburgerIcon } from '@chakra-ui/icons'
 import ThemeToggleButton from './theme-toggle-button.js'
+import Works from '../pages/works'
 
 const LinkItem=({href, path, children}) => {
     const active = path == href
@@ -62,7 +63,7 @@ const Navbar=props =>{
                     flexGrow={1}
                     mt={{base:4, nmd:0}}
                     >
-                    <LinkItem href="works" path={path}>
+                    <LinkItem href="/works" path={path}>
                         Works
                     </LinkItem>
                     <LinkItem href="/posts" path={path}>
