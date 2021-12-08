@@ -1,10 +1,27 @@
 import NextLink from 'next/link'
-import { Button,Container,Box,Heading,Image,Link,useColorModeValue } from "@chakra-ui/react"
+import { 
+    Button,
+    Container,
+    Box,
+    Heading,
+    Image,
+    Link,
+    List,
+    ListItem,
+    Icon,
+    SimpleGrid,
+    useColorModeValue } from "@chakra-ui/react"
 import Section from "../components/section"
 import Paragraph from "../components/paragraph"
 import {ChevronRightIcon} from '@chakra-ui/icons'
 import Layout from '../components/layouts/article'
 import { BioSection,BioYear } from '../components/bio'
+import { GridItem } from '../components/grid-item'
+import {
+    IoLogoGithub,
+    IoLogoDiscord,
+    IoLogoInstagram
+} from 'react-icons/io5'
 
 const Page = () =>{
     return (
@@ -68,6 +85,40 @@ const Page = () =>{
                     <BioYear>Present  </BioYear>
                     Currently I am studying the latest years of the carrer Ingenieria en Sistemas de Informacion at National Technological University locate in Resistencia, Argentina.
                 </BioSection>
+            </Section>
+            <Section delay={0.3}>
+                <Heading as="h3" variant="section-title">
+                    On the web
+                </Heading>
+                <List>
+                    <ListItem>
+                        <Link href="https://github.com/manuelxp95" target="_blank">
+                            <Button variant="ghost" colorScheme="teal" leftIcon={<Icon as={IoLogoGithub}/>}>
+                                @manuelxp95
+                            </Button>
+                        </Link>
+                    </ListItem>
+                    <ListItem>
+                        <Link href="https://discord.gg/NnkhaEsq" target="_blank">
+                            <Button 
+                                variant="ghost" 
+                                colorScheme="teal" 
+                                leftIcon={<Icon as={IoLogoDiscord}/>}>
+                                Discord
+                            </Button>
+                        </Link>
+                    </ListItem>
+                    <ListItem>
+                    <Link href="https://www.instagram.com/manuelxp95/" target="_blank">
+                            <Button 
+                                variant="ghost" 
+                                colorScheme="teal" 
+                                leftIcon={<Icon as={IoLogoInstagram}/>}>
+                                @manuelxp95
+                            </Button>
+                        </Link>
+                    </ListItem>
+                </List>
             </Section>
             </Container>
         </Layout>

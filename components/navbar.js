@@ -87,10 +87,14 @@ const Navbar=props =>{
                             <NextLink href="/works" passHref>
                                 <MenuItem as={Link}>Works</MenuItem>
                             </NextLink>
+
+                            {/*   Disabled post                          
                             <NextLink href="/posts" passHref>
                                 <MenuItem as={Link}>Posts</MenuItem>
                             </NextLink>
-                            <MenuItem as={Link} href="http://www.google.com">View Source</MenuItem>
+                            <MenuItem as={Link} href="http://www.google.com">View Source</MenuItem> 
+                            */}
+                            
                         </MenuList>
                         </Menu>
                     </Box>
