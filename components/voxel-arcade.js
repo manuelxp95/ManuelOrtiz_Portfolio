@@ -50,7 +50,7 @@ const VoxelArcade=()=>{
             container.appendChild(renderer.domElement)
             setRenderer(renderer)
 
-            const scale= scH*0.005+4.8
+            const scale= scH*0.005+23.8
             const camera = new THREE.OrthographicCamera(
                 -scale,
                 scale,
@@ -71,7 +71,7 @@ const VoxelArcade=()=>{
             controls.target=target
             setControls(controls)
 
-            loadGLTFModel(scene,'/arcade.glb',{
+            loadGLTFModel(scene,'/Totoro.glb',{
                 receiveShadow:false,
                 castShadow:false
             }).then(()=>{
