@@ -13,11 +13,11 @@ const VoxelArcade=()=>{
     const [loading,setLoading] = useState(true)
     const [renderer,setRenderer] =useState()
     const[_camera,setCamera] =useState()
-    const[target]=useState(new THREE.Vector3(-0.5,1.2,0))
+    const[target]=useState(new THREE.Vector3(-0.5,10.2,0))//-0,5/1.2/0
     const[initialCameraPosition]=useState(
         new THREE.Vector3(
-            20* Math.sin(0.2*Math.PI),
-            10,
+            20* Math.sin(0.2*Math.PI),//(df20)
+            10, //y(df 10)
             20*Math.cos(0.2*Math.PI)
         )
     )
@@ -50,14 +50,14 @@ const VoxelArcade=()=>{
             container.appendChild(renderer.domElement)
             setRenderer(renderer)
 
-            const scale= scH*0.005+23.8
+            const scale= scH*0.005+19.8
             const camera = new THREE.OrthographicCamera(
                 -scale,
                 scale,
                 scale,
-                -scale,
-                0.01,
-                50000
+                -scale,//df scale
+                0.02,//0.01
+                70000//50000
             )
             camera.position.copy(initialCameraPosition)
             camera.lookAt(target)
@@ -89,7 +89,7 @@ const VoxelArcade=()=>{
                     const p=initialCameraPosition
                     const rotSpeed=-easeOutCirc(frame/120) * Math.PI * 20
 
-                    camera.position.y = 10
+                    camera.position.y = 20
                     camera.position.x= p.x *Math.cos(rotSpeed)+ p.z*Math.sin(rotSpeed)
                     camera.position.z= p.z* Math.cos(rotSpeed) - p.x*Math.sin(rotSpeed)
                     camera.lookAt(target)

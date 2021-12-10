@@ -12,7 +12,7 @@ const Work =() =>{
                     Saltarina <Badge>2021</Badge>
                 </Title>
                 <P>
-                    example description
+                Saltarina it's a game platformer totally inspired in others games like Mario and Ori. This one is my first game completely playable. Made with love
                 </P>
                 <List ml={4} my={4}>
                     <ListItem>
