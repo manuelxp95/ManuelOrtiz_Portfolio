@@ -61,9 +61,14 @@ const Page = () =>{
 
                 I consider myself a predisposed person and desire to learn, a sense of responsibility, dedication and commitment to what I do. I have no problems with individual or group work. I am looking for experiences that enrich my personal and professional life.
 
-                Currently have the project {' '}
+                Currently have the projects {' '}
                 <NextLink href="/works/saltarina">
                     <Link>Saltarina</Link>
+                </NextLink>
+                , and  {' '}
+                  
+                <NextLink href="/works/rtc">
+                    <Link>Road To Carpincho</Link>
                 </NextLink>
                 .
                 </Paragraph>
