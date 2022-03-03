@@ -29,6 +29,13 @@ const Work =() =>{
                         </Link>
                     </ListItem>
                     <ListItem>
+                        <Meta>Itch.io - MOBILE</Meta>
+                        <Link href='https://ortizmanuel.itch.io/road-to-carpincho-mobile?secret=D4luIprb280WjDckIi8O5HeHJMs'>
+                        https://ortizmanuel.itch.io/road-to-carpincho-mobile <ExternalLinkIcon mx="2px"/>
+                        </Link>
+                    </ListItem>
+                    
+                    <ListItem>
                         <Meta>Action, Casual</Meta>
                         <span>Windows/macOs/Linux/iOs/Android</span>
                     </ListItem>
