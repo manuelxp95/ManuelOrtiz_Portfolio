@@ -12,8 +12,8 @@ const Work =() =>{
                     Frusting Path <Badge>2022</Badge>
                 </Title>
                 <P>
-                Choose a card and travel with Larry (THE COCK) in a path totally injustice.
-                 Do your best try to get as far as possible!
+                Choose a card and travel with Larry (THE COCK) in a path totally unfair.
+                 Do your best to try to get as far as possible!
                 </P>
                 <List ml={4} my={4}>
                     <ListItem>
@@ -31,7 +31,7 @@ const Work =() =>{
                     
                     <ListItem>
                         <Meta>Casual</Meta>
-                        <span>Windows/macOs/Linux/</span>
+                        <span>Windows/macOs/Linux</span>
                     </ListItem>
                     <ListItem>
                         <Meta>Engine</Meta>
