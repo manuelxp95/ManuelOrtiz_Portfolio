@@ -12,20 +12,19 @@ const Work =() =>{
                     Meteoritos <Badge>2022</Badge>
                 </Title>
                 <P>
-                This is a adventure game in with you can play as a carpincho, inspired in similar games like Frogger but a little touch of action.
-                You must be the fastest in the road, if you want reunite with your family.
+                Have you played Asteroids (1976)? well... this is worse! BUT IN GODOT!
                 </P>
                 <List ml={4} my={4}>
                     <ListItem>
                         <Meta>Github</Meta>
                         <Link href='https://github.com/manuelxp95/Repo_cenit'>
-                        https://github.com/manuelxp95/RoadToCarpincho <ExternalLinkIcon mx="2px"/>
+                        https://github.com/manuelxp95/Repo_cenit <ExternalLinkIcon mx="2px"/>
                         </Link>
                     </ListItem>
                     <ListItem>
                         <Meta>Itch.io</Meta>
                         <Link href='https://ortizmanuel.itch.io/meteoritos?secret=gIrjifbPQhCR8V1Fl6CKofyHu9s'>
-                        https://ortizmanuel.itch.io/road-to-carpincho <ExternalLinkIcon mx="2px"/>
+                        https://ortizmanuel.itch.io/meteoritos <ExternalLinkIcon mx="2px"/>
                         </Link>
                     </ListItem>
                     
@@ -38,9 +37,9 @@ const Work =() =>{
                         <span>Godot</span>
                     </ListItem>
                 </List>
-                <WorkImage src="/images/works/road_to_carpincho_01.png" alt="RtC sample"/>
-                <WorkImage src="/images/works/road_to_carpincho_02.png" alt="RtC sample"/>
-                <WorkImage src="/images/works/road_to_carpincho_03.png" alt="RtC sample"/>
+                <WorkImage src="/images/works/meteoritos_01.png" alt="meteoritos sample"/>
+                <WorkImage src="/images/works/meteoritos_02.png" alt="meteoritos sample"/>
+                <WorkImage src="/images/works/meteoritos_03.png" alt="meteoritos sample"/>
             </Container>
         </Layout>
     )
