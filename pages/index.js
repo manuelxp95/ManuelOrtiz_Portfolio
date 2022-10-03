@@ -28,14 +28,14 @@ const Page = () =>{
         <Layout>
             <Container>
             <Box borderRadius="lg" bg ={useColorModeValue('whiteAlpha.500','whiteAlpha.200')} p="3" mb={6} align="center">
-            Hello, I'm a trainee game developer based in Argentina
+            Hello, I'm a junior game developer based in Argentina
             </Box>
             <Box display={{md:'flex'}}>
                 <Box flexGrow={1}>
                     <Heading as="h2" variant="page-title">
                         Manuel Ortiz
                     </Heading>
-                    <p>Student / Developer / Designer</p>
+                    <p>Freelance / Student / Developer / Designer</p>
                 </Box>
                 <Box flexShrink={0} mt={{base: 4,md:0}} ml={{md:6}} align="center">
                     <Image borderColor="whiteAlpha.800" 
@@ -91,6 +91,24 @@ const Page = () =>{
                     Currently I am studying the latest years of the carrer Ingenieria en Sistemas de Informacion at National Technological University locate in Resistencia, Argentina.
                 </BioSection>
             </Section>
+
+            {/* Create contact email 
+
+            <Section delay={0.3}>
+                <Heading as="h3" variant="section-title">
+                    Contact Form
+                </Heading>
+                <script type="text/javascript"
+                    src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+                </script>
+                <script type="text/javascript">
+                   { 
+                   (function(){emailjs.init("YOUR_PUBLIC_KEY");})()
+                   }
+                </script>
+                {/* ????????????????????????????????????????????? 
+
+            </Section>*/}
             <Section delay={0.3}>
                 <Heading as="h3" variant="section-title">
                     On the web
@@ -125,6 +143,7 @@ const Page = () =>{
                     </ListItem>
                 </List>
             </Section>
+            
             </Container>
         </Layout>
     )
