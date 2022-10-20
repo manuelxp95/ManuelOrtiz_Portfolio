@@ -50,7 +50,7 @@ const VoxelArcade=()=>{
             container.appendChild(renderer.domElement)
             setRenderer(renderer)
 
-            const scale= scH*0.005+19.8
+            const scale= scH*0.00005+10.8
             const camera = new THREE.OrthographicCamera(
                 -scale,
                 scale,
@@ -66,6 +66,25 @@ const VoxelArcade=()=>{
             const ambientLight= new THREE.AmbientLight(0xccccc, 1)
             scene.add(ambientLight)
 
+            const directionalLightYellow = new THREE.DirectionalLight( 0xfeffc4, 0.7 );
+            directionalLightYellow.position.x=5.0
+            directionalLightYellow.position.y=10.0
+            directionalLightYellow.position.x=7.5
+            scene.add(directionalLightYellow)
+
+            const directionalLight2 = new THREE.DirectionalLight( 0x072ff9, 2 );
+            directionalLight2.position.x=-6.5
+            directionalLight2.position.y=-3.5
+            directionalLight2.position.x=2.2
+            scene.add(directionalLight2)
+
+            const directionalLightRed = new THREE.DirectionalLight( 0xfc0707, 1 );
+            directionalLightRed.position.x=-4.0
+            directionalLightRed.position.y=14.0
+            directionalLightRed.position.x=-5.0
+            scene.add(directionalLightRed)
+
+            
             const controls =new OrbitControls(camera,renderer.domElement)
             controls.autoRotate=true
             controls.target=target
