@@ -53,15 +53,19 @@ const Page = () =>{
                     Works
                 </Heading>
                 <Paragraph>
-                I am an advanced student of the Information Systems Engineering career.
+                I am an Freelancer & advanced student of the Information Systems Engineering career.
 
-                Currently without work experience but eager to learn, and join the working market.
+                Taking my first steps as a freelancer developer but eager to learn, and join the working market.
 
                 I'm looking foward specialize in video game planning, design and development.
 
                 I consider myself a predisposed person and desire to learn, a sense of responsibility, dedication and commitment to what I do. I have no problems with individual or group work. I am looking for experiences that enrich my personal and professional life.
 
                 Currently have the projects {' '}
+                <NextLink href="/works/meteoritos">
+                    <Link>Meteoritos</Link>
+                </NextLink>
+                , {' '}
                 <NextLink href="/works/saltarina">
                     <Link>Saltarina</Link>
                 </NextLink>
