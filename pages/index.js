@@ -20,7 +20,8 @@ import { GridItem } from '../components/grid-item'
 import {
     IoLogoGithub,
     IoLogoDiscord,
-    IoLogoInstagram
+    IoLogoInstagram,
+    IoAtCircleSharp
 } from 'react-icons/io5'
 
 const Page = () =>{
@@ -118,6 +119,13 @@ const Page = () =>{
                     On the web
                 </Heading>
                 <List>
+                <ListItem>
+                        <Link href="ortizmanuel@pm.me" target="_blank">
+                            <Button variant="ghost" colorScheme="teal" leftIcon={<Icon as={IoAtCircleSharp}/>}>
+                                ortizmanuel@pm.me
+                            </Button>
+                        </Link>
+                    </ListItem>
                     <ListItem>
                         <Link href="https://github.com/manuelxp95" target="_blank">
                             <Button variant="ghost" colorScheme="teal" leftIcon={<Icon as={IoLogoGithub}/>}>
