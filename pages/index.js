@@ -92,6 +92,10 @@ const Page = () =>{
                     Born in Corrientes, Argentina.
                 </BioSection>
                 <BioSection>
+                    <BioYear>2022  </BioYear>
+                    Freelancer Junior Game Developer, 3dar - Argentina.
+                </BioSection>
+                <BioSection>
                     <BioYear>Present  </BioYear>
                     Currently I am studying the latest years of the carrer Ingenieria en Sistemas de Informacion at National Technological University locate in Resistencia, Argentina.
                 </BioSection>
