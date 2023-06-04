@@ -7,6 +7,7 @@ import thumbFruPath from '../public/images/works/frusting_path.png'
 import thumbMeteoritos from '../public/images/works/meteoritos.png'
 import thumbClickerTest from '../public/images/works/clicker_test.png'
 import thumbBolasLocas from '../public/images/works/bolas_locas.png'
+import thumbPbd from '../public/images/works/pbd_01.png'
 import Layout from '../components/layouts/article'
 
 // This include all my projects, between the sections 
@@ -18,6 +19,11 @@ const Works =() =>{
                 Works
             </Heading>
             <SimpleGrid columns={[1,1,2]} gap={6}>
+            <Section>
+                    <WorkGridItem id="pbd" title="Path Between Dimensions" thumbnail= {thumbPbd}>
+                    Project with a theme of dimension change developed in Unity Engine.
+                    </WorkGridItem>
+                </Section>
                 <Section>
                     <WorkGridItem id="bolas_locas" title="Bolas Locas" thumbnail= {thumbBolasLocas}>
                         My first game in Unreal Engine 5

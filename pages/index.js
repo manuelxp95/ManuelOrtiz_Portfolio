@@ -118,6 +118,11 @@ const Page = () =>{
                 {/* ????????????????????????????????????????????? 
 
             </Section>*/}
+            <Box align="center" my={4}>
+                <a href="/CV_ManuelOrtiz_2023.pdf">
+                    <Button rightIcon={<ChevronRightIcon/>} colorScheme="teal">Download CV</Button>
+                </a>
+            </Box>
             <Section delay={0.3}>
                 <Heading as="h3" variant="section-title">
                     On the web
