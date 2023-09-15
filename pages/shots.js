@@ -1,4 +1,4 @@
-import { Container,Heading,SimpleGrid } from "@chakra-ui/react";
+import { Container,Heading,SimpleGrid,Link } from "@chakra-ui/react";
 import Layout from "../components/layouts/article";
 import Section from "../components/section"
 import {GridItem} from '../components/grid-item';
@@ -23,7 +23,9 @@ const Posts=()=>(
                         allowfullscreen
                         ></iframe>
                     </div>
-                    <GridItem title="PSXRobbery" href="https://youtu.be/V_bPS9pHbRU?si=oDr3BT3YY5vKmHTR"/>
+                    <Heading as="h3" fontSize={16} mb={4} href="https://youtu.be/V_bPS9pHbRU?si=oDr3BT3YY5vKmHTR">
+                        PSXRobbery
+                    </Heading>
                 </SimpleGrid>
             </Section>
         </Container>
