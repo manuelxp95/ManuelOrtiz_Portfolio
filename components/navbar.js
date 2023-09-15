@@ -18,6 +18,7 @@ import{
 import { HamburgerIcon } from '@chakra-ui/icons'
 import ThemeToggleButton from './theme-toggle-button.js'
 import Works from '../pages/works'
+import Shots from '../pages/shots'
 
 const LinkItem=({href, path, children}) => {
     const active = path == href
@@ -66,6 +67,9 @@ const Navbar=props =>{
                     <LinkItem href="/works" path={path}>
                         Works
                     </LinkItem>
+                    <LinkItem href="/shots" path={path}>
+                        Shots
+                    </LinkItem>
                     {/* <LinkItem href="/posts" path={path}>
                         Posts
                     </LinkItem> */}
@@ -86,6 +90,9 @@ const Navbar=props =>{
                             </NextLink>
                             <NextLink href="/works" passHref>
                                 <MenuItem as={Link}>Works</MenuItem>
+                            </NextLink>
+                            <NextLink href="/shots" passHref>
+                                <MenuItem as={Link}>Shots</MenuItem>
                             </NextLink>
 
                             {/*   Disabled post                          

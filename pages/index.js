@@ -63,13 +63,18 @@ const Page = () =>{
                 I consider myself a predisposed person and desire to learn, a sense of responsibility, dedication and commitment to what I do. I have no problems with individual or group work. I am looking for experiences that enrich my personal and professional life.
 
                 Currently have the projects {' '}
+                <NextLink href="/works/rtb">
+                    <Link>Revolucion Tecnobotanica</Link>
+                </NextLink>
+                ,
+                {' '}
                 <NextLink href="/works/bolas_locas">
                     <Link>Bolas Locas</Link>
                 </NextLink>
                 , 
                 {' '}
                 <NextLink href="/works/meteoritos">
-                    <Link>Meteoritos</Link>
+                    <Link> Meteoritos</Link>
                 </NextLink>
                 , and  {' '}
                 <NextLink href="/works/rtc">
@@ -156,7 +161,7 @@ const Page = () =>{
                             </Button>
                         </Link>
                     </ListItem>
-                    <ListItem>
+                    {/* <ListItem>
                     <Link href="https://www.instagram.com/manuelxp95/" target="_blank">
                             <Button 
                                 variant="ghost" 
@@ -165,7 +170,7 @@ const Page = () =>{
                                 @manuelxp95
                             </Button>
                         </Link>
-                    </ListItem>
+                    </ListItem> */}
                 </List>
             </Section>
             
