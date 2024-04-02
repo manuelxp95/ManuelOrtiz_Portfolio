@@ -128,7 +128,7 @@ const Page = () =>{
 
             </Section>*/}
             <Box align="center" my={4}>
-                <a href="/CV_ManuelOrtiz_2023.pdf" download>
+                <a href="/CV-ManuelOrtiz_2024.pdf" download>
                     <Button rightIcon={<ChevronRightIcon/>} colorScheme="teal">Download CV</Button>
                 </a>
             </Box>
