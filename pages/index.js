@@ -98,12 +98,16 @@ const Page = () =>{
                 </BioSection>
                 <BioSection>
                     <BioYear>(2022)  </BioYear>
-                    Freelancer Junior Game Developer, 3dar - Argentina.
+                    Junior Game Developer, 3dar - Argentina.
                 </BioSection>
                 <BioSection>
-                    <BioYear>(2023 - Present) </BioYear>
+                    <BioYear>(2023) </BioYear>
                     Cinematic Artist, Studio Soup - Argentina.
-                </BioSection>
+                    </BioSection>
+                    <BioSection>
+                        <BioYear>(2024) </BioYear>
+                        Intern Unity game developer, StudioBando - Colombia.
+                    </BioSection>
                 <BioSection>
                     <BioYear>(Present)  </BioYear>
                     Currently I am studying the latest years of the carrer Ingenieria en Sistemas de Informacion at National Technological University locate in Resistencia, Argentina.
