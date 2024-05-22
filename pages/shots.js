@@ -27,6 +27,20 @@ const Posts=()=>(
                         PSXRobbery
                     </Heading>
                 </SimpleGrid>
+                <SimpleGrid columns={[1, 1, 1]} gap={6}>
+                    <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                        <iframe
+                            src="https://www.youtube.com/embed/lU7hbmMjwO8?si=pm-kWBNrBdwkEMW4"
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                    <Heading as="h3" fontSize={16} mb={4} href="https://youtu.be/lU7hbmMjwO8?si=yKrv_pAM7Ldwyla1">
+                        Walkthrough in a house of terror
+                    </Heading>
+                </SimpleGrid>
             </Section>
         </Container>
     </Layout>

@@ -55,15 +55,17 @@ const Page = () => {
                         Works
                     </Heading>
                     <Paragraph>
-                        I am an Freelancer & advanced student of the Information Systems Engineering career.
-
-                        Taking my first steps as a freelancer developer but eager to learn, and join the working market.
-
-                        I'm looking foward specialize in video game planning, design and development.
-
-                        I consider myself a predisposed person and desire to learn, a sense of responsibility, dedication and commitment to what I do. I have no problems with individual or group work. I am looking for experiences that enrich my personal and professional life.
-
-                        Currently have the projects {' '}
+                        I am a freelancer and advanced student of the Information Systems Engineering career.
+                        With over two years of experience in the industry,
+                        I have worked on games such as {' '}
+                        <NextLink href="/works/sopa">
+                            <Link>Sopa - Tale of the Stolen Potato</Link>
+                        </NextLink>
+                        . I am eager to further immerse myself in the working market and specialize in video game planning, design, and development.
+                        I consider myself a dedicated and responsible person with a strong desire to learn and a commitment to my work.
+                        I excel in both individual and group settings.
+                        I seek experiences that will enrich my personal and professional life.
+                        My current projects include  {' '}
                         <NextLink href="/works/rtb">
                             <Link>Revolucion Tecnobotanica</Link>
                         </NextLink>
