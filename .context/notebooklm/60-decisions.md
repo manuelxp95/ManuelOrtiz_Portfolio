@@ -224,3 +224,75 @@ Decision:
 - Dev dependency `@testing-library/user-event` for keyboard tests.
 Consequences: Critical JS 142.9 kB gz; board chunk 1.0 kB. Next 16's history patching keeps
 pushState/back/forward same-document (verified in Chrome).
+
+## Decision: Card Mode visual language — ASCII art (Roadmap P4)
+
+Status: Accepted (stated by the project owner, 2026-09-26)
+Date: 2026-09-26
+Source: owner request (inspired by github.com/alecjacobson/ascii3d) and answers during P4
+Context: The owner wanted an ASCII-art aesthetic; ascii3d is a C++ terminal ray tracer (libigl,
+Eigen, Embree) that cannot run in a browser.
+Decision:
+- Level 1 (static): card faces are a fixed 24×16 character grid (`card-face.ts`) with box-drawing
+  frames, drawn in the system monospace stack; selection switches to a double frame plus
+  "> SELECTED" (shape + text, not only color). Classic keeps Inter.
+- Level 2 (pre-rendered 3D): `src/features/rogue/ascii/renderer.ts` is a dependency-free SDF
+  raymarcher (brightness → ` .:-=+*#%@`); `npm run ascii` (`scripts/ascii/generate.mts`) writes one
+  static glyph and a 36-frame rotation per card as `*.generated.ts`; `npm run ascii:check` in CI and
+  a Vitest test fail on stale output. Rotations load per card (interaction tier) and play one turn
+  when a card opens — no idle loop; reduced motion shows the rest frame.
+- Level 3 (live Three.js ASCII) rejected for P4; only reconsider inside the optional P8 spike.
+- Expanded card = native modal `<dialog>` at every breakpoint; desktop (≥ lg) shows a fanned hand,
+  smaller screens a tap-first grid.
+Consequences: Board chunk 12.0 kB gz, rotations 0.4–1.3 kB each; nothing added to the critical load.
+
+## Decision: Motion deferred; Card Mode P4 is CSS-only animation
+
+Status: Accepted (implementation decision; CLAUDE.md "no dependency without justification",
+"prefer CSS over JS")
+Date: 2026-09-26
+Source: Roadmap P4 planned to add `motion`
+Context: P4's transitions — fan lift, dialog open/close, backdrop — are transform/opacity CSS; the
+ASCII rotation is frame playback, not tweening.
+Decision: Do not add `motion` in P4. Re-evaluate in P6, where drag snap-back springs may justify it
+(ADR-006 responsibility split still applies if it lands).
+Consequences: ~30–40 kB gz less in the Card Mode chunk.
+
+## Decision: Card Mode interaction model (Roadmap P4)
+
+Status: Accepted (implementation within docs/architecture.md → Card interaction states)
+Date: 2026-09-26
+Source: Roadmap P4; verified by Vitest (jsdom) and headless Chrome
+Decision:
+- `card-machine.ts`: idle → expanded → closing → idle (OPEN/CLOSE/CLOSED); reduced motion skips
+  closing. hovered/focused are CSS pseudo-states; selected is derived from `activeSection`;
+  "restoring" is focus returning to the card when the machine reaches idle.
+- Opening a card selects its section (`pushState`). The open card follows `activeSection`, so
+  back/forward and in-card links (e.g. `#project-sopa`, now parsed as the Projects section) switch
+  the dialog. With no card open, hash changes only select.
+- Entering Card Mode by the toggle focuses the selected card; loading the page with a section hash
+  (deep link, reload) opens that card.
+- The modal dialog makes the header inert, so switching mode requires closing the card first.
+- Section bodies moved to `src/components/sections/*`; Classic wraps them in section landmarks and
+  Card Mode renders the same components in the dialog (`GenericSectionPanel`) — one content path.
+
+## Decision: Loading tiers enforced; Card Mode loader without Suspense (Roadmap P5)
+
+Status: Accepted (implementation within ADR-005; verified in headless Chrome)
+Date: 2026-09-26
+Source: Roadmap P5; owner asked to proceed without further approvals
+Decision:
+- `src/features/rogue/preload.ts` is the single entry into Card Mode. The mode toggle warms it on
+  pointerenter/focus/touchstart (skipped on Save-Data / `prefers-reduced-data`); `ModeRoot` renders
+  the loaded module directly through `RogueBoardSlot`. `next/dynamic` was dropped: its
+  React.lazy/Suspense path showed the skeleton even after the chunk had been preloaded (React 19
+  Suspense reveal throttling), breaking "post-preload switch feels instant".
+- A failed Card Mode chunk load falls back to Classic.
+- ESLint `no-restricted-imports`: outside `src/features/rogue`, only `@/features/rogue/preload` may
+  be imported; `three`/`@react-three/*` are banned everywhere except `src/features/rogue/three/`.
+- `scripts/check-budgets.mjs` (`npm run budgets`, in CI after the build) enforces Roadmap §7:
+  critical JS ≤ 149.9 kB gz, Card Mode chunk ≤ 80 kB, all Card Mode chunks ≤ 120 kB, zero Three.js.
+- Skeleton and board share a viewport-tall `.rogue-stage`, removing a 0.104 layout shift measured
+  when the board replaced the skeleton on a slow network.
+- The P3 mobile-LCP known issue was a Lighthouse Lantern artifact (see perf-baseline P5).
+Consequences: Critical JS 142.3 kB gz; Card Mode total 17.4 kB gz.

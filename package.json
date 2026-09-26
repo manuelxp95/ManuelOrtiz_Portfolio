@@ -13,7 +13,10 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "ascii": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ascii/generate.mts",
+    "ascii:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ascii/generate.mts --check",
+    "budgets": "node scripts/check-budgets.mjs"
   },
   "dependencies": {
     "next": "16.3.6",

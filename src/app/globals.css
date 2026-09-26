@@ -76,6 +76,11 @@ html[data-mode="rogue"] [data-renderer="classic"] {
   display: none;
 }
 
+/* Card Mode stage: skeleton and board share a viewport-tall box, so swapping them shifts nothing. */
+.rogue-stage {
+  min-height: calc(100dvh - var(--header-height));
+}
+
 section[id] {
   scroll-margin-top: calc(var(--header-height) + 1rem);
 }

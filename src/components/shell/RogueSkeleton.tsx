@@ -9,7 +9,7 @@ export function RogueSkeleton({ prepaint = false }: { prepaint?: boolean }) {
     <div
       role="status"
       aria-busy="true"
-      className={`${prepaint ? "rogue-prepaint " : ""}py-12`}
+      className={`${prepaint ? "rogue-prepaint " : ""}rogue-stage py-12`}
     >
       <span className="sr-only">Loading Card Mode…</span>
       <div className="mb-6 h-10 w-64 rounded-control bg-surface" />

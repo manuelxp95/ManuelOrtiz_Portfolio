@@ -1,0 +1,190 @@
+/* Card Mode styles (interaction tier: ships with the Card Mode chunk, not the critical CSS). */
+
+.rogue-board {
+  --card-mono:
+    ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+/* Hand: tap-first grid below lg, fanned hand from lg. */
+.card-hand {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 40rem) {
+  .card-hand {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48rem) {
+  .card-hand {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.card-slot {
+  container-type: inline-size;
+}
+
+@media (min-width: 64rem) {
+  .card-hand {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding-top: 2.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .card-slot {
+    width: 11rem;
+    flex: none;
+    transform-origin: 50% 120%;
+    transform: translateY(var(--fan-drop)) rotate(var(--fan-rotate));
+    transition: transform var(--duration-fast) ease-out;
+  }
+
+  .card-slot + .card-slot {
+    margin-left: -2rem;
+  }
+
+  .card-slot:has([aria-current="true"]) {
+    transform: translateY(calc(var(--fan-drop) - 0.75rem))
+      rotate(var(--fan-rotate));
+  }
+
+  .card-slot:hover,
+  .card-slot:focus-within {
+    z-index: 10;
+    transform: translateY(-1.75rem) rotate(0deg) scale(1.04);
+  }
+}
+
+.section-card {
+  display: block;
+  width: 100%;
+  padding: 0.25rem;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow:
+    0 1px 0 var(--border),
+    0 12px 24px -16px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+}
+
+.card-face {
+  display: block;
+  font-family: var(--card-mono);
+  /* 24 monospace columns (~0.6em each) fill the card at any width. */
+  font-size: calc(100cqi / 15);
+  /* 1.0 keeps box-drawing verticals continuous between rows. */
+  line-height: 1;
+  white-space: pre;
+  text-align: left;
+  color: var(--muted);
+  transition: color var(--duration-fast) ease-out;
+}
+
+.section-card:hover .card-face,
+.section-card:focus-visible .card-face {
+  color: var(--text);
+}
+
+.section-card[aria-current="true"] .card-face {
+  color: var(--accent);
+}
+
+/* Expanded card: native modal dialog. */
+.card-dialog {
+  width: min(100vw - 1.5rem, 60rem);
+  max-height: calc(100dvh - 1.5rem);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  color: var(--text);
+  overscroll-behavior: contain;
+}
+
+.card-dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.card-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+
+@media (min-width: 40rem) {
+  .card-dialog-body {
+    padding: 2rem;
+  }
+}
+
+html:has(.card-dialog[open]) {
+  overflow: hidden;
+}
+
+.ascii-art {
+  display: block;
+  min-height: calc(16lh);
+  font-family: var(--card-mono);
+  font-size: clamp(0.6rem, 2.4vw, 0.9rem);
+  line-height: 1.1;
+  white-space: pre;
+  color: var(--accent);
+  text-align: center;
+  overflow: hidden;
+}
+
+@keyframes card-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.97);
+  }
+}
+
+@keyframes card-dialog-out {
+  to {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.97);
+  }
+}
+
+@keyframes card-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.card-dialog[open] {
+  animation: card-dialog-in 200ms ease-out;
+}
+
+.card-dialog[open]::backdrop {
+  animation: card-backdrop-in 200ms ease-out;
+}
+
+.card-dialog[data-state="closing"] {
+  animation: card-dialog-out 160ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-slot,
+  .card-face {
+    transition: none;
+  }
+
+  .card-dialog[open],
+  .card-dialog[open]::backdrop,
+  .card-dialog[data-state="closing"] {
+    animation: none;
+  }
+}

@@ -1,6 +1,6 @@
 # ADR-005 — Loading tiers and chunk ownership
 
-- **Status:** Accepted — budget numbers **provisional until measured in Roadmap P5**
+- **Status:** Accepted — budgets locked in Roadmap P5 and enforced in CI by `scripts/check-budgets.mjs`
 - **Date:** 2026-09-26
 - **Source:** Roadmap §6.5 and §7, `docs/architecture.md` → Loading tiers
 
@@ -12,7 +12,7 @@ critical bundle.
 ## Decision
 
 - Tiers: **critical** (shell, Classic sections, toggle, store, hash sync) → **preview** (CSS
-  skeleton board) → **intent** (rogue chunk: board + cards + Motion, preloaded on toggle
+  skeleton board) → **intent** (rogue chunk: board + cards + dialog, preloaded on toggle
   hover/focus/touchstart) → **interaction** (drag sub-chunk, section panels, expanded-card media)
   → **expensive** (Three.js/R3F, user-triggered only).
 - dnd-kit loads as a deferred sub-chunk; merge it into the rogue chunk if measurement shows the
@@ -20,10 +20,20 @@ critical bundle.
 - ESLint `no-restricted-imports` fences shell/Classic code from statically importing
   `src/features/rogue`; CI enforces byte budgets (Roadmap P5).
 
-## Provisional budgets (Roadmap §7 is the single source)
+## Budgets (Roadmap §7 is the single source; CI: `npm run budgets`)
 
 Critical route First Load JS ≤ P0 baseline + 20 kB gz · rogue chunk ≤ 80 kB gz · drag sub-chunk
 ≤ 15 kB gz · Three.js bytes in critical/rogue chunks = 0 (hard).
+
+## Implementation (Roadmap P5)
+
+`src/features/rogue/preload.ts` is the only Card Mode module the shell may import (ESLint
+`no-restricted-imports` fence; the same rule keeps `three`/`@react-three/*` behind
+`src/features/rogue/three/`). The toggle warms the chunk on pointerenter/focus/touchstart unless
+Save-Data or `prefers-reduced-data` is set. `ModeRoot` renders the loaded board directly
+(`RogueBoardSlot`) instead of `next/dynamic`/Suspense, so a switch after the warm-up is instant; a
+failed load falls back to Classic. Skeleton and board share a viewport-tall stage so the swap causes
+no layout shift.
 
 ## Alternatives
 

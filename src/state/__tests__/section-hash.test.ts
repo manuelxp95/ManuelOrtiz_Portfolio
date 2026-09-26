@@ -16,6 +16,7 @@ describe("parseSectionHash", () => {
     ["#projects", "projects"],
     ["projects", "projects"],
     ["#cv", "cv"],
+    ["#project-sopa", "projects"],
   ])("accepts %s", (hash, expected) => {
     expect(parseSectionHash(hash)).toBe(expected);
   });

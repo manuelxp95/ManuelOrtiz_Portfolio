@@ -4,7 +4,10 @@ export function isSectionId(value: string): value is SectionId {
   return (SECTION_IDS as readonly string[]).includes(value);
 }
 
-/** Section id from a URL hash ("#projects"), or null when it isn't a known section. */
+/**
+ * Section id from a URL hash, or null when it isn't a known section. Project anchors
+ * ("#project-sopa") belong to the Projects section.
+ */
 export function parseSectionHash(hash: string): SectionId | null {
   let id: string;
   try {
@@ -12,6 +15,7 @@ export function parseSectionHash(hash: string): SectionId | null {
   } catch {
     return null;
   }
+  if (id.startsWith("project-")) return "projects";
   return isSectionId(id) ? id : null;
 }
 

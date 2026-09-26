@@ -107,7 +107,7 @@ Next step: Owner confirms whether Godot belongs in Skills.
 
 ## Issue: Mobile LCP slightly above the §7 target
 
-Status: Scheduled (Roadmap P5 — investigate with the loading-tier work)
+Status: Resolved (2026-09-26, Roadmap P5 — simulated-throttling artifact; applied throttling gives LCP 1.7 s = FCP; see docs/perf-baseline.md → P5)
 Evidence: Lighthouse 13.5.0 mobile (simulated throttling, local production build) after P3: LCP
 2.6–2.7 s over three runs vs the ≤ 2.5 s target; P2 measured 2.4 s in one run. LCP element is text
 (`section#about` second paragraph); FCP 0.9 s; performance score 97. See `docs/perf-baseline.md`.

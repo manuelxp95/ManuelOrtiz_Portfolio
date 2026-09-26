@@ -1,10 +1,24 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { MODE_STORAGE_KEY } from "@/state/mode-storage";
+import { installDialog, installMatchMedia } from "@/test/browser-polyfills";
 
 const scrollIntoView = vi.fn();
+
+beforeAll(() => {
+  installMatchMedia();
+  installDialog();
+});
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -75,6 +89,13 @@ describe("mode system", () => {
 
     const historyLength = window.history.length;
     await user.click(card("skills")!);
+    await waitFor(() =>
+      expect(document.querySelector("dialog[open]")).not.toBeNull(),
+    );
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(document.querySelector("dialog[open]")).toBeNull(),
+    );
     expect(window.location.hash).toBe("#skills");
     expect(window.history.length).toBe(historyLength + 1);
     expect(store.getState().activeSection).toBe("skills");
@@ -113,6 +134,10 @@ describe("mode system", () => {
     );
     expect(classicMounted()).toBe(false);
     expect(document.documentElement.dataset.mode).toBe("rogue");
+    // A deep link in Card Mode opens that card directly.
+    await waitFor(() =>
+      expect(screen.getByRole("dialog", { name: /contact/i })).toBeTruthy(),
+    );
     expect(toggle()).toHaveProperty("ariaPressed", "true");
   });
 

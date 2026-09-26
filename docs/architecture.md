@@ -86,10 +86,13 @@ loads. Never resolve mode in `useEffect` alone — it flashes the wrong mode.
 
 1. **Critical** — page shell, header, classic content, mode toggle, store, hash sync,
    above-fold styles.
-2. **Preview** — static CSS skeleton of the Card Mode board, shown while its chunk loads.
-3. **Intent** — the Card Mode renderer chunk (board + Motion), preloaded once on
-   hover/focus/touchstart of the mode toggle (skipped on `saveData`).
-4. **Interaction** — drag sub-chunk (dnd-kit), section-specific panels, expanded-card media.
+2. **Preview** — static CSS skeleton of the Card Mode board, shown while its chunk loads (same
+   viewport-tall stage as the board, so the swap never shifts layout).
+3. **Intent** — the Card Mode renderer chunk (board, cards, dialog; Motion only if P6 adds it),
+   preloaded once on hover/focus/touchstart of the mode toggle through
+   `src/features/rogue/preload.ts` (skipped on Save-Data / `prefers-reduced-data`).
+4. **Interaction** — per-card ASCII rotations, drag sub-chunk (dnd-kit), section-specific panels,
+   expanded-card media.
 5. **Expensive** — Three.js, React Three Fiber, 3D models. Never in the initial render or the
    Card Mode chunk; only on an explicit user action; isolated.
 
@@ -123,6 +126,13 @@ idle → hovered/focused → selected → expanded → closing/restoring → idl
 and touch path; drag states are desktop-pointer only and always have a click/keyboard/tap
 equivalent. Handle interruptions: mode switched mid-interaction, viewport resized, Escape pressed,
 reduced motion active, card opened directly via URL hash.
+
+Implementation (Roadmap P4): `src/features/rogue/card-machine.ts` owns expanded/closing;
+hovered/focused are CSS pseudo-states (`:hover`, `:focus-visible`, `:focus-within`); selected is
+derived from the store; restoring is focus returning to the card once the machine is idle. The
+expanded card is a native modal `<dialog>` rendering the same section bodies as Classic
+(`src/components/sections/*`). Card Mode's look is ASCII art: fixed character-grid faces plus
+build-time rendered rotations (`npm run ascii`).
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns visual
 transforms/springs; the state machine owns truth — library events only dispatch transitions.
