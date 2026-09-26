@@ -1,2 +1,9 @@
-node_module
+node_modules
 .next
+out
+package-lock.json
+public
+.context
+.claude
+scripts
+*.md

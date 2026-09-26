@@ -22,7 +22,7 @@ Next step:
 
 ## Issue: Visual Studio `.vs/` state is tracked in git
 
-Status: Scheduled (Roadmap P0 task 4)
+Status: Resolved (2026-09-26, Roadmap P0 — `git rm --cached -r .vs` + `.vs/` in `.gitignore`)
 Evidence: `git ls-files` lists `.vs/ProjectSettings.json`, `.vs/VSWorkspaceState.json`,
 `.vs/slnx.sqlite`, `.vs/ManuelOrtiz_Portfolio/v17/.wsuo`; `.gitignore` has no `.vs/` entry.
 Impact: Machine-local IDE state churns in diffs.
@@ -30,7 +30,7 @@ Next step: `git rm --cached -r .vs` + `.gitignore` entry during P0.
 
 ## Issue: Empty placeholder file `components/contact.js`
 
-Status: Scheduled (Roadmap P0 — legacy `components/` is removed by the fresh scaffold)
+Status: Resolved (2026-09-26, Roadmap P0 — legacy `components/` removed)
 Evidence: `components/contact.js` is 0 bytes and tracked.
 Impact: None at runtime.
 Next step: Disappears with the legacy app files in P0.
@@ -67,3 +67,15 @@ Evidence: P3 prompt asked for "hidden+inert switching" while ADR-3 rejects it; P
 (+15 kB, 60 kB) differed from §7 (+20 kB, 80 kB); P4 and architecture.md used different card-state
 names; P5 tier names differed from CLAUDE.md/architecture.md; ADRs were never scheduled.
 Next step: none — all aligned; see `60-decisions.md` → Documentation audit.
+
+## Issue: Vercel preview builds of `portfolio_v2` failed on the legacy app
+
+Status: Open (Roadmap P0 task 5 — expected to resolve with the first scaffold push)
+Evidence: Vercel email to the owner: "The preview deployment for project
+manuel-ortiz-portfolio-pjhc failed on branch portfolio_v2 at commit 764dcc0 … The deployment
+failed because of a project or build error." The Vercel project already existed and builds every
+push; `764dcc0` still contained the Next 12 / React 17 app.
+Impact: No working v2 preview URL; Lighthouse baseline (`docs/perf-baseline.md`) is blocked on it.
+Next step: push the P0 scaffold; if the preview still fails, check the Vercel project settings
+(Framework Preset = Next.js, default build/output/install commands, Root Directory `./`, Node.js
+version matching `.nvmrc`).

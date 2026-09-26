@@ -111,3 +111,35 @@ Resolved points:
 - `docs/daily/` is a private, git-ignored prompt workspace — not project documentation.
 Consequences: on any future conflict between these docs, fix the docs rather than choosing one
 silently.
+
+## Decision: Drop legacy assets outside the kept-asset list
+
+Status: Accepted (stated by the project owner, 2026-09-26 session)
+Date: 2026-09-26
+Source: owner answer during Roadmap P0 planning
+Context: `public/` held assets the Roadmap's P0 "Kept" list did not mention: `Totoro.glb`,
+`_Totoro.glb` (legacy voxel header model), `bug.png`/`bug-dark.png` (navbar logo),
+`images/posts/thumbnail.jpeg` (placeholder), `CV_ManuelOrtiz_2023.pdf`.
+Decision: Remove all of them from `portfolio_v2`; they survive on `master` and are inventoried in
+`docs/legacy-content/misc.md`.
+Consequences: No 3D asset exists for Roadmap P8 (its default recommendation, skip unless a real
+asset exists, stands). A logo/favicon must be designed later (P10).
+
+## Decision: P0 scaffold toolchain specifics
+
+Status: Accepted (implementation choice within Roadmap P0; recorded in `docs/perf-baseline.md`)
+Date: 2026-09-26
+Source: Roadmap P0 tasks 2–3
+Context: `create-next-app@latest` produced Next 16.3.6 / React 19.2.8 / Tailwind 4 / ESLint 9
+flat config / Turbopack build.
+Decision:
+- `typecheck` = `next typegen && tsc --noEmit` — Next 16 generates global types (`LayoutProps`)
+  under `.next/types`, so a bare `tsc` fails on a clean clone.
+- Prettier 3 with default options (no config file); the legacy `prettier.config.js` was broken
+  (`module.export`) and never applied. `.prettierignore` excludes Markdown and generated/tooling
+  dirs.
+- `AGENTS.md` (Next's agent-rules block) is committed at the root. When it exists, `next dev`
+  writes its block there instead of injecting it into the project `CLAUDE.md`.
+- Geist fonts from the template removed; system font until the font choice in Roadmap P2.
+- `engines.node >=20.9.0` (Next 16 requirement), `.nvmrc` = `22`.
+Consequences: First Load JS baseline 129.9 kB gz (modern browsers) — the reference for §7 budgets.
