@@ -188,3 +188,62 @@ html:has(.card-dialog[open]) {
     animation: none;
   }
 }
+
+/* Drag enhancement (P6): mouse/pen only — hidden where the primary pointer is coarse. */
+.play-zone {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .play-zone {
+    display: grid;
+    place-items: center;
+    height: 4.5rem;
+    margin-top: 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-card);
+    font-family: var(--card-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    transition:
+      border-color var(--duration-fast) ease-out,
+      background-color var(--duration-fast) ease-out,
+      color var(--duration-fast) ease-out;
+  }
+
+  .play-zone[data-dragging] {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .play-zone[data-candidate] {
+    border-style: solid;
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  .section-card {
+    touch-action: manipulation;
+  }
+}
+
+.section-card[data-dragging] {
+  opacity: 0.35;
+}
+
+.card-overlay {
+  container-type: inline-size;
+  cursor: grabbing;
+  transform: rotate(-2deg) scale(1.04);
+  box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-zone {
+    transition: none;
+  }
+
+  .card-overlay {
+    transform: none;
+  }
+}

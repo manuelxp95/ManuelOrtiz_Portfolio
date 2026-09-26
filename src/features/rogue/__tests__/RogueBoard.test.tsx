@@ -148,6 +148,25 @@ describe("Card Mode board", () => {
     expect(document.activeElement).toBe(card("projects"));
   });
 
+  it("with drag wired, a press that moves less than the threshold still opens the card", async () => {
+    render(<RogueBoard />);
+    const target = card("education");
+    fireEvent.mouseDown(target, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.mouseMove(document, { clientX: 14, clientY: 12 });
+    fireEvent.mouseUp(document, { clientX: 14, clientY: 12 });
+    fireEvent.click(target);
+    expect(
+      await screen.findByRole("dialog", { name: /education/i }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the play zone out of the accessibility tree", () => {
+    render(<RogueBoard />);
+    const zone = document.querySelector(".play-zone");
+    expect(zone?.getAttribute("aria-hidden")).toBe("true");
+    expect(card("skills").getAttribute("aria-roledescription")).toBeNull();
+  });
+
   it("the open card follows back/forward navigation", async () => {
     const user = userEvent.setup();
     render(<RogueBoard />);

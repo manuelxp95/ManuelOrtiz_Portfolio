@@ -21,6 +21,18 @@ they fight over transforms. 3D is optional and expensive.
 - 3D is admitted only if: user-triggered, model ≤ 500 kB transfer, no frame drops on mid-range
   mobile, render loop stops when unmounted/offscreen/hidden, zero bytes loaded before the trigger.
 
+## Implementation (Roadmap P6)
+
+dnd-kit (`@dnd-kit/core` 6.3) with a `MouseSensor` only (8px activation distance): touch keeps
+tap-to-open and native scrolling. dnd-kit's own draggable ARIA attributes are not applied (they
+would rename the card buttons); its live region announces drag progress. Events only dispatch
+`card-machine.ts` transitions (`DRAG_START` / `DRAG_OVER` / `DROP` / `DRAG_CANCEL`); dnd-kit already
+cancels on Escape, window resize and tab visibility change. Motion was **not** needed: the lift is
+CSS and the snap-back is dnd-kit's built-in drop animation (disabled under reduced motion and on a
+successful drop). dnd-kit ships inside the Card Mode chunk (+13.9 kB gz): a separate chunk would
+have to wrap the already-mounted cards in its provider once loaded, remounting them and dropping
+keyboard focus.
+
 ## Alternatives
 
 - Motion-only hand-rolled drag — more code, worse accessibility and cancellation handling.

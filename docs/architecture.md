@@ -134,6 +134,10 @@ expanded card is a native modal `<dialog>` rendering the same section bodies as 
 (`src/components/sections/*`). Card Mode's look is ASCII art: fixed character-grid faces plus
 build-time rendered rotations (`npm run ascii`).
 
+Drag (Roadmap P6): mouse-only `MouseSensor`, drop a card on the play zone above the hand to open
+it; releasing elsewhere, Escape, resize or a hidden tab return it to the hand. Every card still
+opens by click, Enter/Space and tap.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns visual
 transforms/springs; the state machine owns truth — library events only dispatch transitions.
 

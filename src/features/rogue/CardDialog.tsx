@@ -21,18 +21,19 @@ interface CardDialogProps {
  */
 export function CardDialog({ state, onClose, onClosed }: CardDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const card = state.status === "idle" ? null : state.card;
+  const open = state.status === "expanded" || state.status === "closing";
+  const card = open ? state.card : null;
   const section = sections.find((meta) => meta.id === card);
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
-    if (state.status === "idle") {
+    if (!open) {
       if (element.open) element.close();
     } else if (!element.open) {
       element.showModal();
     }
-  }, [state.status]);
+  }, [open]);
 
   useEffect(() => {
     if (state.status !== "closing") return;

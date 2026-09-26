@@ -151,3 +151,16 @@ the critical JS chunks to the LCP dependency graph because they start downloadin
 observed LCP. With applied throttling (`--throttling-method=devtools`, two runs): **FCP 1.7 s,
 LCP 1.7 s, performance 99**. Switching Inter to `display: optional` did not change the simulated
 number, so the font is not the cause. Re-check on the Vercel preview in P9.
+
+## P6 — Drag enhancement (2026-09-26)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.3 kB (unchanged) |
+| Card Mode chunk (now includes `@dnd-kit/core`) | ≤ 80 kB | 25.8 kB (+13.9 kB; §7 drag target ≤ 15 kB) |
+| All Card Mode chunks | ≤ 120 kB | 31.3 kB |
+
+Drag matrix (headless Chrome, production build): drop on the play zone opens the card and pushes
+its hash; release elsewhere returns it (focus stays on the card, no click fires); Escape and a
+window resize mid-drag cancel; a 4px wobble still counts as a click; a touch swipe never starts a
+drag and a tap opens the card; the live region announces each step; no console errors.

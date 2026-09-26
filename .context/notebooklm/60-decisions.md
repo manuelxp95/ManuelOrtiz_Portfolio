@@ -296,3 +296,22 @@ Decision:
   when the board replaced the skeleton on a slow network.
 - The P3 mobile-LCP known issue was a Lighthouse Lantern artifact (see perf-baseline P5).
 Consequences: Critical JS 142.3 kB gz; Card Mode total 17.4 kB gz.
+
+## Decision: Drag enhancement implementation (Roadmap P6)
+
+Status: Accepted (implementation within ADR-006; owner asked to proceed without further approvals)
+Date: 2026-09-26
+Source: Roadmap P6; verified by Vitest and a headless-Chrome drag matrix
+Decision:
+- `@dnd-kit/core` 6.3 with `MouseSensor` only, activation distance 8px; touch keeps tap-to-open.
+- Drop target: a play zone above the hand, shown only for `(hover: hover) and (pointer: fine)`,
+  `aria-hidden` (dnd-kit's live region announces progress instead).
+- `card-machine.ts` gains `dragging` (with `overZone` = drop candidate) and DRAG_START / DRAG_OVER /
+  DROP / DRAG_CANCEL; dnd-kit handlers only dispatch these. A successful drop selects the section
+  (`pushState`) and expands the card; anything else returns it to the hand with focus on it.
+- dnd-kit's draggable ARIA attributes are not spread onto the card buttons (they would announce
+  "draggable" instead of "button"); keyboard users keep Enter/Space.
+- Motion still not added: lift is CSS, snap-back is dnd-kit's drop animation (off under reduced
+  motion and on successful drops).
+- dnd-kit is merged into the Card Mode chunk instead of a deferred sub-chunk: wrapping mounted
+  cards in the provider after a lazy load would remount them and lose focus. Cost +13.9 kB gz.

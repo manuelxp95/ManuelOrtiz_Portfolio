@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   contactLinks,
@@ -20,7 +27,12 @@ import {
 import { parseSectionHash } from "@/state/section-hash";
 import { CardDialog } from "./CardDialog";
 import { cardReducer, initialCardState } from "./card-machine";
-import { SectionCard } from "./SectionCard";
+import {
+  DRAG_ACTIVATION_DISTANCE,
+  dragAnnouncements,
+} from "./drag/drag-config";
+import { PLAY_ZONE_ID, PlayZone } from "./drag/PlayZone";
+import { CardFace, SectionCard } from "./SectionCard";
 import { useReducedMotion } from "./use-reduced-motion";
 import "./rogue.css";
 
@@ -51,6 +63,16 @@ export function RogueBoard() {
   const cards = useRef(new Map<SectionId, HTMLButtonElement>());
   const mounted = useRef(false);
   const lastOpen = useRef<SectionId | null>(null);
+  // Mouse only: touch keeps tap-to-open and native scrolling (P6, ADR-006).
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE },
+    }),
+  );
+  const dragged =
+    state.status === "dragging"
+      ? sections.find((section) => section.id === state.card)
+      : undefined;
 
   // Entering Card Mode: a user switch focuses the selected card; a page load with a section hash
   // (shared deep link, reload) opens that card directly.
@@ -102,25 +124,66 @@ export function RogueBoard() {
       <p className="mt-2 font-mono text-sm text-muted">
         &gt; choose a card to open it_
       </p>
-      <ul aria-label="Sections" className="card-hand">
-        {sections.map((section, index) => (
-          <li key={section.id} className="card-slot" style={fanStyle(index)}>
-            <SectionCard
-              ref={(element) => {
-                if (element) cards.current.set(section.id, element);
-                else cards.current.delete(section.id);
-              }}
-              section={section}
-              stat={cardStats[section.id]}
-              selected={section.id === activeSection}
-              onOpen={() => {
-                selectSection(section.id, "push");
-                dispatch({ type: "OPEN", card: section.id });
-              }}
-            />
-          </li>
-        ))}
-      </ul>
+      {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
+      <DndContext
+        sensors={sensors}
+        accessibility={{ announcements: dragAnnouncements }}
+        onDragStart={({ active }) =>
+          dispatch({ type: "DRAG_START", card: active.id as SectionId })
+        }
+        onDragOver={({ over }) =>
+          dispatch({ type: "DRAG_OVER", overZone: over?.id === PLAY_ZONE_ID })
+        }
+        onDragEnd={({ active, over }) => {
+          const onZone = over?.id === PLAY_ZONE_ID;
+          dispatch({ type: "DRAG_OVER", overZone: onZone });
+          if (onZone) selectSection(active.id as SectionId, "push");
+          dispatch({ type: "DROP" });
+        }}
+        onDragCancel={() => dispatch({ type: "DRAG_CANCEL" })}
+      >
+        <PlayZone
+          dragging={state.status === "dragging"}
+          candidate={state.status === "dragging" && state.overZone}
+        />
+        <ul aria-label="Sections" className="card-hand">
+          {sections.map((section, index) => (
+            <li key={section.id} className="card-slot" style={fanStyle(index)}>
+              <SectionCard
+                ref={(element) => {
+                  if (element) cards.current.set(section.id, element);
+                  else cards.current.delete(section.id);
+                }}
+                section={section}
+                stat={cardStats[section.id]}
+                selected={section.id === activeSection}
+                onOpen={() => {
+                  selectSection(section.id, "push");
+                  dispatch({ type: "OPEN", card: section.id });
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+        {/* A successful drop opens the dialog in place of a snap-back; reduced motion never animates. */}
+        <DragOverlay
+          dropAnimation={
+            reducedMotion || (state.status === "dragging" && state.overZone)
+              ? null
+              : undefined
+          }
+        >
+          {dragged && (
+            <div className="section-card card-overlay">
+              <CardFace
+                section={dragged}
+                stat={cardStats[dragged.id]}
+                selected={dragged.id === activeSection}
+              />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
       <CardDialog state={state} onClose={close} onClosed={closed} />
     </section>
   );
