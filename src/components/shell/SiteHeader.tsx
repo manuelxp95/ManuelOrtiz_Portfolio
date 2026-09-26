@@ -1,5 +1,6 @@
 import { profile } from "@/content";
 import { sections } from "@/domain/sections";
+import { ModeToggle } from "./ModeToggle";
 
 export function SiteHeader() {
   return (
@@ -22,6 +23,7 @@ export function SiteHeader() {
             ))}
           </ul>
         </nav>
+        <ModeToggle />
       </div>
     </header>
   );

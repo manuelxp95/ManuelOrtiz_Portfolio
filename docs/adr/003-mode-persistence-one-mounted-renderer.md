@@ -12,7 +12,10 @@ returning Card Mode user shouldn't see a flash of Classic.
 ## Decision
 
 - The chosen mode is stored in `localStorage`. A small blocking inline script sets `data-mode` on
-  `<html>` before paint; the store initializes from it after hydration.
+  `<html>` before paint. The client store reads the same `localStorage` key when it is created,
+  and renderers stay gated behind hydration (`useSyncExternalStore`), so the first client render
+  still matches the server's Classic HTML (implemented in Roadmap P3: `src/state/`,
+  `src/components/shell/ModeRoot.tsx`).
 - Classic HTML is the server-rendered default for crawlers and first-time visitors.
 - Exactly one presentation renderer is mounted at a time. Switching mode unmounts the inactive
   renderer; only domain/navigation state (`mode`, `activeSection`) survives. The inactive

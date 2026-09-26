@@ -16,7 +16,11 @@ export function ClassicSection({ id, children }: ClassicSectionProps) {
       aria-labelledby={`${id}-heading`}
       className="border-t border-border py-12"
     >
-      <h2 id={`${id}-heading`} className="mb-6 text-2xl font-semibold">
+      <h2
+        id={`${id}-heading`}
+        tabIndex={-1}
+        className="mb-6 text-2xl font-semibold"
+      >
         {label}
       </h2>
       {children}

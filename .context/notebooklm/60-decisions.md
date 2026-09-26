@@ -196,3 +196,31 @@ Decision:
   `<details>` (no JS, crawlable); `next/image` uses `loading="eager"` + `fetchPriority="high"` for
   the portrait (Next 16 deprecated `priority`); CI in `.github/workflows/ci.yml`.
 Consequences: Critical JS 140.0 kB gz (baseline + 10.1 kB), Lighthouse mobile 98/100/100/100.
+
+## Decision: Mode system implementation details (Roadmap P3)
+
+Status: Accepted (implementation within ADR-003 / ADR-004; verified in tests and headless Chrome)
+Date: 2026-09-26
+Source: Roadmap P3; Next 16 guide `node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md`
+Context: ADR-003 requires no-flash persisted mode and exactly one mounted renderer; ADR-004 the
+hash/history policy.
+Decision:
+- `src/state/portfolio-store.ts` (Zustand): only `mode` + `activeSection`, initialized on the client
+  from the same `localStorage` key as the inline `<head>` script and from `location.hash`.
+  Renderers are gated behind `useHydrated()` (`useSyncExternalStore`) so the first client render
+  matches the server's Classic HTML — no setState-in-effect, no hydration mismatch.
+- Pre-paint: `<html suppressHydrationWarning>` + inline script sets `data-mode`; CSS hides Classic
+  and reveals a server-rendered skeleton for a stored Card Mode preference. `ModeRoot` re-applies
+  `data-mode` in a layout effect (Strict Mode remount in dev resets `<html>` attributes).
+- Card Mode loads via `next/dynamic` (`ssr: false`) as its own chunk; `ModeRoot` renders either
+  Classic `children` or the board, never both.
+- Hash policy: anchor clicks → native `hashchange`; card selection → `pushState`; scroll-spy
+  (`IntersectionObserver` in `ClassicSync`) → `replaceState`, suppressed until `scrollend` (1 s
+  fallback) during anchor/programmatic scrolls. Spy band starts at 80px, just below the 72px anchor
+  landing line (header + scroll-margin); an earlier 64px band rewrote `#projects` to `#experience`.
+- Focus after a user mode switch: a one-shot flag (`consumePendingModeFocus`) lets the incoming
+  renderer focus the active card, or scroll to and focus the active section heading (`tabIndex=-1`).
+  Initial loads never move focus.
+- Dev dependency `@testing-library/user-event` for keyboard tests.
+Consequences: Critical JS 142.9 kB gz; board chunk 1.0 kB. Next 16's history patching keeps
+pushState/back/forward same-document (verified in Chrome).

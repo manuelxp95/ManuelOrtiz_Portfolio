@@ -77,3 +77,24 @@ sit inside closed `<details>` and use native lazy loading.
 |---|---|---|---|---|---|---|---|---|
 | Mobile | 98 | 100 | 100 | 100 | 2.4 s | 0 | 20 ms | 1.0 s |
 | Desktop | 100 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms | 0.2 s |
+
+## P3 — Mode system (2026-09-26)
+
+Local production build on top of `15b1554`.
+
+| Asset (`/`) | Gzip |
+|---|---|
+| JS, modern browsers (8 chunks) | **142.9 kB** (+12.9 kB vs P0; §7 target ≤ 149.9 kB) |
+| Card Mode placeholder chunk (not in initial load) | 1.0 kB |
+
+The +2.9 kB over P2 is Zustand, `ModeRoot`, `ModeToggle`, `ClassicSync` and the pre-paint skeleton.
+No chunk contains Three.js.
+
+| Lighthouse 13.5.0 | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|
+| Mobile (3 runs) | 97 | 100 | 100 | 100 | 2.6–2.7 s | 0 | 20–60 ms |
+| Desktop | 100 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms |
+
+Mobile LCP now sits just above the §7 target (≤ 2.5 s; P2 measured 2.4 s in a single run). The LCP
+element is text (the second About paragraph), with FCP at 0.9 s — see
+`.context/notebooklm/70-known-issues.md`; investigate in Roadmap P5.

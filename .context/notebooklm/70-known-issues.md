@@ -104,3 +104,21 @@ Evidence: meteoritos, road-to-carpincho and saltarina list Godot in `stack`; the
 (and so `src/content/skills.ts`) does not list Godot.
 Impact: Minor inconsistency between Skills and Projects.
 Next step: Owner confirms whether Godot belongs in Skills.
+
+## Issue: Mobile LCP slightly above the §7 target
+
+Status: Scheduled (Roadmap P5 — investigate with the loading-tier work)
+Evidence: Lighthouse 13.5.0 mobile (simulated throttling, local production build) after P3: LCP
+2.6–2.7 s over three runs vs the ≤ 2.5 s target; P2 measured 2.4 s in one run. LCP element is text
+(`section#about` second paragraph); FCP 0.9 s; performance score 97. See `docs/perf-baseline.md`.
+Impact: Target (not hard budget) missed by ~0.1–0.2 s in lab conditions.
+Next step: Check whether the late LCP entry comes from the Inter font swap re-painting the hero
+text or from JS priority; compare against a P2 build; re-measure on the Vercel preview.
+
+## Issue: Section nav is cramped on narrow screens
+
+Status: Open (Roadmap P9 hardening or earlier if reported)
+Evidence: At 412px the header shows the name, ~2 nav links and the Card Mode toggle; the remaining
+links need horizontal scrolling (Lighthouse final screenshot after P3).
+Impact: Lower discoverability of later sections on phones; everything stays reachable.
+Next step: Consider a second header row or a compact menu below `sm`.

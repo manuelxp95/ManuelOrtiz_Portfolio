@@ -63,6 +63,19 @@ body {
   border-radius: var(--radius-control);
 }
 
+/* Pre-paint Card Mode (ADR-003): the inline <head> script sets data-mode before first paint. */
+.rogue-prepaint {
+  display: none;
+}
+
+html[data-mode="rogue"] .rogue-prepaint {
+  display: block;
+}
+
+html[data-mode="rogue"] [data-renderer="classic"] {
+  display: none;
+}
+
 section[id] {
   scroll-margin-top: calc(var(--header-height) + 1rem);
 }

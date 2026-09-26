@@ -9,7 +9,11 @@ export function AboutSection() {
       className="flex flex-col-reverse gap-8 py-12 sm:flex-row sm:items-start"
     >
       <div className="flex-1">
-        <h1 id="about-heading" className="text-4xl font-bold tracking-tight">
+        <h1
+          id="about-heading"
+          tabIndex={-1}
+          className="text-4xl font-bold tracking-tight"
+        >
           {profile.name}
         </h1>
         <p className="mt-2 text-lg text-accent">{profile.headline}</p>

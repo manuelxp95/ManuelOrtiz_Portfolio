@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { siteUrl } from "@/config/site";
 import { profile } from "@/content";
+import { modeInitScript } from "@/state/mode-storage";
 import "./globals.css";
 
 const inter = Inter({
@@ -37,7 +38,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`}>
+    <html
+      lang="en"
+      className={`${inter.variable} antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: modeInitScript }} />
+      </head>
       <body className="flex min-h-screen flex-col font-sans">
         <a
           href="#main"
