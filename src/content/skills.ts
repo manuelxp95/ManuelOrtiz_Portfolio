@@ -1,4 +1,4 @@
-import type { Skill } from "@/domain/types";
+import type { Skill, SkillCategory } from "@/domain/types";
 
 export const skills: Skill[] = [
   {
@@ -114,6 +114,7 @@ export const skills: Skill[] = [
     tags: ["game-dev"],
     context: "Training and personal projects",
   },
+  { id: "godot", name: "Godot", category: "engine", tags: ["game-dev"] },
   {
     id: "real-time-cinematics",
     name: "Real-time cinematics and camera work",
@@ -181,3 +182,16 @@ export const skills: Skill[] = [
   { id: "postman", name: "Postman", category: "tool", tags: ["backend"] },
   { id: "nodejs", name: "Node.js", category: "tool", tags: ["web"] },
 ];
+
+/** Display order and labels for skill groups. */
+export const skillCategoryLabels: Record<SkillCategory, string> = {
+  language: "Languages",
+  backend: "Backend and data",
+  frontend: "Web frontend",
+  testing: "Testing and quality",
+  practice: "Engineering practice",
+  engine: "Game engines and cinematics",
+  xr: "VR and AR",
+  ai: "Artificial intelligence",
+  tool: "Tools",
+};

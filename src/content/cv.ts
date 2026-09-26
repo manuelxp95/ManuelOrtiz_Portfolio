@@ -1,7 +1,7 @@
-import type { CvMeta } from "@/domain/types";
+import type { CvDocument } from "@/domain/types";
 
-export const cv: CvMeta = {
-  href: "/CV-ManuelOrtiz_2024.pdf",
-  fileName: "CV-ManuelOrtiz_2024.pdf",
-  lastUpdated: "2024-05-02",
-};
+/**
+ * Downloadable CV, or null while none is published. The 2024 PDF in `public/` predates the
+ * current experience and stays unlinked until the owner provides a portfolio CV (Roadmap P10).
+ */
+export const cv: CvDocument | null = null;

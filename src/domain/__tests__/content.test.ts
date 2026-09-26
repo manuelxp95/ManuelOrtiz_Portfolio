@@ -121,6 +121,12 @@ describe("links", () => {
     }
   });
 
+  it("project links carry no access tokens", () => {
+    for (const link of projects.flatMap((project) => project.links)) {
+      expect(new URL(link.url).searchParams.has("secret")).toBe(false);
+    }
+  });
+
   it("contact links are mailto or absolute https", () => {
     for (const link of contactLinks) {
       if (link.kind === "email")
@@ -130,7 +136,8 @@ describe("links", () => {
     }
   });
 
-  it("CV file exists in public/", () => {
+  it.runIf(cv !== null)("CV file exists in public/", () => {
+    if (cv === null) return;
     expect(existsSync(path.join(publicDir, cv.href))).toBe(true);
     expect(cv.href.endsWith(cv.fileName)).toBe(true);
   });

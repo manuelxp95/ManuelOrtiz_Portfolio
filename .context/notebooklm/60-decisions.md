@@ -174,3 +174,25 @@ Decision: P1 adds only Vitest 5 (node environment) for content validation; RTL +
 with the first component tests. `@types/node` moved to `^22` to match the pinned Node 22 runtime
 (Vitest 5's peer range excludes `^20`). `CLAUDE.md` and `docs/Roadmap.md` updated.
 Consequences: No unused test dependencies in P1.
+
+## Decision: Classic mode visual and content choices (Roadmap P2)
+
+Status: Accepted (stated by the project owner, 2026-09-26)
+Date: 2026-09-26
+Source: owner answers during Roadmap P2
+Context: P2 needed a visual direction, a font, and a CV answer while the only PDF (May 2024)
+predates the current experience.
+Decision:
+- Neutral palette following `prefers-color-scheme`, single teal accent (tokens in
+  `src/app/globals.css`, AA contrast in both schemes); Inter via `next/font` (self-hosted).
+- CV section shows a summary and "PDF coming soon", no download, until the owner supplies a
+  portfolio-specific CV (`src/content/cv.ts` → `cv = null`). The 2024 PDF stays in `public/` so old
+  external links keep working, but the site no longer links it.
+- itch.io links with `?secret=` tokens removed until the owner finds the public URLs; Godot added
+  to skills.
+- Implementation choices: `ModeToggle` is not stubbed in P2 (no dead UI) — it arrives with the mode
+  system in P3; shared display labels (skill categories, project context, employment, contact
+  kinds) live beside the content so Card Mode reuses them; project details and galleries use native
+  `<details>` (no JS, crawlable); `next/image` uses `loading="eager"` + `fetchPriority="high"` for
+  the portrait (Next 16 deprecated `priority`); CI in `.github/workflows/ci.yml`.
+Consequences: Critical JS 140.0 kB gz (baseline + 10.1 kB), Lighthouse mobile 98/100/100/100.

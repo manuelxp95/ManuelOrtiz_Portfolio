@@ -1,4 +1,4 @@
-import type { ContactLink } from "@/domain/types";
+import type { ContactKind, ContactLink } from "@/domain/types";
 
 export const contactLinks: ContactLink[] = [
   {
@@ -26,3 +26,10 @@ export const contactLinks: ContactLink[] = [
     href: "https://ortizmanuel.itch.io",
   },
 ];
+
+export const contactKindLabels: Record<ContactKind, string> = {
+  email: "Email",
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  itch: "itch.io",
+};

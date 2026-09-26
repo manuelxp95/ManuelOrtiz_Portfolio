@@ -1,7 +1,7 @@
-export { contactLinks } from "./contact";
+export { contactKindLabels, contactLinks } from "./contact";
 export { cv } from "./cv";
 export { education } from "./education";
-export { experience } from "./experience";
+export { employmentLabels, experience } from "./experience";
 export { profile } from "./profile";
-export { projects } from "./projects";
-export { skills } from "./skills";
+export { projectContextLabels, projects } from "./projects";
+export { skillCategoryLabels, skills } from "./skills";

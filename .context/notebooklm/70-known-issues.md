@@ -82,23 +82,24 @@ version matching `.nvmrc`).
 
 ## Issue: CV PDF predates the current experience
 
-Status: Scheduled (Roadmap P10 — needs a new PDF from the owner)
+Status: Scheduled (Roadmap P10 — owner will produce a portfolio-specific CV, stated 2026-09-26)
 Evidence: `public/CV-ManuelOrtiz_2024.pdf` was last updated in commit `15e32b8` (2024-05-02);
 `src/content/experience.ts` lists UNNE (2024–2025) and ATP (2026–present), which it cannot contain.
 Impact: The CV download would contradict the site's Experience section.
-Next step: Owner supplies an updated CV; update `src/content/cv.ts`.
+Next step: Owner supplies the portfolio CV at P10; update `src/content/cv.ts`.
 
 ## Issue: Unlisted itch.io links carry `?secret=` tokens
 
-Status: Scheduled (Roadmap P10 — owner decision)
-Evidence: `src/content/projects.ts` → meteoritos, road-to-carpincho (desktop and mobile),
-saltarina itch.io URLs include `?secret=` (copied verbatim from the legacy site).
+Status: Mitigated (2026-09-26 — links removed from `src/content/projects.ts`; owner to supply public URLs)
+Evidence: The legacy meteoritos, road-to-carpincho (desktop and mobile) and saltarina itch.io URLs
+include `?secret=` (still recorded in `docs/legacy-content/projects.md`). A content test now
+rejects any project link with a `secret` query parameter.
 Impact: Publishes unlisted-page tokens; pages may also be intentionally unlisted.
-Next step: Make those itch.io pages public and drop the tokens, or remove the links.
+Next step: Owner finds or publishes the public itch.io pages; add them back as `itch` links.
 
 ## Issue: Godot appears in projects but not in skills
 
-Status: Open (owner to confirm)
+Status: Resolved (2026-09-26 — owner confirmed; Godot added to `src/content/skills.ts`)
 Evidence: meteoritos, road-to-carpincho and saltarina list Godot in `stack`; the owner's profile
 (and so `src/content/skills.ts`) does not list Godot.
 Impact: Minor inconsistency between Skills and Projects.

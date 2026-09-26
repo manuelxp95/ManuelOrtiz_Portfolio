@@ -1,4 +1,4 @@
-import type { Project } from "@/domain/types";
+import type { Project, ProjectContext } from "@/domain/types";
 
 /**
  * Featured and professional work first. Legacy prose is kept verbatim until the
@@ -306,11 +306,6 @@ export const projects: Project[] = [
         label: "Meteoritos source on GitHub",
         url: "https://github.com/manuelxp95/Repo_cenit",
       },
-      {
-        kind: "itch",
-        label: "Meteoritos on itch.io",
-        url: "https://ortizmanuel.itch.io/meteoritos?secret=gIrjifbPQhCR8V1Fl6CKofyHu9s",
-      },
     ],
     thumbnail: {
       src: "/images/works/meteoritos.png",
@@ -413,16 +408,6 @@ export const projects: Project[] = [
         label: "Road to Carpincho source on GitHub",
         url: "https://github.com/manuelxp95/RoadToCarpincho",
       },
-      {
-        kind: "itch",
-        label: "Road to Carpincho on itch.io",
-        url: "https://ortizmanuel.itch.io/road-to-carpincho?secret=o2ZzlqTxNEXQ3vXlBFBF5t7SEE",
-      },
-      {
-        kind: "itch",
-        label: "Road to Carpincho mobile build on itch.io",
-        url: "https://ortizmanuel.itch.io/road-to-carpincho-mobile?secret=D4luIprb280WjDckIi8O5HeHJMs",
-      },
     ],
     thumbnail: {
       src: "/images/works/road_to_carpincho.png",
@@ -471,11 +456,6 @@ export const projects: Project[] = [
         label: "Saltarina source on GitHub",
         url: "https://github.com/manuelxp95/PSaltarina",
       },
-      {
-        kind: "itch",
-        label: "Saltarina on itch.io",
-        url: "https://ortizmanuel.itch.io/saltarina?secret=i0084P3lYEC83xshV9u2SILwhA",
-      },
     ],
     thumbnail: {
       src: "/images/works/saltarina.png",
@@ -501,3 +481,10 @@ export const projects: Project[] = [
     featured: false,
   },
 ];
+
+export const projectContextLabels: Record<ProjectContext, string> = {
+  professional: "Professional",
+  "game-jam": "Game jam",
+  coursework: "Course project",
+  personal: "Personal project",
+};

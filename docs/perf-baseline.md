@@ -57,3 +57,23 @@ later deploys, since local numbers exclude CDN/network effects.
 |---|---|---|---|---|---|---|---|---|
 | Mobile | 100 | 100 | 100 | 100 | 1.9 s | 0 | 20 ms | 0.8 s |
 | Desktop | 100 | 100 | 100 | 100 | 0.5 s | 0 | 0 ms | 0.2 s |
+
+## P2 — Classic mode (2026-09-26)
+
+Full Classic page (7 sections, 11 projects, 34 images), local production build on top of
+`eef8e7c`, same method as P0.
+
+| Asset (`/`) | Gzip |
+|---|---|
+| JS, modern browsers (8 chunks) | **140.0 kB** (+10.1 kB vs P0; §7 target ≤ 149.9 kB) |
+| CSS | 4.8 kB |
+| HTML (all content server-rendered) | 21.9 kB |
+
+No `"use client"` modules in `src/`. The JS growth is framework runtime pulled in by
+`next/image` (its client chunk alone is 5.6 kB gz) plus small shared chunks; project gallery images
+sit inside closed `<details>` and use native lazy loading.
+
+| Lighthouse 13.5.0 | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT | FCP |
+|---|---|---|---|---|---|---|---|---|
+| Mobile | 98 | 100 | 100 | 100 | 2.4 s | 0 | 20 ms | 1.0 s |
+| Desktop | 100 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms | 0.2 s |

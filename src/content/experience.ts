@@ -1,4 +1,4 @@
-import type { Experience } from "@/domain/types";
+import type { EmploymentType, Experience } from "@/domain/types";
 
 /** Most recent first. */
 export const experience: Experience[] = [
@@ -99,3 +99,9 @@ export const experience: Experience[] = [
     projectIds: [],
   },
 ];
+
+export const employmentLabels: Record<EmploymentType, string> = {
+  internship: "Internship",
+  freelance: "Freelance",
+  contract: "Contract",
+};

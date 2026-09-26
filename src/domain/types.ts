@@ -153,7 +153,7 @@ export interface ContactLink {
   href: string;
 }
 
-export interface CvMeta {
+export interface CvDocument {
   href: `/${string}`;
   fileName: string;
   lastUpdated: string;
