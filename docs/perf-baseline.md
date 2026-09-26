@@ -46,11 +46,14 @@ by the prerendered `.next/server/app/index.html` (gzip level 9):
 **Critical-route First Load JS baseline: 129.9 kB gz** (modern browsers). Roadmap §7 target for
 P2+: ≤ 149.9 kB gz. Numbers get locked into CI in P5.
 
-### Lighthouse (Vercel preview)
+### Lighthouse
 
-Pending: needs the Vercel preview URL live (Roadmap P0 task 5).
+Lighthouse 13.5.0, headless Chrome, against the local production server (`next build` +
+`next start`, commit `3e817f9`) — default mobile throttling and `--preset=desktop`. The Vercel
+preview of `3e817f9` deployed successfully; re-run on the deployed URL when comparing against
+later deploys, since local numbers exclude CDN/network effects.
 
-| Run | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
-|---|---|---|---|---|---|---|---|
-| Mobile | — | — | — | — | — | — | — |
-| Desktop | — | — | — | — | — | — | — |
+| Run | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT | FCP |
+|---|---|---|---|---|---|---|---|---|
+| Mobile | 100 | 100 | 100 | 100 | 1.9 s | 0 | 20 ms | 0.8 s |
+| Desktop | 100 | 100 | 100 | 100 | 0.5 s | 0 | 0 ms | 0.2 s |

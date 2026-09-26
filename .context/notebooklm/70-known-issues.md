@@ -70,7 +70,7 @@ Next step: none — all aligned; see `60-decisions.md` → Documentation audit.
 
 ## Issue: Vercel preview builds of `portfolio_v2` failed on the legacy app
 
-Status: Open (Roadmap P0 task 5 — expected to resolve with the first scaffold push)
+Status: Resolved (commit `3e817f9` — GitHub commit status "Vercel: success", owner confirmed the preview loads)
 Evidence: Vercel email to the owner: "The preview deployment for project
 manuel-ortiz-portfolio-pjhc failed on branch portfolio_v2 at commit 764dcc0 … The deployment
 failed because of a project or build error." The Vercel project already existed and builds every
@@ -79,3 +79,27 @@ Impact: No working v2 preview URL; Lighthouse baseline (`docs/perf-baseline.md`)
 Next step: push the P0 scaffold; if the preview still fails, check the Vercel project settings
 (Framework Preset = Next.js, default build/output/install commands, Root Directory `./`, Node.js
 version matching `.nvmrc`).
+
+## Issue: CV PDF predates the current experience
+
+Status: Scheduled (Roadmap P10 — needs a new PDF from the owner)
+Evidence: `public/CV-ManuelOrtiz_2024.pdf` was last updated in commit `15e32b8` (2024-05-02);
+`src/content/experience.ts` lists UNNE (2024–2025) and ATP (2026–present), which it cannot contain.
+Impact: The CV download would contradict the site's Experience section.
+Next step: Owner supplies an updated CV; update `src/content/cv.ts`.
+
+## Issue: Unlisted itch.io links carry `?secret=` tokens
+
+Status: Scheduled (Roadmap P10 — owner decision)
+Evidence: `src/content/projects.ts` → meteoritos, road-to-carpincho (desktop and mobile),
+saltarina itch.io URLs include `?secret=` (copied verbatim from the legacy site).
+Impact: Publishes unlisted-page tokens; pages may also be intentionally unlisted.
+Next step: Make those itch.io pages public and drop the tokens, or remove the links.
+
+## Issue: Godot appears in projects but not in skills
+
+Status: Open (owner to confirm)
+Evidence: meteoritos, road-to-carpincho and saltarina list Godot in `stack`; the owner's profile
+(and so `src/content/skills.ts`) does not list Godot.
+Impact: Minor inconsistency between Skills and Projects.
+Next step: Owner confirms whether Godot belongs in Skills.

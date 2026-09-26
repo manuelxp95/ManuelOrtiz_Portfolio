@@ -11,13 +11,14 @@ Full domain/architecture detail: [docs/architecture.md](docs/architecture.md). R
 any architecture-affecting change.
 
 ## Current state (read before touching anything)
-Until Roadmap P0 lands, the working tree is the **legacy Next 12 / Pages Router / JS / Chakra UI**
-site (React 17, framer-motion v5, `three`, GitHub Pages). v2 is a **fresh scaffold** on branch
-`portfolio_v2` replacing the root app, deployed to **Vercel**; the legacy site stays frozen and
-deployable on `master`. The rules below describe the **target**. Do not assume any target-stack
-piece (App Router, TS strict, Tailwind, Zustand, dnd-kit, Vitest) exists until it's actually been
-introduced — check `package.json`/`tsconfig.json` first. Execution plan: `docs/Roadmap.md`;
-migration approach: `docs/architecture.md`.
+Roadmap P0 landed: `portfolio_v2` is a **fresh Next 16 scaffold** (App Router, `src/`, React 19,
+TypeScript strict, Tailwind v4, ESLint 9, Prettier 3, Turbopack) deployed to **Vercel** previews.
+The legacy Next 12 / Chakra site stays frozen and deployable on `master`; its content is harvested
+in `docs/legacy-content/`. The rules below describe the **target**. Do not assume any later-phase
+piece (Zustand, Motion, dnd-kit, Vitest, RTL) exists until it's actually been introduced — check
+`package.json` first. Next 16 differs from older training data: read the relevant guide in
+`node_modules/next/dist/docs/` before writing Next-specific code (see `AGENTS.md`). Execution
+plan: `docs/Roadmap.md`; decisions: `docs/adr/`; perf baseline: `docs/perf-baseline.md`.
 
 ## Non-negotiable rules
 
@@ -90,7 +91,8 @@ TODO without a concrete blocker, no dependency without justification.
 
 Prioritize: section mapping, mode switching + active-section preservation, URL/hash sync,
 keyboard accessibility, content/domain validation, key state transitions. Don't snapshot-test
-static markup. Stack: Vitest + React Testing Library (introduced in Roadmap P1); Playwright only if jsdom
+static markup. Stack: Vitest (Roadmap P1, domain validation) + React Testing Library/jsdom (Roadmap
+P2, first component tests); Playwright only if jsdom
 proves insufficient.
 
 ## Git

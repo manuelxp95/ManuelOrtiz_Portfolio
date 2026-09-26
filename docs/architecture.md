@@ -53,10 +53,17 @@ Presentation metadata the renderers need (`classicLabel`, `cardLabel`, `cardVari
 icon identifiers) lives beside the domain data as plain identifiers — never styling values or
 JSX.
 
-Project entries carry: id, name, summary, description (problem/context), role,
-responsibilities, stack, links (repo/play/store), media (path + required alt), tags, optional
-impact. Concrete engineering facts over marketing adjectives. Content is plain typed TypeScript
-(no JSON/MDX/CMS until long-form content exists).
+Project entries carry: id, name, optional year, context (professional / game-jam / coursework /
+personal), summary, description (problem/context), optional role, responsibilities, stack,
+genres, platforms, links (repo/store/itch/web-build/video/notebook, each with a human-readable
+label), optional thumbnail, media, domain tags, optional impact, and a `featured` flag. Every
+media entry stores its `public/` path, required alt text and intrinsic width/height (so
+`next/image` renders without layout shift). Domain tags shared by projects, skills and experience:
+`backend | web | testing | game-dev | cinematics | xr | ai`. Concrete engineering facts over
+marketing adjectives. Content is plain typed TypeScript (no JSON/MDX/CMS until long-form content
+exists): types in `src/domain/types.ts`, section registry in `src/domain/sections.ts`, content in
+`src/content/*` behind a single `src/content/index.ts` export surface, validated by
+`src/domain/__tests__/content.test.ts`.
 
 Active section is **domain state**, independent of presentation mode, and must survive a mode
 switch (e.g. viewing Projects in Classic → switch to Card Mode → Relic Collection is active).

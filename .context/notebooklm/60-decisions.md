@@ -143,3 +143,34 @@ Decision:
 - Geist fonts from the template removed; system font until the font choice in Roadmap P2.
 - `engines.node >=20.9.0` (Next 16 requirement), `.nvmrc` = `22`.
 Consequences: First Load JS baseline 129.9 kB gz (modern browsers) — the reference for §7 budgets.
+
+## Decision: Owner's private profile summary is the source for professional facts
+
+Status: Accepted (stated by the project owner, 2026-09-26)
+Date: 2026-09-26
+Source: owner instruction during Roadmap P1: use `perfil-global.md` (a private file outside the
+repo), taking only what the portfolio needs.
+Context: The legacy site's copy was outdated (2022–2024) and missing skills, recent roles and
+education details.
+Decision: `src/content/*` takes professional facts (headline, experience, education, skills,
+proof points) from the owner's profile summary, which wins over legacy copy on conflicts. Only the
+public, professional subset is used. Excluded on purpose: phone number, job-search strategy and
+priority tiers, compensation, relocation and visa plans, and self-assessed gaps. Legacy prose is
+kept verbatim only for game-project descriptions, pending the Roadmap P10 rewrite.
+Consequences: Claim limits from that profile are binding on content: C++ is coursework only,
+Unreal is training-level, generative-AI work is personal and unpublished (never "trained a LoRA"
+or "fine-tuned"), no game-design credit on SOPA, and the ATP portal is described in prose only
+(never linked, screenshotted or with internal data). Conflicts resolved in favor of the profile:
+3DAR role (AR Developer, Lens Studio), Studio Bando dates (2023–2024), SOPA release (6 Oct 2025
+on PC, Xbox, PlayStation, Switch), Discord dropped from contact.
+
+## Decision: React Testing Library deferred to P2
+
+Status: Accepted (stated by the project owner, 2026-09-26)
+Date: 2026-09-26
+Source: owner answer to the P1 plan
+Context: The Roadmap put Vitest and RTL in P1, but P1 has no components to test.
+Decision: P1 adds only Vitest 5 (node environment) for content validation; RTL + jsdom arrive in P2
+with the first component tests. `@types/node` moved to `^22` to match the pinned Node 22 runtime
+(Vitest 5's peer range excludes `^20`). `CLAUDE.md` and `docs/Roadmap.md` updated.
+Consequences: No unused test dependencies in P1.
