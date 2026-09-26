@@ -108,3 +108,21 @@ dist
 
 # Claude Code local/session settings
 .claude/settings.local.json
+
+# --- NotebookLM project memory -------------------------------------------
+# Generated Markdown snapshots ARE tracked (.context/notebooklm/*.md).
+# These are user-/machine-specific or ephemeral and are not:
+.context/notebooklm/config.json
+.context/notebooklm/manifest.json
+.context/notebooklm/.dirty
+.context/notebooklm/*.tmp
+scripts/**/__pycache__/
+**/*.pyc
+# Never commit NotebookLM auth state. It lives outside the repo (~/.nlm,
+# ~/.config/notebooklm), but guard against a stray copy landing here.
+**/.nlm/
+**/nlm-cookies*
+**/notebooklm-auth*
+
+# Local prompt workspace (not part of the project)
+docs/daily/

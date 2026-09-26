@@ -11,12 +11,13 @@ Full domain/architecture detail: [docs/architecture.md](docs/architecture.md). R
 any architecture-affecting change.
 
 ## Current state (read before touching anything)
-This repo is a **legacy Next 12 / Pages Router / JS / Chakra UI** site (React 17, framer-motion
-v5, `three` already a dependency, deployed to GitHub Pages via `gh-pages`). The rules below
-describe the **target** architecture this project is migrating toward. Do not assume the target
-stack (App Router, TS strict, Tailwind, Zustand, dnd-kit) exists until it's actually been
-introduced — check `package.json`/`tsconfig.json` first. See `docs/architecture.md` for the
-migration approach.
+Until Roadmap P0 lands, the working tree is the **legacy Next 12 / Pages Router / JS / Chakra UI**
+site (React 17, framer-motion v5, `three`, GitHub Pages). v2 is a **fresh scaffold** on branch
+`portfolio_v2` replacing the root app, deployed to **Vercel**; the legacy site stays frozen and
+deployable on `master`. The rules below describe the **target**. Do not assume any target-stack
+piece (App Router, TS strict, Tailwind, Zustand, dnd-kit, Vitest) exists until it's actually been
+introduced — check `package.json`/`tsconfig.json` first. Execution plan: `docs/Roadmap.md`;
+migration approach: `docs/architecture.md`.
 
 ## Non-negotiable rules
 
@@ -27,8 +28,9 @@ migration approach.
    preserve the active section (id, not mode-specific).
 3. **Sections stay deep-linkable** via a stable id (e.g. `#projects`), regardless of mode. Don't
    invent `/classic/x` or `/rogue/x` routes without a strong reason.
-4. **Never mount both renderers' expensive runtime simultaneously** just to make switching feel
-   fast. Use progressive/tiered loading (critical → preview → intent-based → interaction-based →
+4. **Exactly one renderer is mounted at a time.** Switching mode unmounts the inactive renderer;
+   never keep both mounted (hidden or `inert`) to make switching feel fast — a warm cached chunk
+   remounts cheaply. Use progressive/tiered loading (critical → preview → intent-based → interaction-based →
    expensive). Full tier breakdown: `docs/architecture.md`.
 5. **Three.js / React Three Fiber never ship in the critical bundle.** Lazy-load, isolate behind
    its own client boundary, stop rendering when unmounted/offscreen/hidden.
@@ -38,8 +40,8 @@ migration approach.
 ## Stack
 
 Next.js (current stable) · App Router · React · TypeScript strict · Tailwind CSS ·
-Motion/Framer Motion · dnd-kit (semantic drag/drop) · Zustand (small coordination state only) ·
-static generation/export where feasible. React Three Fiber/Three.js are optional, isolated,
+Motion/Framer Motion · dnd-kit (semantic drag/drop) · Zustand (mode + active section only) ·
+static generation on Vercel (`output: 'export'` not required). React Three Fiber/Three.js are optional, isolated,
 lazy-loaded. No Redux, no game engine, no backend unless a concrete need proves one necessary.
 Check the existing stack before adding any dependency.
 
@@ -66,8 +68,9 @@ information behind canvas-only rendering or game interactions.
 
 Server Components by default; `"use client"` only where real interactivity requires it. Keep
 client islands narrow — don't make the root page/layout client just for a toggle or one card.
-Local component state for ephemeral UI; Zustand only for state genuinely shared across distant
-components (mode, active section/card, deck/interface state). Server-renderable content must not
+Local component state for ephemeral UI; card interaction state in the Card Mode state machine;
+Zustand holds only `mode` and `activeSection` — add a field only when distant components genuinely
+share it. Server-renderable content must not
 depend on a client store.
 
 ## Styling
@@ -87,8 +90,8 @@ TODO without a concrete blocker, no dependency without justification.
 
 Prioritize: section mapping, mode switching + active-section preservation, URL/hash sync,
 keyboard accessibility, content/domain validation, key state transitions. Don't snapshot-test
-static markup. Pick the testing stack based on the actual Next.js setup once it exists — don't
-assume one now.
+static markup. Stack: Vitest + React Testing Library (introduced in Roadmap P1); Playwright only if jsdom
+proves insufficient.
 
 ## Git
 
@@ -107,4 +110,33 @@ modes.
 
 Use the project skills in `.claude/skills/` for their specific workflows instead of improvising:
 `architecture-review`, `performance-review`, `accessibility-review`, `feature-plan`,
-`verify-feature`, `card-interaction-review`.
+`verify-feature`, `card-interaction-review`, `project-memory-status`, `project-memory-query`,
+`project-memory-sync`.
+
+## Project memory
+
+Long-term project context is stored in the NotebookLM notebook `Manuel Ortiz Portfolio — Project
+Memory` (alias `portfolio`), generated from `.context/notebooklm/*.md` by
+`scripts/notebooklm/generate-context.py` (mirrors `docs/architecture.md`, `docs/Roadmap.md`, ADRs
+and this file, plus inventory, roadmap-progress evidence and current state).
+
+Use NotebookLM for architecture history, roadmap rationale, decisions and cross-session context —
+not for current state.
+
+Authority order:
+1. Git working tree — current code/config state
+2. CLAUDE.md — project operating rules
+3. `docs/` — architecture, roadmap, ADRs
+4. NotebookLM — historical/contextual memory
+
+Before relying on NotebookLM for current implementation details, verify against the repository. On
+a conflict, report it — never change the project to match NotebookLM.
+
+- `/project-memory-status` — CURRENT / STALE / UNAVAILABLE
+- `/project-memory-query` — ask the notebook
+- `/project-memory-sync` — regenerate + upload only changed sources
+
+Run `/project-memory-sync` after a roadmap phase completes, after architecture/stack/deploy changes
+or a recorded decision — not after every edit. Record decisions in
+`.context/notebooklm/60-decisions.md` and evidence-backed issues in `70-known-issues.md`; the other
+documents are generated and must not be hand-edited.

@@ -1,6 +1,6 @@
 ---
 name: card-interaction-review
-description: Review Card Mode UX as a state machine (idle, hovered/focused, grabbed/dragged, drop candidate, active, expanded, closing/restoring) across mouse, keyboard and touch, including interruption cases like mode switch mid-interaction, resize, Escape, reduced motion, and direct URL/hash activation. Use after implementing or changing any Card Mode card interaction.
+description: Review Card Mode UX as a state machine (idle, hovered/focused, selected, expanded, closing/restoring, plus grabbed/dragging and drop candidate for the drag enhancement) across mouse, keyboard and touch, including interruption cases like mode switch mid-interaction, resize, Escape, reduced motion, and direct URL/hash activation. Use after implementing or changing any Card Mode card interaction.
 ---
 
 # card-interaction-review
@@ -11,15 +11,19 @@ Scope: review only — do not edit files unless explicitly asked to.
 
 ## States to check
 
-For each interactive card, confirm defined, correct behavior at:
+Canonical states are defined in `docs/architecture.md` → Card interaction states. For each
+interactive card, confirm defined, correct behavior at:
 
 - idle
 - hovered / focused
-- grabbed / dragged
-- drop candidate
-- active
+- selected (the card matching `activeSection`)
 - expanded
 - closing / restoring
+- grabbed / dragging — drag enhancement (Roadmap P6), desktop pointer only
+- drop candidate — drag enhancement
+
+Every non-drag state must be reachable by mouse, keyboard and touch; drag states must always have
+a click/keyboard/tap equivalent.
 
 ## Input paths to check per state
 
@@ -30,7 +34,7 @@ For each interactive card, confirm defined, correct behavior at:
 ## Interruption cases to check
 
 - mode switched mid-interaction (card was mid-drag/expanded when the user switched to Classic)
-- viewport resized while a card is active/expanded
+- viewport resized while a card is selected/expanded
 - Escape pressed while dragging or expanded
 - `prefers-reduced-motion` active — does the state machine still work without relying on the
   motion that would normally communicate the transition?
