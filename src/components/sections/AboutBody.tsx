@@ -5,11 +5,9 @@ import { profile } from "@/content";
 interface AboutBodyProps {
   /** Rendered above the headline: Classic passes the page h1; Card Mode's dialog has its own title. */
   heading?: ReactNode;
-  /** Classic's portrait is above the fold (LCP candidate); elsewhere it loads lazily. */
-  eagerPhoto?: boolean;
 }
 
-export function AboutBody({ heading, eagerPhoto = false }: AboutBodyProps) {
+export function AboutBody({ heading }: AboutBodyProps) {
   return (
     <div className="flex flex-col-reverse gap-8 sm:flex-row sm:items-start">
       <div className="flex-1">
@@ -36,7 +34,8 @@ export function AboutBody({ heading, eagerPhoto = false }: AboutBodyProps) {
         width={profile.photo.width}
         height={profile.photo.height}
         sizes="160px"
-        {...(eagerPhoto && { loading: "eager", fetchPriority: "high" })}
+        // Lazy on purpose: not the LCP element, and a non-lazy image gets a React preload that a
+        // stored Card Mode never uses.
         className="size-32 shrink-0 rounded-full border border-border object-cover sm:size-40"
       />
     </div>

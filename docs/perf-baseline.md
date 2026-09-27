@@ -207,3 +207,25 @@ Renderer cost (Node, 44×18 frame): potato 2.7 ms. Headless Chrome, production b
 - Drag (30 moves) plus 6 arrow-key turns, worst event duration: 24 ms at 1× CPU, 48 ms at 4×,
   88 ms at 6× (INP target ≤ 200 ms).
 - 390px, dark scheme: art 213px wide, no horizontal overflow; no console errors.
+
+## P9 — Hardening (2026-09-27)
+
+Final numbers for the release candidate (details and walkthroughs: `docs/audit-checklist.md`).
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB |
+| Card Mode load | ≤ 80 kB | 67.0 kB |
+| Panels | ≤ 10 kB each | 1.5 / 1.0 / 0.8 kB |
+| Relic inspector | ≤ 5 kB | 2.0 kB |
+| All Card Mode chunks | ≤ 120 kB | 77.8 kB |
+| Three.js bytes | 0 | 0 |
+
+| Lighthouse 13 (Classic first load) | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|
+| Vercel preview, mobile (2 runs) | 99 | 100 | 100 | 66 (preview `noindex`) | 2.1 s | 0 | 10–40 ms |
+| Vercel preview, desktop | 100 | 100 | 100 | 66 (preview `noindex`) | 0.5 s | 0 | 0 ms |
+| Local production, mobile | 97 | 100 | 100 | 100 | 2.5 s | 0 | 30 ms |
+
+The CDN-served preview meets the §7 mobile LCP target (≤ 2.5 s) that local Lantern runs sat on;
+see P5 for why local simulated LCP reads high.

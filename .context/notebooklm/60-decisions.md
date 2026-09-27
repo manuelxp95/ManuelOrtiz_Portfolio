@@ -362,3 +362,23 @@ Decision:
 - P7 remained uncommitted at the owner's choice while P8 was built on top.
 Consequences: inspector 2.0 kB gz; worst event 88 ms at 6× CPU throttling; no idle frames.
 `renderer.ts` now runs at runtime too, so new shapes need a cost check.
+
+## Decision: P9 hardening outcomes
+
+Status: Accepted (implementation within Roadmap P9 scope; fix-forward only)
+Date: 2026-09-27
+Source: `docs/audit-checklist.md`, `docs/perf-baseline.md` → P9
+Decision:
+- Classic suppresses the scroll-spy on a page load with a section hash until the anchor scroll
+  settles (deep links to `#contact`/`#cv` used to end on `#education`).
+- The About photo loads lazily: React preloads non-lazy SSR images, which a stored Card Mode never
+  shows ("preloaded but not used" warning). It is not the LCP element.
+- `<main>` is focusable (`tabIndex={-1}`) so the skip link moves focus.
+- Scaffold `favicon.ico` replaced by `icon.svg` + `apple-icon.tsx` (OG colors, "MO" monogram).
+- `"use client"` kept only on `ModeRoot`, `ModeToggle`, `ClassicSync` and the Card Mode entry
+  `RogueBoard`.
+- Accepted as is: Motion `domMax` includes ~3.6 kB of unused drag gesture code (no public
+  layout-only bundle); images stay WebP (AVIF unnecessary for the budget); Vercel previews score
+  SEO 66 because of their `noindex` header.
+Consequences: all automated walkthroughs pass; NVDA and physical-phone passes remain manual. The
+owner plans a corrections round after P9 for plan-vs-result discrepancies.

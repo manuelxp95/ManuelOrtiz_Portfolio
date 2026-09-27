@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import type { SectionId } from "@/domain/types";
 import { frameLoaders } from "./ascii/frame-loaders";

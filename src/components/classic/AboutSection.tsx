@@ -5,7 +5,6 @@ export function AboutSection() {
   return (
     <section id="about" aria-labelledby="about-heading" className="py-12">
       <AboutBody
-        eagerPhoto
         heading={
           <h1
             id="about-heading"

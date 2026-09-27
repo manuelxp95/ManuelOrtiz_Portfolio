@@ -10,6 +10,7 @@ import {
 import {
   firstVisibleSection,
   isScrollSpySuppressed,
+  parseSectionHash,
   suppressScrollSpy,
 } from "@/state/section-hash";
 
@@ -37,6 +38,10 @@ export function ClassicSync() {
           .querySelector<HTMLElement>("h1, h2")
           ?.focus({ preventScroll: true });
       }
+    } else if (parseSectionHash(window.location.hash)) {
+      // A page load with a section hash: the browser's anchor scroll must not be read as the user
+      // scrolling, or it rewrites the hash on the way (and a short last section never wins).
+      suppressScrollSpy();
     }
 
     if (typeof IntersectionObserver === "undefined") return;

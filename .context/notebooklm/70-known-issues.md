@@ -122,3 +122,21 @@ Evidence: At 412px the header shows the name, ~2 nav links and the Card Mode tog
 links need horizontal scrolling (Lighthouse final screenshot after P3).
 Impact: Lower discoverability of later sections on phones; everything stays reachable.
 Next step: Consider a second header row or a compact menu below `sm`.
+
+## Issue: Deep-link loads smooth-scroll from the top
+
+Status: Open (found in Roadmap P9 audit, 2026-09-27)
+Evidence: headless Chrome, `/#projects` load: `scrollY` 779 → 3109 over ~1 s.
+Cause: `html { scroll-behavior: smooth }` also applies to the browser's initial anchor scroll.
+Next step: corrections round — apply smooth scrolling only after the first load.
+
+## Issue: Panel intent preload ignores Save-Data
+
+Status: Open (Roadmap P9 performance review, 2026-09-27)
+Evidence: `preloadSectionPanel` in `src/features/rogue/sections/SectionPanel.tsx` has no
+`prefersLessData` check, unlike `preloadRogueBoard`. Impact ~1 kB per hovered card.
+
+## Issue: Manual screen-reader and physical-device passes pending
+
+Status: Open (Roadmap P9, 2026-09-27)
+Evidence: `docs/audit-checklist.md` — NVDA smoke test and a physical phone pass are marked manual.
