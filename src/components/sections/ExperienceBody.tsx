@@ -1,14 +1,28 @@
 import { employmentLabels, experience, projects } from "@/content";
 import { formatYearRange } from "@/domain/dates";
+import type { Experience } from "@/domain/types";
 import { TagList } from "./TagList";
+
+/** Employment · location · years, shared with the Card Mode quest path. */
+export function experienceMeta(entry: Experience): string {
+  return [
+    employmentLabels[entry.employment],
+    entry.location,
+    formatYearRange(entry.startYear, entry.endYear),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export function relatedProjects(entry: Experience) {
+  return projects.filter((project) => entry.projectIds.includes(project.id));
+}
 
 export function ExperienceBody() {
   return (
     <ol className="space-y-10">
       {experience.map((entry) => {
-        const relatedProjects = projects.filter((project) =>
-          entry.projectIds.includes(project.id),
-        );
+        const related = relatedProjects(entry);
         return (
           <li key={entry.id}>
             <article aria-labelledby={`experience-${entry.id}`}>
@@ -21,15 +35,7 @@ export function ExperienceBody() {
                   · {entry.organization}
                 </span>
               </h3>
-              <p className="mt-1 text-sm text-muted">
-                {[
-                  employmentLabels[entry.employment],
-                  entry.location,
-                  formatYearRange(entry.startYear, entry.endYear),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
+              <p className="mt-1 text-sm text-muted">{experienceMeta(entry)}</p>
               <p className="mt-3 leading-relaxed">{entry.summary}</p>
               {entry.highlights.length > 0 && (
                 <ul className="mt-3 list-disc space-y-1 pl-5 leading-relaxed">
@@ -38,10 +44,10 @@ export function ExperienceBody() {
                   ))}
                 </ul>
               )}
-              {relatedProjects.length > 0 && (
+              {related.length > 0 && (
                 <p className="mt-3 text-sm">
                   Project:{" "}
-                  {relatedProjects.map((project) => (
+                  {related.map((project) => (
                     <a
                       key={project.id}
                       href={`#project-${project.id}`}

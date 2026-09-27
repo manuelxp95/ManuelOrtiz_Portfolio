@@ -164,3 +164,25 @@ Drag matrix (headless Chrome, production build): drop on the play zone opens the
 its hash; release elsewhere returns it (focus stays on the card, no click fires); Escape and a
 window resize mid-drag cancel; a 4px wobble still counts as a click; a touch swipe never starts a
 drag and a tap opens the card; the live region announces each step; no console errors.
+
+## P7 — Section panels and Motion (2026-09-27)
+
+Local production build on top of `ed58cce`. `scripts/check-budgets.mjs` now sums every chunk of a
+dynamic import's load group; the P5/P6 rows measured only the chunk holding the board.
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB (unchanged within noise) |
+| Card Mode load: board + dnd-kit (20.4 kB), Motion (39.8 kB), shared content/`next/image` (7.2 kB) | ≤ 80 kB | **67.4 kB** |
+| Projects / Experience / Contact panel chunk | ≤ 10 kB each | 1.1 / 1.0 / 0.8 kB |
+| All Card Mode chunks | ≤ 120 kB | 75.7 kB |
+| Three.js bytes, any chunk | 0 | 0 |
+
+Motion (`motion` 13.4, `LazyMotion` + `domMax`) is the whole increase. Measured alternative:
+`domAnimation` saves 4.3 kB but drops layout animations; kept `domMax`.
+
+Verified in headless Chrome (production build): each panel loads when its card opens (deep link
+and click); opening a relic spans it across the row while siblings slide (layout transforms
+present mid-animation); a quest-path project link switches the dialog to Projects with that relic
+open and focused; reduced motion renders entrances at full opacity with no layout transforms; no
+horizontal overflow at 390px in the dark scheme; no console errors.

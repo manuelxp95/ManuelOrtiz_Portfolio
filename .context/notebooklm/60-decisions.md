@@ -315,3 +315,31 @@ Decision:
   motion and on successful drops).
 - dnd-kit is merged into the Card Mode chunk instead of a deferred sub-chunk: wrapping mounted
   cards in the provider after a lazy load would remount them and lose focus. Cost +13.9 kB gz.
+
+## Decision: Section panels and Motion (Roadmap P7)
+
+Status: Accepted (owner asked to continue with the next phase and install Motion)
+Date: 2026-09-27
+Source: Roadmap P7, ADR-006 (Implementation P7); verified by Vitest and headless Chrome
+Context: P4 and P6 deferred `motion` (CSS and dnd-kit covered their needs). The owner asked for it
+for better animations; P7's panels need exit-free reveals, staggered entrances and layout slides
+that CSS cannot express cleanly.
+Decision:
+- `motion` 13.4 added, Card Mode only: `CardMotion` = `LazyMotion` (`domMax`, `strict`, `m.*`
+  only) + `MotionConfig reducedMotion="user"`. Motion drives one-shot staggered entrances and
+  `layout="position"` slides; hover lift, dialog open/close and play-zone highlight stay CSS.
+  `useEntrance` renders entrances in place under reduced motion.
+- Panels in `src/features/rogue/sections/`: Projects = relic collection (rarity from context,
+  impact and `featured`, always written as text; one relic open at a time, spanning the row);
+  Experience = semantic `<ol>` quest path (ongoing role open, nodes independent); Contact =
+  merchant offers (real links, action-first names, CV offer when published). About/Skills/
+  Education/CV keep `GenericSectionPanel`.
+- Each panel is its own lazy chunk (`React.lazy` + `Suspense`, fallback = generic panel, a failed
+  load also falls back to it), warmed on card hover/focus.
+- Collapsed details stay in the DOM with `hidden`, keeping content parity and deferring images.
+- `#project-<id>` opens and focuses that relic (quest-path links use it).
+- `ProjectCard`'s blocks extracted to `components/sections/ProjectDetails.tsx` (second consumer);
+  `experienceMeta`/`relatedProjects` exported from `ExperienceBody`.
+- Budget script measures whole load groups plus a ≤ 10 kB check per panel.
+Consequences: Card Mode load 67.4 kB gz (Motion 39.8 kB), panels ~1 kB each, total 75.7 kB;
+critical JS unchanged (141.9 kB).

@@ -88,11 +88,11 @@ loads. Never resolve mode in `useEffect` alone — it flashes the wrong mode.
    above-fold styles.
 2. **Preview** — static CSS skeleton of the Card Mode board, shown while its chunk loads (same
    viewport-tall stage as the board, so the swap never shifts layout).
-3. **Intent** — the Card Mode renderer chunk (board, cards, dialog; Motion only if P6 adds it),
+3. **Intent** — the Card Mode renderer load (board, cards, dialog, dnd-kit, Motion),
    preloaded once on hover/focus/touchstart of the mode toggle through
    `src/features/rogue/preload.ts` (skipped on Save-Data / `prefers-reduced-data`).
-4. **Interaction** — per-card ASCII rotations, drag sub-chunk (dnd-kit), section-specific panels,
-   expanded-card media.
+4. **Interaction** — per-card ASCII rotations, section-specific panels (one chunk each, warmed on
+   card hover/focus; the generic panel stands in while one loads), expanded-card media.
 5. **Expensive** — Three.js, React Three Fiber, 3D models. Never in the initial render or the
    Card Mode chunk; only on an explicit user action; isolated.
 
@@ -138,8 +138,14 @@ Drag (Roadmap P6): mouse-only `MouseSensor`, drop a card on the play zone above 
 it; releasing elsewhere, Escape, resize or a hidden tab return it to the hand. Every card still
 opens by click, Enter/Space and tap.
 
-Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns visual
-transforms/springs; the state machine owns truth — library events only dispatch transitions.
+Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
+JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
+truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)
+stay CSS.
+
+Section panels (Roadmap P7): Projects (relic collection), Experience (quest path) and Contact
+(merchant offers) have their own panels in `src/features/rogue/sections/`; About, Skills,
+Education and CV keep the generic panel. Panels render the same content layer as Classic.
 
 ## 3D isolation
 

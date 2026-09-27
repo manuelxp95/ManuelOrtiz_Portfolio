@@ -23,7 +23,10 @@ critical bundle.
 ## Budgets (Roadmap §7 is the single source; CI: `npm run budgets`)
 
 Critical route First Load JS ≤ P0 baseline + 20 kB gz · rogue chunk ≤ 80 kB gz · drag sub-chunk
-≤ 15 kB gz · Three.js bytes in critical/rogue chunks = 0 (hard).
+≤ 15 kB gz · section panel ≤ 10 kB gz each · Three.js bytes in critical/rogue chunks = 0 (hard).
+
+Since Roadmap P7 the check measures every chunk of a dynamic import's load group (Turbopack splits
+the Card Mode load into board, dnd-kit and Motion chunks), not only the chunk holding the board.
 
 ## Implementation (Roadmap P5)
 

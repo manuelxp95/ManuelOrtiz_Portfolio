@@ -26,6 +26,8 @@ export function CardFace({ section, stat, selected }: CardFaceProps) {
 
 interface SectionCardProps extends CardFaceProps {
   onOpen: () => void;
+  /** Hover or focus: a likely open, so its panel chunk can start loading. */
+  onIntent: () => void;
   ref: (element: HTMLButtonElement | null) => void;
 }
 
@@ -39,6 +41,7 @@ export function SectionCard({
   stat,
   selected,
   onOpen,
+  onIntent,
   ref,
 }: SectionCardProps) {
   const { listeners, setNodeRef, isDragging } = useDraggable({
@@ -56,6 +59,8 @@ export function SectionCard({
       aria-current={selected ? "true" : undefined}
       aria-haspopup="dialog"
       onClick={onOpen}
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
       {...listeners}
       data-dragging={isDragging || undefined}
       className="section-card"

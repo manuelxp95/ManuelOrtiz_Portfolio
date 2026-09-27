@@ -33,6 +33,19 @@ successful drop). dnd-kit ships inside the Card Mode chunk (+13.9 kB gz): a sepa
 have to wrap the already-mounted cards in its provider once loaded, remounting them and dropping
 keyboard focus.
 
+## Implementation (Roadmap P7)
+
+`motion` 13 is added for the section panels. `CardMotion` (`src/features/rogue/motion-config.tsx`)
+wraps the board in `LazyMotion` (`domMax`, `strict`, so only `m.*` components are allowed) and
+`MotionConfig reducedMotion="user"`. Motion drives what CSS cannot: staggered one-shot entrances
+(cards dealt into the hand, relics, quest nodes, merchant offers) and layout slides (`layout=
+"position"`) when a relic or quest node opens and its siblings move. Under reduced motion,
+entrances render in place (`useEntrance` returns no initial state) and transform/layout animations
+are dropped. The hover lift, dialog open/close and play-zone highlight stay CSS; dnd-kit keeps its
+drop animation. Motion ships in the Card Mode load (intent tier) as a sibling chunk of the board:
+39.8 kB gz of the 67.4 kB Card Mode load. `domAnimation` instead of `domMax` would save only
+4.3 kB and lose the layout slides.
+
 ## Alternatives
 
 - Motion-only hand-rolled drag — more code, worse accessibility and cancellation handling.

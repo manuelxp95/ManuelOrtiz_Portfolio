@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { m } from "motion/react";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   contactLinks,
@@ -32,6 +33,8 @@ import {
   dragAnnouncements,
 } from "./drag/drag-config";
 import { PLAY_ZONE_ID, PlayZone } from "./drag/PlayZone";
+import { CardMotion, stagger, useEntrance } from "./motion-config";
+import { preloadSectionPanel } from "./sections/SectionPanel";
 import { CardFace, SectionCard } from "./SectionCard";
 import { useReducedMotion } from "./use-reduced-motion";
 import "./rogue.css";
@@ -59,6 +62,7 @@ function fanStyle(index: number) {
 export function RogueBoard() {
   const activeSection = usePortfolioStore((state) => state.activeSection);
   const reducedMotion = useReducedMotion();
+  const deal = useEntrance({ opacity: 0, y: 24 });
   const [state, dispatch] = useReducer(cardReducer, initialCardState);
   const cards = useRef(new Map<SectionId, HTMLButtonElement>());
   const mounted = useRef(false);
@@ -111,80 +115,94 @@ export function RogueBoard() {
   const closed = useCallback(() => dispatch({ type: "CLOSED" }), []);
 
   return (
-    <section
-      aria-labelledby="card-board-heading"
-      className="rogue-board rogue-stage py-12"
-    >
-      <h1 id="card-board-heading" className="text-3xl font-bold">
-        {profile.name}{" "}
-        <span className="font-mono text-lg font-normal text-muted">
-          · Card Mode
-        </span>
-      </h1>
-      <p className="mt-2 font-mono text-sm text-muted">
-        &gt; choose a card to open it_
-      </p>
-      {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
-      <DndContext
-        sensors={sensors}
-        accessibility={{ announcements: dragAnnouncements }}
-        onDragStart={({ active }) =>
-          dispatch({ type: "DRAG_START", card: active.id as SectionId })
-        }
-        onDragOver={({ over }) =>
-          dispatch({ type: "DRAG_OVER", overZone: over?.id === PLAY_ZONE_ID })
-        }
-        onDragEnd={({ active, over }) => {
-          const onZone = over?.id === PLAY_ZONE_ID;
-          dispatch({ type: "DRAG_OVER", overZone: onZone });
-          if (onZone) selectSection(active.id as SectionId, "push");
-          dispatch({ type: "DROP" });
-        }}
-        onDragCancel={() => dispatch({ type: "DRAG_CANCEL" })}
+    <CardMotion>
+      <section
+        aria-labelledby="card-board-heading"
+        className="rogue-board rogue-stage py-12"
       >
-        <PlayZone
-          dragging={state.status === "dragging"}
-          candidate={state.status === "dragging" && state.overZone}
-        />
-        <ul aria-label="Sections" className="card-hand">
-          {sections.map((section, index) => (
-            <li key={section.id} className="card-slot" style={fanStyle(index)}>
-              <SectionCard
-                ref={(element) => {
-                  if (element) cards.current.set(section.id, element);
-                  else cards.current.delete(section.id);
-                }}
-                section={section}
-                stat={cardStats[section.id]}
-                selected={section.id === activeSection}
-                onOpen={() => {
-                  selectSection(section.id, "push");
-                  dispatch({ type: "OPEN", card: section.id });
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-        {/* A successful drop opens the dialog in place of a snap-back; reduced motion never animates. */}
-        <DragOverlay
-          dropAnimation={
-            reducedMotion || (state.status === "dragging" && state.overZone)
-              ? null
-              : undefined
+        <h1 id="card-board-heading" className="text-3xl font-bold">
+          {profile.name}{" "}
+          <span className="font-mono text-lg font-normal text-muted">
+            · Card Mode
+          </span>
+        </h1>
+        <p className="mt-2 font-mono text-sm text-muted">
+          &gt; choose a card to open it_
+        </p>
+        {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
+        <DndContext
+          sensors={sensors}
+          accessibility={{ announcements: dragAnnouncements }}
+          onDragStart={({ active }) =>
+            dispatch({ type: "DRAG_START", card: active.id as SectionId })
           }
+          onDragOver={({ over }) =>
+            dispatch({ type: "DRAG_OVER", overZone: over?.id === PLAY_ZONE_ID })
+          }
+          onDragEnd={({ active, over }) => {
+            const onZone = over?.id === PLAY_ZONE_ID;
+            dispatch({ type: "DRAG_OVER", overZone: onZone });
+            if (onZone) selectSection(active.id as SectionId, "push");
+            dispatch({ type: "DROP" });
+          }}
+          onDragCancel={() => dispatch({ type: "DRAG_CANCEL" })}
         >
-          {dragged && (
-            <div className="section-card card-overlay">
-              <CardFace
-                section={dragged}
-                stat={cardStats[dragged.id]}
-                selected={dragged.id === activeSection}
-              />
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
-      <CardDialog state={state} onClose={close} onClosed={closed} />
-    </section>
+          <PlayZone
+            dragging={state.status === "dragging"}
+            candidate={state.status === "dragging" && state.overZone}
+          />
+          <ul aria-label="Sections" className="card-hand">
+            {sections.map((section, index) => (
+              <li
+                key={section.id}
+                className="card-slot"
+                style={fanStyle(index)}
+              >
+                {/* Dealt into the hand once on entry; the fan transform stays on the slot. */}
+                <m.div
+                  initial={deal}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={stagger(index)}
+                >
+                  <SectionCard
+                    ref={(element) => {
+                      if (element) cards.current.set(section.id, element);
+                      else cards.current.delete(section.id);
+                    }}
+                    section={section}
+                    stat={cardStats[section.id]}
+                    selected={section.id === activeSection}
+                    onOpen={() => {
+                      selectSection(section.id, "push");
+                      dispatch({ type: "OPEN", card: section.id });
+                    }}
+                    onIntent={() => preloadSectionPanel(section.id)}
+                  />
+                </m.div>
+              </li>
+            ))}
+          </ul>
+          {/* A successful drop opens the dialog in place of a snap-back; reduced motion never animates. */}
+          <DragOverlay
+            dropAnimation={
+              reducedMotion || (state.status === "dragging" && state.overZone)
+                ? null
+                : undefined
+            }
+          >
+            {dragged && (
+              <div className="section-card card-overlay">
+                <CardFace
+                  section={dragged}
+                  stat={cardStats[dragged.id]}
+                  selected={dragged.id === activeSection}
+                />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+        <CardDialog state={state} onClose={close} onClosed={closed} />
+      </section>
+    </CardMotion>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { sections } from "@/domain/sections";
 import { AsciiAnimation } from "./AsciiAnimation";
 import type { CardState } from "./card-machine";
-import { GenericSectionPanel } from "./GenericSectionPanel";
+import { SectionPanel } from "./sections/SectionPanel";
 
 const CLOSE_FALLBACK_MS = 300;
 
@@ -81,7 +81,7 @@ export function CardDialog({ state, onClose, onClosed }: CardDialogProps) {
             </button>
           </header>
           <AsciiAnimation section={section.id} />
-          <GenericSectionPanel section={section.id} />
+          <SectionPanel section={section.id} />
         </div>
       )}
     </dialog>
