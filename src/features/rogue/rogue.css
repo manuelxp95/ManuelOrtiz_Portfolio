@@ -553,3 +553,66 @@ a.merchant-offer:focus-visible {
     transform: none;
   }
 }
+
+/* Relic inspector (P8): pseudo-3D ASCII model, turned by drag, keys or buttons. */
+.relic-model-toggle {
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  border: 1px dashed var(--rarity);
+  border-radius: var(--radius-control);
+  font-family: var(--card-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.relic-model-toggle:hover,
+.relic-model-toggle[aria-expanded="true"] {
+  border-style: solid;
+}
+
+.relic-inspector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+}
+
+.relic-inspector-art {
+  font-family: var(--card-mono);
+  font-size: clamp(0.55rem, 2.2vw, 1.05rem);
+  line-height: 1.1;
+  color: var(--rarity);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.relic-inspector-art:active {
+  cursor: grabbing;
+}
+
+.relic-inspector-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.relic-inspector-controls button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-family: var(--card-mono);
+  cursor: pointer;
+}
+
+.relic-inspector-controls button:hover {
+  border-color: var(--accent);
+}

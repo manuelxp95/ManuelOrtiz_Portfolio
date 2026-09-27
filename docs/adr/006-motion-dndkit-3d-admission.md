@@ -1,7 +1,7 @@
 # ADR-006 — Motion vs dnd-kit responsibility; 3D admission criteria
 
-- **Status:** Accepted — 3D admission numbers **provisional until the Roadmap P8 spike measures
-  them**
+- **Status:** Accepted — 3D admission numbers provisional; Roadmap P8 chose ASCII pseudo-3D over
+  Three.js and measured it against these criteria (ADR-007)
 - **Date:** 2026-09-26
 - **Source:** Roadmap §6.6, CLAUDE.md rules 5–6
 

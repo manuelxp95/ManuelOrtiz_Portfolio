@@ -343,3 +343,22 @@ Decision:
 - Budget script measures whole load groups plus a ≤ 10 kB check per panel.
 Consequences: Card Mode load 67.4 kB gz (Motion 39.8 kB), panels ~1 kB each, total 75.7 kB;
 critical JS unchanged (141.9 kB).
+
+## Decision: ASCII pseudo-3D relic inspector instead of a Three.js spike (Roadmap P8)
+
+Status: Accepted (project owner: keep the ASCII pseudo-3D line; chose "one project relic")
+Date: 2026-09-27
+Source: ADR-007; verified by Vitest and headless Chrome with CPU throttling
+Context: P8's Three.js spike defaulted to skip (no model asset, ~150 kB gz). Card Mode already
+renders 3D objects as ASCII with a build-time SDF raymarcher (0.8 kB gz minified).
+Decision:
+- No-go for Three.js/R3F; the fence and the zero-Three.js budget stay.
+- SOPA's relic detail gets "View relic in 3D": a custom SDF potato turned by drag, arrow keys and
+  labelled buttons (turn left/right, tilt up/down, reset), raymarched in the browser once per input.
+  Flicks and a short intro coast decay to a stop; reduced motion removes both.
+- `RELIC_MODELS` in `ascii/scenes.ts` maps project id → shape + text alternative.
+- The inspector is a user-triggered chunk (`src/features/rogue/inspector/`), budget ≤ 5 kB gz,
+  checked to be absent from the initial, Card Mode and panel loads.
+- P7 remained uncommitted at the owner's choice while P8 was built on top.
+Consequences: inspector 2.0 kB gz; worst event 88 ms at 6× CPU throttling; no idle frames.
+`renderer.ts` now runs at runtime too, so new shapes need a cost check.

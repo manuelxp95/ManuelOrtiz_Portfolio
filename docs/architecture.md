@@ -93,8 +93,9 @@ loads. Never resolve mode in `useEffect` alone — it flashes the wrong mode.
    `src/features/rogue/preload.ts` (skipped on Save-Data / `prefers-reduced-data`).
 4. **Interaction** — per-card ASCII rotations, section-specific panels (one chunk each, warmed on
    card hover/focus; the generic panel stands in while one loads), expanded-card media.
-5. **Expensive** — Three.js, React Three Fiber, 3D models. Never in the initial render or the
-   Card Mode chunk; only on an explicit user action; isolated.
+5. **Expensive** — the relic inspector (P8, ADR-007) and any Three.js / React Three Fiber / 3D
+   models. Never in the initial render or the Card Mode chunk; only on an explicit user action;
+   isolated.
 
 **Chunk warm ≠ component mounted.** Exactly one renderer is mounted at a time: switching mode
 unmounts the inactive renderer; only domain/navigation state (mode, activeSection) survives; the
@@ -154,6 +155,11 @@ Education and CV keep the generic panel. Panels render the same content layer as
 nested optional 3D feature can't pull Three.js into a shared chunk. Rendering loops stop on
 unmount, inactive view, or non-visible tab. Admission criteria: Roadmap ADR-6; 3D is not in the
 MVP and may never ship.
+
+Roadmap P8 chose ASCII pseudo-3D instead (ADR-007): the Card Mode SDF raymarcher also runs in the
+browser for the relic inspector (`src/features/rogue/inspector/`), a user-triggered chunk opened
+from a project's "View relic in 3D" button. It draws one frame per input, never while idle; models
+are listed in `RELIC_MODELS` (`src/features/rogue/ascii/scenes.ts`).
 
 ## Testing
 

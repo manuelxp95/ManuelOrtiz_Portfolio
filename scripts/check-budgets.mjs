@@ -15,7 +15,9 @@ const BUDGETS = {
   rogueChunk: 80 * KB,
   /** Each P7 section panel, beyond what the Card Mode load already brought. */
   panel: 10 * KB,
-  /** Every Card Mode-only chunk together (Card Mode load + ASCII rotations + panels). */
+  /** P8 relic inspector (runtime ASCII renderer), loaded only on "View relic in 3D". */
+  inspector: 5 * KB,
+  /** Every Card Mode-only chunk together (Card Mode load + ASCII rotations + panels + inspector). */
   rogueTotal: 120 * KB,
 };
 /** Strings only present in Card Mode code / Three.js builds; rotations are long ASCII-ramp strings. */
@@ -25,6 +27,7 @@ const PANEL_MARKERS = {
   experience: "quest-path",
   contact: "merchant-offers",
 };
+const INSPECTOR_MARKER = "relic-inspector-art";
 const THREE_MARKERS = ["WebGLRenderer", "THREE.REVISION", "three.module"];
 
 const next = ".next";
@@ -70,17 +73,18 @@ const panels = Object.entries(PANEL_MARKERS).map(([section, marker]) => {
   const own = groupOf(marker).filter((file) => !rogueChunks.includes(file));
   return { section, own, bytes: total(own) };
 });
+const panelChunks = panels.flatMap((panel) => panel.own);
+const inspectorHolders = chunks.filter((file) => source(file).includes(INSPECTOR_MARKER));
+const inspector = groupOf(INSPECTOR_MARKER).filter(
+  (file) => !rogueChunks.includes(file) && !panelChunks.includes(file),
+);
 const threeChunks = chunks.filter((file) =>
   THREE_MARKERS.some((marker) => source(file).includes(marker)),
 );
 
 const criticalJs = initial.reduce((sum, file) => sum + gz(file), 0);
 const rogueChunk = total(rogueChunks);
-const rogueTotal = total([
-  ...rogueChunks,
-  ...rotationChunks,
-  ...panels.flatMap((panel) => panel.own),
-]);
+const rogueTotal = total([...rogueChunks, ...rotationChunks, ...panelChunks, ...inspector]);
 
 const checks = [
   ["Critical JS (/)", criticalJs <= BUDGETS.criticalJs, `${kb(criticalJs)} ≤ ${kb(BUDGETS.criticalJs)}`],
@@ -91,6 +95,12 @@ const checks = [
     [`Panel ${section}`, own.length > 0 && bytes <= BUDGETS.panel, `${kb(bytes)} ≤ ${kb(BUDGETS.panel)} (${own.length} chunk(s))`],
     [`Panel ${section} not in initial load`, !own.some((f) => initial.includes(f)), ""],
   ]),
+  ["Relic inspector", inspector.length > 0 && total(inspector) <= BUDGETS.inspector, `${kb(total(inspector))} ≤ ${kb(BUDGETS.inspector)} (${inspector.length} chunk(s))`],
+  [
+    "Relic inspector only on demand",
+    !inspectorHolders.some((f) => initial.includes(f) || rogueChunks.includes(f) || panelChunks.includes(f)),
+    "not in the initial, Card Mode or panel loads",
+  ],
   ["Card Mode total", rogueTotal <= BUDGETS.rogueTotal, `${kb(rogueTotal)} ≤ ${kb(BUDGETS.rogueTotal)} (${rotationChunks.length} rotation chunks)`],
   ["Three.js bytes anywhere", threeChunks.length === 0, `${threeChunks.length} chunk(s)`],
 ];

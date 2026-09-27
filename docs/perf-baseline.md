@@ -186,3 +186,24 @@ and click); opening a relic spans it across the row while siblings slide (layout
 present mid-animation); a quest-path project link switches the dialog to Projects with that relic
 open and focused; reduced motion renders entrances at full opacity with no layout transforms; no
 horizontal overflow at 390px in the dark scheme; no console errors.
+
+## P8 — ASCII relic inspector (2026-09-27)
+
+Local production build on top of `ed58cce` plus the uncommitted P7 work.
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 67.0 kB |
+| Projects panel chunk (now with the "View relic in 3D" trigger) | ≤ 10 kB | 1.5 kB |
+| Relic inspector chunk (runtime renderer), user-triggered | ≤ 5 kB | 2.0 kB |
+| All Card Mode chunks | ≤ 120 kB | 77.8 kB |
+| Three.js bytes, any chunk | 0 | 0 |
+
+Renderer cost (Node, 44×18 frame): potato 2.7 ms. Headless Chrome, production build:
+- The inspector chunk is not requested until "View relic in 3D" is pressed.
+- 0 `requestAnimationFrame` calls in 2 s of idle after the intro coast and after interaction;
+  0 under reduced motion.
+- Drag (30 moves) plus 6 arrow-key turns, worst event duration: 24 ms at 1× CPU, 48 ms at 4×,
+  88 ms at 6× (INP target ≤ 200 ms).
+- 390px, dark scheme: art 213px wide, no horizontal overflow; no console errors.

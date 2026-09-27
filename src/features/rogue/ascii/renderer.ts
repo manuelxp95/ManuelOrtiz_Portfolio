@@ -1,12 +1,20 @@
 /**
- * Build-time ASCII renderer: raymarches a signed-distance shape and maps diffuse brightness to a
- * character ramp (the approach of alecjacobson/ascii3d, reduced to pure TypeScript). Runs only in
- * `scripts/ascii/generate.mts`; the browser receives the generated text, never this code.
+ * ASCII renderer: raymarches a signed-distance shape and maps diffuse brightness to a character
+ * ramp (the approach of alecjacobson/ascii3d, reduced to pure TypeScript). Card glyphs and
+ * rotations are rendered at build time by `scripts/ascii/generate.mts`; the relic inspector
+ * (Roadmap P8) also runs it in the browser, one frame per user input.
  * Keep this module dependency-free: Node runs it directly with type stripping.
  */
 
 export type AsciiShape =
-  "sphere" | "box" | "torus" | "octahedron" | "coin" | "book" | "scroll";
+  | "sphere"
+  | "box"
+  | "torus"
+  | "octahedron"
+  | "coin"
+  | "book"
+  | "scroll"
+  | "potato";
 
 export const ASCII_RAMP = " .:-=+*#%@";
 
@@ -48,6 +56,36 @@ function sdCylinder(
   );
 }
 
+/** Ellipsoid bound (Inigo Quilez): close to exact near the surface, cheap everywhere. */
+function sdEllipsoid(p: Vec3, r: Vec3): number {
+  const k0 = length(p[0] / r[0], p[1] / r[1], p[2] / r[2]);
+  const k1 = length(p[0] / r[0] ** 2, p[1] / r[1] ** 2, p[2] / r[2] ** 2);
+  return (k0 * (k0 - 1)) / (k1 || 1e-6);
+}
+
+/** Dimples on the potato surface. */
+const POTATO_EYES: Vec3[] = [
+  [0.55, 0.45, -0.45],
+  [-0.6, -0.2, -0.55],
+  [0.2, -0.5, 0.5],
+  [-0.3, 0.55, 0.35],
+  [0.9, 0.1, 0.3],
+];
+
+/** A lumpy ellipsoid with a few eyes; scaled down so the displaced field stays a safe step. */
+function sdPotato(p: Vec3): number {
+  const body = sdEllipsoid(p, [1.1, 0.74, 0.7]);
+  const lumps =
+    0.045 *
+    Math.sin(3.1 * p[0] + 1.3) *
+    Math.sin(2.7 * p[1] + 0.4) *
+    Math.sin(3.4 * p[2] + 2.1);
+  let eyes = Infinity;
+  for (const e of POTATO_EYES)
+    eyes = Math.min(eyes, length(p[0] - e[0], p[1] - e[1], p[2] - e[2]) - 0.11);
+  return Math.max(body + lumps, -eyes) * 0.85;
+}
+
 const SHAPES: Record<AsciiShape, (p: Vec3) => number> = {
   sphere: (p) => length(...p) - 1,
   box: (p) => sdBox(p, [0.72, 0.72, 0.72], 0.08),
@@ -61,6 +99,7 @@ const SHAPES: Record<AsciiShape, (p: Vec3) => number> = {
       sdCylinder(p, 0, 0.42, 0.8),
       sdCylinder([Math.abs(p[0]) - 0.85, p[1], p[2]], 0, 0.52, 0.08),
     ),
+  potato: sdPotato,
 };
 
 function rotate(p: Vec3, yaw: number, pitch: number): Vec3 {

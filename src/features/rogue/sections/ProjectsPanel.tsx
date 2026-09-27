@@ -9,6 +9,8 @@ import {
 } from "@/components/sections/ProjectDetails";
 import { projects } from "@/content";
 import type { Project } from "@/domain/types";
+import { RELIC_MODELS } from "../ascii/scenes";
+import { RelicModel } from "../inspector/RelicModel";
 import { enter, layoutSpring, stagger, useEntrance } from "../motion-config";
 
 type Rarity = "legendary" | "rare" | "common";
@@ -60,6 +62,7 @@ export function ProjectsPanel() {
           const expanded = open === project.id;
           const rarity = rarityOf(project);
           const detailId = `relic-${project.id}-detail`;
+          const model = RELIC_MODELS[project.id];
           return (
             <m.li
               key={project.id}
@@ -106,6 +109,13 @@ export function ProjectsPanel() {
                 className="relic-detail"
               >
                 <ProjectSummary project={project} />
+                {model && (
+                  <RelicModel
+                    projectId={project.id}
+                    shape={model.shape}
+                    description={model.description}
+                  />
+                )}
                 <ProjectExtras
                   project={project}
                   mediaSizes="(min-width: 40rem) 27rem, 45vw"
