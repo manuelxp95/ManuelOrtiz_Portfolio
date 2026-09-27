@@ -14,11 +14,20 @@ import {
   skillCards,
   type CardId,
 } from "./cards";
+import {
+  REWARD_EVERY,
+  drawOffer,
+  heroStats,
+  modifier,
+  type HeroStats,
+  type ModifierId,
+  type Stacks,
+} from "./modifiers";
 
 /**
- * The battlefield of Card Mode (Roadmap P9.1–P9.4): a turn-based duel between the hero (the
+ * The battlefield of Card Mode (Roadmap P9.1–P9.7): a turn-based duel between the hero (the
  * portfolio's owner) and an original ASCII bug, played from a deck. Every two cards the hero plays,
- * the bug takes a turn. The game never gates content: a card always opens its dialog, whatever
+ * the bug takes a turn; every two rounds the hero picks a stacking modifier. The game never gates content: a card always opens its dialog, whatever
  * the state of the fight, and the site header reaches every section even when its card is in
  * the deck.
  */
@@ -57,6 +66,10 @@ export interface Combat {
   /** "pending": the bug acts once the board is back to idle; "acting": its move is showing. */
   boss: "waiting" | "pending" | "acting";
   outcome: "won" | "lost" | null;
+  /** Modifiers picked this fight, with their stack counts. */
+  modifiers: Stacks;
+  /** Modifiers on offer: the fight is paused until one is picked or the offer is skipped. */
+  reward: ModifierId[] | null;
 }
 
 export const initialCombat: Combat = {
@@ -70,7 +83,13 @@ export const initialCombat: Combat = {
   actionsLeft: ACTIONS_PER_TURN,
   boss: "waiting",
   outcome: null,
+  modifiers: {},
+  reward: null,
 };
+
+/** The hero's stats with every held modifier. */
+export const statsOf = (combat: Pick<Combat, "modifiers">): HeroStats =>
+  heroStats(combat.modifiers, HERO.maxHp);
 
 /** What the last card or bug move did, for the effect animation and the live region. */
 export type Hit =
@@ -78,6 +97,10 @@ export type Hit =
       by: "card";
       card: CardId;
       damage: number;
+      /** Modifier rolls: an extra strike, doubled damage, HP healed from the damage. */
+      extraHit: boolean;
+      crit: boolean;
+      healed: number;
       /** Cards the play pulled from the deck into the hand. */
       drawn: CardId[];
       /** Increments per event, so each one restarts its animation. */
@@ -90,6 +113,8 @@ export type Hit =
       amount: number;
       blocked: number;
       dodged: boolean;
+      /** Damage the bug took back from the hero's thorns. */
+      thorns: number;
       count: number;
     };
 
@@ -161,7 +186,11 @@ export type BoardEvent =
   /** The bug's move has shown (or was skipped): the hero's next turn starts. */
   | { type: "BOSS_DONE" }
   /** "Play again" after a win or a loss: the fight restarts with a fresh deal. */
-  | { type: "RESET_BATTLE" };
+  | { type: "RESET_BATTLE" }
+  /** The hero takes one of the offered modifiers; the fight resumes. */
+  | { type: "PICK_MODIFIER"; id: ModifierId }
+  /** The hero declines the offer; the fight resumes. */
+  | { type: "SKIP_REWARD" };
 
 export function bossMove(combat: Pick<Combat, "turn">): BossMove {
   return BOSS_PATTERN[(combat.turn - 1) % BOSS_PATTERN.length];
@@ -218,13 +247,58 @@ function cycle(
   return { hand, deck, seed, drawn };
 }
 
+/** True with the given chance; rolls (and advances the seed) only when the chance is above 0. */
+function chance(probability: number, seed: number): [boolean, number] {
+  if (probability <= 0) return [false, seed];
+  const [value, next] = random(seed);
+  return [value < probability, next];
+}
+
+interface Strike {
+  damage: number;
+  extraHit: boolean;
+  crit: boolean;
+  seed: number;
+}
+
+/** A card's damage with the hero's modifiers: an extra strike, a critical, the multiplier. */
+function strike(combat: Combat, card: CardId, seed: number): Strike {
+  const attack = cardAction(card).attack;
+  if (!attack) return { damage: 0, extraHit: false, crit: false, seed };
+  const stats = statsOf(combat);
+  const [extraHit, afterHit] = chance(stats.extraHitChance, seed);
+  const [crit, afterCrit] = chance(stats.critChance, afterHit);
+  const raw =
+    (attack.hits + (extraHit ? 1 : 0)) * (attack.perHit + combat.strength);
+  return {
+    damage: Math.round(raw * stats.damageMultiplier * (crit ? 2 : 1)),
+    extraHit,
+    crit,
+    seed: afterCrit,
+  };
+}
+
 /** A played card: its effect on the fight, and one of the turn's actions spent. */
-function applyCard(combat: Combat, card: CardId): [Combat, number] {
-  if (combat.outcome || combat.boss !== "waiting") return [combat, 0];
+function applyCard(
+  combat: Combat,
+  card: CardId,
+  seed: number,
+): [Combat, Strike & { healed: number }] {
+  if (combat.outcome || combat.boss !== "waiting")
+    return [
+      combat,
+      { damage: 0, extraHit: false, crit: false, healed: 0, seed },
+    ];
   const action = cardAction(card);
-  const damage = Math.min(combat.bugHp, cardDamage(card, combat.strength));
+  const stats = statsOf(combat);
+  const hit = strike(combat, card, seed);
+  const damage = Math.min(combat.bugHp, hit.damage);
   const bugHp = combat.bugHp - damage;
   const actionsLeft = combat.actionsLeft - 1 + (action.energy ?? 0);
+  const heroHp = Math.min(
+    stats.maxHp,
+    combat.heroHp + (action.heal ?? 0) + Math.round(damage * stats.lifesteal),
+  );
   return [
     {
       ...combat,
@@ -232,12 +306,12 @@ function applyCard(combat: Combat, card: CardId): [Combat, number] {
       block: combat.block + (action.block ?? 0),
       strength: combat.strength + (action.strength ?? 0),
       dodge: combat.dodge || !!action.dodge,
-      heroHp: Math.min(HERO.maxHp, combat.heroHp + (action.heal ?? 0)),
+      heroHp,
       actionsLeft,
       boss: bugHp > 0 && actionsLeft <= 0 ? "pending" : "waiting",
       outcome: bugHp === 0 ? "won" : null,
     },
-    damage,
+    { ...hit, damage, healed: heroHp - combat.heroHp },
   ];
 }
 
@@ -249,7 +323,15 @@ function bossAct(state: BoardState): BoardState {
     return {
       ...state,
       combat: { ...combat, charged: true, boss: "acting" },
-      lastHit: { by: "bug", move, amount: 0, blocked: 0, dodged: false, count },
+      lastHit: {
+        by: "bug",
+        move,
+        amount: 0,
+        blocked: 0,
+        dodged: false,
+        thorns: 0,
+        count,
+      },
     };
   if (move === "heal") {
     const healed = Math.min(BOSS_HEAL, BUG.maxHp - combat.bugHp);
@@ -262,28 +344,79 @@ function bossAct(state: BoardState): BoardState {
         amount: healed,
         blocked: 0,
         dodged: false,
+        thorns: 0,
         count,
       },
     };
   }
+  const stats = statsOf(combat);
   const raw = combat.charged ? BOSS_ATTACK * 2 : BOSS_ATTACK;
-  const dodged = combat.dodge;
+  const [evaded, seed] = combat.dodge
+    ? [false, state.seed]
+    : chance(stats.dodgeChance, state.seed);
+  const dodged = combat.dodge || evaded;
   const blocked = dodged ? 0 : Math.min(combat.block, raw);
   const amount = dodged ? 0 : raw - blocked;
   const heroHp = Math.max(0, combat.heroHp - amount);
+  const thorns = Math.min(combat.bugHp, stats.thorns);
+  const bugHp = combat.bugHp - thorns;
   return {
     ...state,
+    seed,
     combat: {
       ...combat,
       heroHp,
+      bugHp,
       block: dodged ? combat.block : combat.block - blocked,
       dodge: false,
       charged: false,
       boss: "acting",
-      outcome: heroHp === 0 ? "lost" : null,
+      // Thorns that finish the bug win the fight, even on the blow that downs the hero.
+      outcome: bugHp === 0 ? "won" : heroHp === 0 ? "lost" : null,
     },
-    lastHit: { by: "bug", move, amount, blocked, dodged, count },
+    lastHit: { by: "bug", move, amount, blocked, dodged, thorns, count },
   };
+}
+
+/** The hero's next turn; every `REWARD_EVERY` rounds the fight pauses on a modifier offer. */
+function nextTurn(state: BoardState): BoardState {
+  const { combat } = state;
+  const stats = statsOf(combat);
+  const rewardDue = !combat.outcome && combat.turn % REWARD_EVERY === 0;
+  let seed = state.seed;
+  const reward = rewardDue
+    ? drawOffer(combat.modifiers, () => {
+        const [value, next] = random(seed);
+        seed = next;
+        return value;
+      })
+    : [];
+  return {
+    ...state,
+    seed,
+    combat: {
+      ...combat,
+      boss: "waiting",
+      turn: combat.turn + 1,
+      actionsLeft: ACTIONS_PER_TURN + stats.actions,
+      block: combat.block + stats.turnBlock,
+      reward: reward.length ? reward : null,
+    },
+  };
+}
+
+/** A picked modifier stacks and applies its one-off effect; the fight resumes. */
+function pickModifier(combat: Combat, id: ModifierId): Combat {
+  if (!combat.reward?.includes(id)) return combat;
+  const picked: Combat = {
+    ...combat,
+    modifiers: { ...combat.modifiers, [id]: (combat.modifiers[id] ?? 0) + 1 },
+    reward: null,
+  };
+  const { onPick } = modifier(id);
+  if (!onPick) return picked;
+  const { heroHp, block } = picked;
+  return { ...picked, ...onPick({ heroHp, block }, statsOf(picked)) };
 }
 
 /**
@@ -298,16 +431,15 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
         ? bossAct(state)
         : state;
     case "BOSS_DONE":
-      if (state.combat.boss !== "acting") return state;
-      return {
-        ...state,
-        combat: {
-          ...state.combat,
-          boss: "waiting",
-          turn: state.combat.turn + 1,
-          actionsLeft: ACTIONS_PER_TURN,
-        },
-      };
+      return state.combat.boss === "acting" ? nextTurn(state) : state;
+    case "PICK_MODIFIER": {
+      const combat = pickModifier(state.combat, event.id);
+      return combat === state.combat ? state : { ...state, combat };
+    }
+    case "SKIP_REWARD":
+      return state.combat.reward
+        ? { ...state, combat: { ...state.combat, reward: null } }
+        : state;
     case "RESET_BATTLE":
       return {
         ...state,
@@ -334,16 +466,23 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
   const played = state.played.includes(section)
     ? state.played
     : [...state.played, section];
+  // While a modifier is on offer the fight is paused: a card still opens, but stays in the hand.
   const fromHand =
     (event.type === "PLAY" || event.type === "DROP") &&
-    state.hand.includes(entering);
+    state.hand.includes(entering) &&
+    !state.combat.reward;
   if (!fromHand) return { ...state, card, played };
 
   const { drawn, ...cycled } = cycle(state, entering);
-  const [combat, damage] = applyCard(state.combat, entering);
+  const [combat, { damage, extraHit, crit, healed, seed }] = applyCard(
+    state.combat,
+    entering,
+    cycled.seed,
+  );
   return {
     ...state,
     ...cycled,
+    seed,
     card,
     played,
     combat,
@@ -354,6 +493,9 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
             by: "card",
             card: entering,
             damage,
+            extraHit,
+            crit,
+            healed,
             drawn,
             count: (state.lastHit?.count ?? 0) + 1,
           },

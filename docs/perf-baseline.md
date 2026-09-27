@@ -289,3 +289,16 @@ no console errors; no horizontal overflow at 390 px.
 Headless Chrome (1280 px and 390 px): the opening hand deals from the pile, a draw flies in after a
 play and the hand re-spaces; afterwards every card is at opacity 1 with no leftover inline
 transform; no console errors; no horizontal overflow.
+
+## P9.7 — Roguelike modifiers (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 77.1 kB (+2.1 kB: modifier registry, rolls, reward dialog) |
+| All Card Mode chunks | ≤ 120 kB | 87.8 kB |
+
+Headless Chrome (1280 px and 390 px), keyboard only: after four plays (two rounds) the turn bar
+reads "Round 2 cleared · choose an upgrade" and the offer dialog opens with focus on the first
+offer; Tab + Enter picks, the dialog closes, focus returns to a hand card and the hero shows the
+modifier's status chip; no console errors. The Card Mode load now has 2.9 kB of headroom.

@@ -457,3 +457,19 @@ Decision:
   hidden; no WAAPI or reduced motion → placed directly.
 - Hand slots are `m.li layout="position"`; the fan transform moved to an inner `.card-fan`.
 Consequences: Card Mode load 75.0 kB gz (5 kB headroom left under the 80 kB budget).
+
+## Decision: Roguelike modifiers every two rounds (Roadmap P9.7, ADR-012)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-012; Vitest and headless Chrome
+Decision:
+- Every 2 rounds (hero turn + bug turn) the fight pauses on a modal offer of 3 distinct random
+  modifiers (seeded PRNG, rarity-weighted, maxed ones skipped); picks stack; Escape/Skip declines.
+- Registry pattern in `modifiers.ts`: one data entry per modifier (text, rarity, maxStacks,
+  per-stack `stats`, optional `onPick`, `badge`); the fight stores stack counts, `statsOf` derives
+  `HeroStats`. New modifier = one entry; new effect kind = one `HeroStats` field + one engine line.
+- 10 modifiers: damage ×0.5, heal 25%, +1 hit chance, crit chance, dodge chance, Block per turn,
+  thorns, lifesteal, max HP, +1 action.
+- While an offer is pending a card still opens its section but stays in the hand.
+Consequences: Card Mode load 77.1 kB gz (2.9 kB headroom under the 80 kB budget).

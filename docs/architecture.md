@@ -173,6 +173,12 @@ cover the combatants' feet, and played cards and effects travel freely over the 
 target is the field above the hand, decided by the pointer (`pointerWithin`), so a card picked up
 from the hand is never already over the field.
 
+Modifiers (Roadmap P9.7, ADR-012): every two rounds (hero turn + bug turn) the fight pauses on a
+modal offer of three random modifiers; the picked one stacks for the rest of the fight (Escape or
+"Skip" declines). Modifiers are data in a registry (`modifiers.ts`): per-stack stats added to the
+hero's `HeroStats`, and/or a one-off effect; the fight stores only stack counts and derives the
+stats, so adding a modifier is one entry.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

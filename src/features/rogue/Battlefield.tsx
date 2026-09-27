@@ -5,6 +5,7 @@ import {
   BUG,
   bossIntent,
   HERO,
+  statsOf,
   type BoardState,
   type BossMove,
   type Combat,
@@ -17,6 +18,7 @@ import {
   type EffectKind,
   type Target,
 } from "./cards";
+import { modifier, modifierIds } from "./modifiers";
 
 export const BATTLEFIELD_ID = "battlefield";
 
@@ -291,16 +293,22 @@ function describe(hit: Hit, combat: Combat): string {
     const drew = hit.drawn.length
       ? ` Drew ${hit.drawn.map((card) => cardFace(card).title).join(", ")}.`
       : "";
+    const rolls = `${hit.crit ? " Critical hit!" : ""}${hit.extraHit ? " It strikes once more." : ""}`;
+    const leech = hit.healed ? ` ${HERO.name} heals ${hit.healed}.` : "";
     return action.target === "hero"
       ? `${action.verb}. ${HERO.name} has ${combat.heroHp} HP.${drew}`
-      : `${action.verb}: ${BUG.name} takes ${hit.damage} damage, ${combat.bugHp} HP left.${drew}`;
+      : `${action.verb}:${rolls} ${BUG.name} takes ${hit.damage} damage, ${combat.bugHp} HP left.${leech}${drew}`;
   }
   if (hit.move === "charge")
     return `${BUG.name} charges up: its next attack deals double damage.`;
   if (hit.move === "heal")
     return `${BUG.name} heals ${hit.amount}, ${combat.bugHp} HP.`;
-  if (hit.dodged) return `${BUG.name} attacks, but ${HERO.name} dodges.`;
-  return `${BUG.name} attacks: ${hit.amount} damage${hit.blocked ? `, ${hit.blocked} blocked` : ""}. ${HERO.name} has ${combat.heroHp} HP.`;
+  const thorns = hit.thorns
+    ? ` Thorns hit it back for ${hit.thorns}, ${combat.bugHp} HP left.`
+    : "";
+  if (hit.dodged)
+    return `${BUG.name} attacks, but ${HERO.name} dodges.${thorns}`;
+  return `${BUG.name} attacks: ${hit.amount} damage${hit.blocked ? `, ${hit.blocked} blocked` : ""}. ${HERO.name} has ${combat.heroHp} HP.${thorns}`;
 }
 
 interface BattlefieldProps {
@@ -357,14 +365,25 @@ export function Battlefield({
       ? { card: playing, key: cardHit.count }
       : null;
 
+  const stats = statsOf(combat);
   const bugPopup: Popup | null =
     playing && cardHit && cardHit.damage > 0
-      ? { text: `−${cardHit.damage}`, tone: "damage", key: cardHit.count }
-      : bugHit?.move === "heal"
-        ? { text: `+${bugHit.amount}`, tone: "heal", key: bugHit.count }
-        : bugHit?.move === "charge"
-          ? { text: "⚡ ×2", tone: "power", key: bugHit.count }
-          : null;
+      ? {
+          text: `${cardHit.crit ? "crit " : ""}−${cardHit.damage}${cardHit.extraHit ? " +1 hit" : ""}`,
+          tone: "damage",
+          key: cardHit.count,
+        }
+      : bugHit?.thorns
+        ? {
+            text: `−${bugHit.thorns} thorns`,
+            tone: "damage",
+            key: bugHit.count,
+          }
+        : bugHit?.move === "heal"
+          ? { text: `+${bugHit.amount}`, tone: "heal", key: bugHit.count }
+          : bugHit?.move === "charge"
+            ? { text: "⚡ ×2", tone: "power", key: bugHit.count }
+            : null;
   const heroPopup: Popup | null =
     bugHit?.move === "attack"
       ? {
@@ -376,20 +395,28 @@ export function Battlefield({
           tone: bugHit.amount > 0 ? "damage" : "power",
           key: bugHit.count,
         }
-      : null;
+      : playing && cardHit && cardHit.healed > 0
+        ? { text: `+${cardHit.healed}`, tone: "heal", key: cardHit.count }
+        : null;
 
   const heroStatuses = [
     combat.block > 0 && `Block ${combat.block}`,
     combat.strength > 0 && `Str ${combat.strength}`,
     combat.dodge && "Dodge",
+    ...modifierIds.map((id) => {
+      const stacks = combat.modifiers[id];
+      return !!stacks && modifier(id).badge?.(stacks);
+    }),
   ].filter((status): status is string => !!status);
   const turnText = combat.outcome
     ? combat.outcome === "won"
       ? "Bug fixed!"
       : `${HERO.name} is down.`
-    : combat.boss === "waiting"
-      ? `Turn ${combat.turn} · ${combat.actionsLeft} ${combat.actionsLeft === 1 ? "action" : "actions"} before the bug acts`
-      : `Turn ${combat.turn} · the bug's move`;
+    : combat.reward
+      ? `Round ${combat.turn - 1} cleared · choose an upgrade`
+      : combat.boss === "waiting"
+        ? `Turn ${combat.turn} · ${combat.actionsLeft} ${combat.actionsLeft === 1 ? "action" : "actions"} before the bug acts`
+        : `Turn ${combat.turn} · the bug's move`;
 
   return (
     <div
@@ -407,7 +434,7 @@ export function Battlefield({
           side="hero"
           name={HERO.name}
           hp={combat.heroHp}
-          maxHp={HERO.maxHp}
+          maxHp={stats.maxHp}
           art={HERO_ART}
           statuses={heroStatuses}
           aimed={aimed === "hero"}

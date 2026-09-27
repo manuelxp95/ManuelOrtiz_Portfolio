@@ -34,7 +34,9 @@ import {
   dragAnnouncements,
 } from "./drag/drag-config";
 import { DeckPile, DrawnCard } from "./DeckPile";
+import type { ModifierId } from "./modifiers";
 import { CardMotion, layoutSpring } from "./motion-config";
+import { RewardDialog } from "./RewardDialog";
 import { preloadSectionPanel } from "./sections/SectionPanel";
 import { CardFace, SectionCard } from "./SectionCard";
 import { TargetArrow } from "./TargetArrow";
@@ -170,6 +172,21 @@ export function RogueBoard() {
       return () => window.clearTimeout(timer);
     }
   }, [boss, state.status]);
+
+  // The upgrade pick waits for the board to be idle (never over an open card). Once it is taken or
+  // skipped, focus returns to the hand.
+  const reward = board.combat.reward;
+  const offer = state.status === "idle" ? reward : null;
+  const offered = useRef(false);
+  useEffect(() => {
+    if (offered.current && reward === null) focusCard(null);
+    offered.current = offer !== null;
+  }, [offer, reward, focusCard]);
+  const pickModifier = useCallback(
+    (id: ModifierId) => dispatch({ type: "PICK_MODIFIER", id }),
+    [],
+  );
+  const skipReward = useCallback(() => dispatch({ type: "SKIP_REWARD" }), []);
 
   // Escape skips a running effect.
   useEffect(() => {
@@ -395,6 +412,12 @@ export function RogueBoard() {
           </DragOverlay>
         </DndContext>
         <CardDialog state={state} onClose={close} onClosed={closed} />
+        <RewardDialog
+          offer={offer}
+          held={board.combat.modifiers}
+          onPick={pickModifier}
+          onSkip={skipReward}
+        />
       </section>
     </CardMotion>
   );
