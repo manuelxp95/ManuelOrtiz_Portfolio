@@ -414,3 +414,18 @@ Decision:
 - The hero art is a placeholder until the owner supplies a model (`assets/models/`, `.obj`
   preferred; converted to ASCII at build time). Boss behaviour work deferred by the owner.
 Consequences: Card Mode load 70.5 kB gz. Fixed duplicate bug art caused by sibling React keys.
+
+## Decision: Turn system (Roadmap P9.3, ADR-010)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-010; Vitest (193 tests) and a headless-Chrome full fight
+Decision:
+- 2 hero actions per turn (cards played from the hand); then the bug acts once the board is idle:
+  cycle attack 8 → charge ×2 → attack (16 if charged) → heal 12, shown as its intent.
+- Hero 50 HP, bug 100 HP. Statuses are mechanics: Str +2 per Skills play, Block +6 (Education),
+  Dodge (About), heal 12 (Contact); attacks Experience 5×(4+Str), Projects 22+Str, CV 15+Str.
+- Direct opens never touch the fight; playing during the bug's turn resolves it at once; win/loss
+  shows "Play again"; content is never gated.
+Consequences: Card Mode load 71.9 kB gz; replaying cards now counts (P9.1's "damage once" rule
+superseded).

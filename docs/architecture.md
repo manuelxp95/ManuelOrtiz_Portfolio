@@ -156,6 +156,12 @@ attacks add up to its HP); SKILL and POWER cards act on the hero and grant statu
 is dragged — or lifted by a tap — a targeting arrow (`TargetArrow.tsx`) runs from the card to its
 target, which glows; releasing anywhere over the battlefield plays the card.
 
+Turns (Roadmap P9.3, ADR-010): the hero has two actions (cards played from the hand) per turn;
+then the bug takes its telegraphed turn — attack, charge (×2), attack, heal — once the board is
+idle again, never over an open card. Statuses are mechanics (Strength, Block, Dodge, heal). A win
+or a loss offers "Play again"; cards always open their sections. `battle.ts` owns the fight; the
+board only schedules the bug's turn.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

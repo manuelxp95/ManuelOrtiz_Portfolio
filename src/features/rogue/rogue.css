@@ -832,11 +832,21 @@ a.merchant-offer:focus-visible {
   border-block: 1px solid var(--accent);
 }
 
-.damage {
+.popup {
   font-family: var(--card-mono);
   font-size: 1.75rem;
   font-weight: 700;
+  white-space: nowrap;
   color: var(--danger);
+}
+
+.popup[data-tone="heal"] {
+  color: #16a34a;
+}
+
+.popup[data-tone="power"] {
+  font-size: 1.1rem;
+  color: var(--rarity-legendary);
 }
 
 .effect-verb {
@@ -873,4 +883,53 @@ a.merchant-offer:focus-visible {
   .combatant-hp > span {
     transition: none;
   }
+}
+
+/* Turns (P9.3): whose move it is, the bug's announced intent, and the end of the fight. */
+.turn-bar {
+  position: absolute;
+  top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.battlefield[data-boss="acting"] .turn-bar,
+.battlefield[data-boss="pending"] .turn-bar {
+  color: var(--danger);
+}
+
+.combatant-intent {
+  padding: 0.125rem 0.5rem;
+  border: 1px dashed var(--danger);
+  border-radius: var(--radius-control);
+  font-size: 0.7rem;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.outcome {
+  position: absolute;
+  bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.outcome-button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  font-family: var(--card-mono);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.outcome-button:hover {
+  background: var(--accent-soft);
 }

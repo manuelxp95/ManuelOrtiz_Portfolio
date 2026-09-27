@@ -12,6 +12,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { experience, projects } from "@/content";
 import { SECTION_IDS } from "@/domain/types";
+import { HERO } from "@/features/rogue/battle";
 import { RogueBoard } from "@/features/rogue/RogueBoard";
 import {
   consumePendingModeFocus,
@@ -203,9 +204,9 @@ describe("playing cards on the battlefield (P9.1)", () => {
     expect(
       document.querySelector(".battlefield")?.getAttribute("data-playing"),
     ).toBe("experience");
-    expect(hp()).toContain("HP 60/100");
+    expect(hp()).toContain("HP 80/100");
     expect(document.querySelector("[aria-live]")?.textContent).toMatch(
-      /takes 40 damage, 60 HP left/,
+      /takes 20 damage, 80 HP left/,
     );
 
     expect(
@@ -230,10 +231,12 @@ describe("playing cards on the battlefield (P9.1)", () => {
     render(<RogueBoard />);
     await user.click(card("education"));
     expect(hp()).toContain("HP 100/100");
-    const statuses = screen.getByRole("list", { name: /statuses/i });
+    const statuses = screen.getByRole("list", {
+      name: `${HERO.name}'s statuses`,
+    });
     expect(statuses.textContent).toMatch(/Block \d+/);
     expect(document.querySelector("[aria-live]")?.textContent).toMatch(
-      /gains Block/,
+      /Block \+\d+\. \w+ has 50 HP/,
     );
     await screen.findByRole("dialog", { name: /education/i });
   });
@@ -333,7 +336,7 @@ describe("playing cards on the battlefield (P9.1)", () => {
     render(<RogueBoard />);
     fireEvent.click(card("cv"));
     expect(openDialog()).not.toBeNull();
-    expect(hp()).toContain("HP 80/100");
+    expect(hp()).toContain("HP 85/100");
   });
 
   it("Left/Right arrows move along the hand", async () => {
@@ -346,11 +349,67 @@ describe("playing cards on the battlefield (P9.1)", () => {
     expect(document.activeElement).toBe(card("cv"));
   });
 
-  it("a deep link counts as played", async () => {
+  it("a deep link marks the card read without touching the fight", async () => {
     window.history.replaceState(null, "", "/#projects");
     usePortfolioStore.setState({ activeSection: "projects" });
     render(<RogueBoard />);
     await screen.findByRole("dialog", { name: /projects/i });
-    expect(hp()).toContain("HP 60/100");
+    expect(hp()).toContain("HP 100/100");
+    expect(slot("projects").hasAttribute("data-played")).toBe(true);
+  });
+});
+
+describe("turns (P9.3)", () => {
+  const turnBar = () => document.querySelector(".turn-bar")?.textContent;
+  const heroHp = () =>
+    document.querySelector('[data-combatant="hero"] .combatant-hp-text')
+      ?.textContent;
+  const playAndClose = (id: string) => {
+    fireEvent.click(card(id));
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+  };
+
+  beforeEach(() => setReducedMotion(true));
+
+  it("announces the bug's intent and counts down the hero's actions", () => {
+    render(<RogueBoard />);
+    expect(turnBar()).toMatch(/Turn 1 · 2 actions/);
+    expect(
+      document.querySelector('[data-combatant="bug"] .combatant-intent')
+        ?.textContent,
+    ).toMatch(/attack 8/);
+    playAndClose("skills");
+    expect(turnBar()).toMatch(/Turn 1 · 1 action /);
+  });
+
+  it("after two cards the bug acts once the dialog is closed, then turn 2 starts", async () => {
+    render(<RogueBoard />);
+    playAndClose("skills");
+    fireEvent.click(card("cv"));
+    expect(heroHp()).toContain("HP 50/50");
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+
+    await waitFor(() => expect(heroHp()).toContain("HP 42/50"));
+    expect(document.querySelector("[aria-live]")?.textContent).toMatch(
+      /attacks: 8 damage/,
+    );
+    await waitFor(() => expect(turnBar()).toMatch(/Turn 2 · 2 actions/));
+    expect(
+      document.querySelector('[data-combatant="bug"] .combatant-intent')
+        ?.textContent,
+    ).toMatch(/charge/);
+  });
+
+  it("playing a card while the bug's turn is due settles it first", () => {
+    render(<RogueBoard />);
+    playAndClose("skills");
+    playAndClose("about");
+    fireEvent.click(card("experience"));
+    expect(turnBar()).toMatch(/Turn 2 · 1 action /);
+    expect(heroHp()).toContain("HP 50/50");
+    expect(
+      document.querySelector('[data-combatant="hero"] .combatant-statuses')
+        ?.textContent,
+    ).not.toContain("Dodge");
   });
 });

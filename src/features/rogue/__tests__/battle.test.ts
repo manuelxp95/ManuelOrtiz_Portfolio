@@ -1,101 +1,157 @@
 import { describe, expect, it } from "vitest";
-import { contactLinks, education, experience, skills } from "@/content";
+import { contactLinks, education, experience, projects } from "@/content";
 import { SECTION_IDS, type SectionId } from "@/domain/types";
 import {
+  ACTIONS_PER_TURN,
+  BOSS_ATTACK,
+  BOSS_HEAL,
+  BOSS_PATTERN,
   BUG,
+  HERO,
   boardReducer,
-  bugHp,
+  bossIntent,
   cardActions,
-  heroStatuses,
+  cardDamage,
   initialBoardState,
+  initialCombat,
+  type BoardEvent,
   type BoardState,
 } from "@/features/rogue/battle";
-import type { CardEvent } from "@/features/rogue/card-machine";
 
-const run = (events: CardEvent[], from: BoardState = initialBoardState) =>
+const run = (events: BoardEvent[], from: BoardState = initialBoardState) =>
   events.reduce(boardReducer, from);
-const play = (card: SectionId): CardEvent[] => [
+/** Play a card from the hand and close its dialog. */
+const play = (card: SectionId): BoardEvent[] => [
   { type: "PLAY", card, reducedMotion: false },
   { type: "EFFECT_DONE" },
   { type: "CLOSE", reducedMotion: true },
 ];
-const attacks = SECTION_IDS.filter((id) => cardActions[id].type === "attack");
+const bossTurn: BoardEvent[] = [{ type: "BOSS_ACT" }, { type: "BOSS_DONE" }];
+const withCombat = (combat: Partial<BoardState["combat"]>): BoardState => ({
+  ...initialBoardState,
+  combat: { ...initialCombat, ...combat },
+});
 
-describe("battle data", () => {
-  it("attack cards hit the bug and together deal exactly its HP", () => {
-    const total = attacks.reduce(
-      (sum, id) => sum + (cardActions[id].damage ?? 0),
-      0,
-    );
-    expect(total).toBe(BUG.maxHp);
-    for (const id of attacks) expect(cardActions[id].target).toBe("bug");
-  });
-
-  it("skill and power cards act on the hero with a status and no damage", () => {
-    for (const id of SECTION_IDS.filter((id) => !attacks.includes(id))) {
-      expect(cardActions[id].target).toBe("hero");
-      expect(cardActions[id].status).toBeTruthy();
-      expect(cardActions[id].damage).toBeUndefined();
-    }
-  });
-
-  it("every effect is drawn from the content", () => {
+describe("card actions", () => {
+  it("attacks hit the bug; skills and powers act on the hero", () => {
     for (const id of SECTION_IDS) {
-      expect(cardActions[id].tokens.length).toBeGreaterThan(0);
-      expect(cardActions[id].verb.trim()).not.toBe("");
+      const action = cardActions[id];
+      expect(action.target).toBe(action.type === "attack" ? "bug" : "hero");
+      expect(!!action.attack).toBe(action.type === "attack");
+      expect(action.tokens.length).toBeGreaterThan(0);
     }
-    expect(cardActions.experience.tokens).toHaveLength(experience.length);
-    expect(skills.map((skill) => skill.name)).toEqual(
-      expect.arrayContaining(cardActions.skills.tokens),
-    );
-    expect(cardActions.education.status).toBe(`Block ${education.length}`);
-    expect(cardActions.contact.status).toBe(`Gold ${contactLinks.length}`);
+  });
+
+  it("draws its numbers from the content, and Strength adds to every hit", () => {
+    expect(cardDamage("experience", 0)).toBe(experience.length * 4);
+    expect(cardDamage("experience", 2)).toBe(experience.length * 6);
+    expect(cardDamage("projects", 0)).toBe(projects.length * 2);
+    expect(cardDamage("education", 5)).toBe(0);
+    expect(cardActions.education.block).toBe(education.length);
+    expect(cardActions.contact.heal).toBe(contactLinks.length * 3);
   });
 });
 
-describe("boardReducer", () => {
-  it("an attack lands once: hit on PLAY, none when its effect ends", () => {
+describe("turns", () => {
+  it(`the bug's turn comes after ${ACTIONS_PER_TURN} cards played from the hand`, () => {
+    const one = run(play("experience"));
+    expect(one.combat.actionsLeft).toBe(ACTIONS_PER_TURN - 1);
+    expect(one.combat.boss).toBe("waiting");
+    const two = run(play("cv"), one);
+    expect(two.combat.boss).toBe("pending");
+
+    const acted = run([{ type: "BOSS_ACT" }], two);
+    expect(acted.combat.boss).toBe("acting");
+    expect(acted.combat.heroHp).toBe(HERO.maxHp - BOSS_ATTACK);
+    const next = run([{ type: "BOSS_DONE" }], acted);
+    expect(next.combat).toMatchObject({
+      boss: "waiting",
+      turn: 2,
+      actionsLeft: ACTIONS_PER_TURN,
+    });
+  });
+
+  it("the bug follows its announced pattern: attack, charge, double attack, heal", () => {
+    expect(BOSS_PATTERN).toEqual(["attack", "charge", "attack", "heal"]);
+    let state = withCombat({ bugHp: 50 });
+    const moves: string[] = [];
+    for (let turn = 0; turn < 4; turn++) {
+      const intent = bossIntent(state.combat);
+      state = run([...play("skills"), ...play("skills")], state);
+      state = run([{ type: "BOSS_ACT" }], state);
+      const hit = state.lastHit!;
+      expect(hit.by).toBe("bug");
+      if (hit.by === "bug") {
+        moves.push(`${hit.move}:${hit.amount}`);
+        if (intent.move === "attack") expect(hit.amount).toBe(intent.amount);
+      }
+      state = run([{ type: "BOSS_DONE" }], state);
+    }
+    expect(moves).toEqual([
+      `attack:${BOSS_ATTACK}`,
+      "charge:0",
+      `attack:${BOSS_ATTACK * 2}`,
+      `heal:${BOSS_HEAL}`,
+    ]);
+    expect(state.combat.bugHp).toBe(50 + BOSS_HEAL);
+  });
+
+  it("Block absorbs an attack, Dodge avoids one, a potion heals", () => {
+    const blocked = run(
+      [...play("education"), ...play("contact"), ...bossTurn],
+      withCombat({ heroHp: 40 }),
+    );
+    const blockedBy = Math.min(education.length, BOSS_ATTACK);
+    expect(blocked.combat.heroHp).toBe(
+      Math.min(HERO.maxHp, 40 + contactLinks.length * 3) -
+        (BOSS_ATTACK - blockedBy),
+    );
+    expect(blocked.combat.block).toBe(education.length - blockedBy);
+
+    const dodged = run([...play("about"), ...play("skills"), ...bossTurn]);
+    expect(dodged.combat.heroHp).toBe(HERO.maxHp);
+    expect(dodged.combat.dodge).toBe(false);
+    expect(dodged.lastHit).toMatchObject({ by: "bug", dodged: true });
+  });
+
+  it("direct opens (URL hash, back/forward) never touch the fight", () => {
+    const opened = run([{ type: "OPEN", card: "projects" }]);
+    expect(opened.played).toEqual(["projects"]);
+    expect(opened.combat).toBe(initialCombat);
+    expect(opened.lastHit).toBeNull();
+  });
+
+  it("an effect ending does not count a second time", () => {
     const playing = run([
       { type: "PLAY", card: "experience", reducedMotion: false },
     ]);
-    expect(playing.played).toEqual(["experience"]);
-    expect(playing.lastHit).toEqual({
-      card: "experience",
-      damage: 40,
-      count: 1,
-    });
-    const open = run([{ type: "EFFECT_DONE" }], playing);
-    expect(open.card).toEqual({ status: "expanded", card: "experience" });
-    expect(open.lastHit).toBe(playing.lastHit);
+    expect(run([{ type: "EFFECT_DONE" }], playing).combat).toBe(playing.combat);
+  });
+});
+
+describe("outcome", () => {
+  it("bringing the bug to 0 wins, and the bug stops acting", () => {
+    const won = run(play("projects"), withCombat({ bugHp: 5, actionsLeft: 1 }));
+    expect(won.combat).toMatchObject({ bugHp: 0, outcome: "won" });
+    expect(won.combat.boss).toBe("waiting");
+    expect(run([{ type: "BOSS_ACT" }], won)).toBe(won);
   });
 
-  it("a hero card lands without damage and grants its status", () => {
-    const state = run(play("education"));
-    expect(state.lastHit?.damage).toBe(0);
-    expect(bugHp(state.played)).toBe(BUG.maxHp);
-    expect(heroStatuses(state.played)).toEqual([`Block ${education.length}`]);
+  it("the hero at 0 loses; cards still open but no longer fight", () => {
+    const lost = run(
+      bossTurn,
+      withCombat({ heroHp: 3, actionsLeft: 0, boss: "pending" }),
+    );
+    expect(lost.combat).toMatchObject({ heroHp: 0, outcome: "lost" });
+    const after = run(play("cv"), run([{ type: "BOSS_DONE" }], lost));
+    expect(after.card).toEqual({ status: "idle" });
+    expect(after.combat.bugHp).toBe(BUG.maxHp);
   });
 
-  it("replaying an attack replays its effect without damage", () => {
-    const again = run([...play("projects"), ...play("projects")]);
-    expect(again.played).toEqual(["projects"]);
-    expect(again.lastHit).toEqual({ card: "projects", damage: 0, count: 2 });
-    expect(bugHp(again.played)).toBe(BUG.maxHp - 40);
-  });
-
-  it("a direct open (deep link) counts as played", () => {
-    const opened = run([{ type: "OPEN", card: "cv" }]);
-    expect(opened.played).toEqual(["cv"]);
-    expect(opened.lastHit?.damage).toBe(cardActions.cv.damage);
-  });
-
-  it("playing the three attacks defeats the bug", () => {
-    const done = run(attacks.flatMap(play));
-    expect(bugHp(done.played)).toBe(0);
-    expect(done.card).toEqual({ status: "idle" });
-  });
-
-  it("unchanged machine state returns the same board", () => {
-    expect(run([{ type: "EFFECT_DONE" }])).toBe(initialBoardState);
+  it("Play again resets the fight, not what has been read", () => {
+    const state = run(play("experience"));
+    const reset = run([{ type: "RESET_BATTLE" }], state);
+    expect(reset.combat).toBe(initialCombat);
+    expect(reset.played).toEqual(["experience"]);
   });
 });

@@ -254,3 +254,14 @@ slow network and 16/16 deep links unchanged; no horizontal overflow at 390 px; n
 Headless Chrome: dragging an attack aims at the bug (red arrow, bug framed), a skill at the hero
 (teal); drops play and fly from the release point; a tap-lifted card on a 390 px screen shows its
 arrow; no horizontal overflow; no console errors.
+
+## P9.3 — Turn system (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 71.9 kB (+1.4 kB) |
+
+Headless Chrome, a full fight by clicks: Block absorbed 6 of the first attack, the charge raised
+the intent to 16, Dodge avoided it, the heal was announced, the bug fell on turn 5 with "Play
+again"; no console errors; no horizontal overflow at 390 px.

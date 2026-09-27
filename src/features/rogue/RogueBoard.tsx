@@ -48,6 +48,10 @@ import { TargetArrow } from "./TargetArrow";
 import { useReducedMotion } from "./use-reduced-motion";
 import "./rogue.css";
 
+/** The bug acts this long after the board is idle again, and its move shows for this long. */
+const BOSS_DELAY_MS = 400;
+const BOSS_MOVE_MS = 1200;
+
 /** One-line summary per card, derived from the content (never a second copy of it). */
 const cardStats: Record<SectionId, string> = {
   about: profile.location.split(",")[0],
@@ -137,6 +141,26 @@ export function RogueBoard() {
     }
   }, [state]);
 
+  // The bug takes its turn once the board is back to idle (never over an open card), shows its
+  // move, then hands the turn back. Playing a card meanwhile resolves it at once (see `play`).
+  const boss = board.combat.boss;
+  useEffect(() => {
+    if (boss === "pending" && state.status === "idle") {
+      const timer = window.setTimeout(
+        () => dispatch({ type: "BOSS_ACT" }),
+        BOSS_DELAY_MS,
+      );
+      return () => window.clearTimeout(timer);
+    }
+    if (boss === "acting") {
+      const timer = window.setTimeout(
+        () => dispatch({ type: "BOSS_DONE" }),
+        BOSS_MOVE_MS,
+      );
+      return () => window.clearTimeout(timer);
+    }
+  }, [boss, state.status]);
+
   // Escape skips a running effect.
   useEffect(() => {
     if (state.status !== "playing") return;
@@ -147,8 +171,16 @@ export function RogueBoard() {
     return () => window.removeEventListener("keydown", skip);
   }, [state.status]);
 
+  /** A due or showing bug move resolves at once when the player acts again. */
+  const settleBoss = useCallback(() => {
+    if (boss === "pending") dispatch({ type: "BOSS_ACT" });
+    if (boss === "pending" || boss === "acting")
+      dispatch({ type: "BOSS_DONE" });
+  }, [boss]);
+
   const play = useCallback(
     (card: SectionId) => {
+      settleBoss();
       const element = cards.current.get(card);
       setFlight(
         element && field.current
@@ -158,7 +190,7 @@ export function RogueBoard() {
       selectSection(card, "push");
       dispatch({ type: "PLAY", card, reducedMotion });
     },
-    [reducedMotion],
+    [reducedMotion, settleBoss],
   );
 
   const close = useCallback(
@@ -248,6 +280,7 @@ export function RogueBoard() {
                   ? measureFlight(released, field.current)
                   : null,
               );
+              settleBoss();
               selectSection(active.id as SectionId, "push");
             }
             dispatch({ type: "DROP", reducedMotion });
@@ -267,6 +300,7 @@ export function RogueBoard() {
                 else if (state.status === "inspecting") play(state.card);
               }}
               onEffectDone={effectDone}
+              onReset={() => dispatch({ type: "RESET_BATTLE" })}
               renderFace={(card) => (
                 <CardFace
                   section={sectionMeta(card)}
