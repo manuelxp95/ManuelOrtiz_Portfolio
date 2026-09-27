@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { sections } from "@/domain/sections";
 import { AsciiAnimation } from "./AsciiAnimation";
 import type { CardState } from "./card-machine";
+import { sectionOf } from "./cards";
 import { SectionPanel } from "./sections/SectionPanel";
 
 const CLOSE_FALLBACK_MS = 300;
@@ -21,7 +22,7 @@ export function CardDialog({ state, onClose, onClosed }: CardDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const open = state.status === "expanded" || state.status === "closing";
   const card = open ? state.card : null;
-  const section = sections.find((meta) => meta.id === card);
+  const section = sections.find((meta) => card && meta.id === sectionOf(card));
 
   useEffect(() => {
     const element = dialog.current;

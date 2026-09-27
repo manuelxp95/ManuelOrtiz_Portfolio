@@ -1,30 +1,37 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useRef, type PointerEvent } from "react";
-import type { SectionMeta } from "@/domain/types";
 import { cardGlyphs } from "./ascii/glyphs.generated";
-import { BUG, cardActions, HERO } from "./battle";
+import { BUG, HERO } from "./battle";
 import { buildCardFace } from "./card-face";
+import {
+  cardAction,
+  cardElementId,
+  cardFace,
+  isSectionCard,
+  sectionOf,
+  type CardId,
+} from "./cards";
 
 /** A touch that travels this far upwards before lifting plays the card (swipe up). */
 const SWIPE_UP_PX = 40;
 
 interface CardFaceProps {
-  section: SectionMeta;
-  stat: string;
+  card: CardId;
   selected: boolean;
 }
 
 /** The decorative ASCII face, shared by the card in the hand, its drag overlay and its flight. */
-export function CardFace({ section, stat, selected }: CardFaceProps) {
+export function CardFace({ card, selected }: CardFaceProps) {
+  const face = cardFace(card);
   return (
     <span aria-hidden="true" className="card-face">
       {buildCardFace({
-        title: section.cardLabel,
-        glyph: cardGlyphs[section.id],
-        label: section.classicLabel,
-        stat,
+        title: face.title,
+        glyph: cardGlyphs[face.glyph],
+        label: face.label,
+        stat: face.stat,
         selected,
-        type: cardActions[section.id].type,
+        type: cardAction(card).type,
       })}
     </span>
   );
@@ -42,14 +49,13 @@ interface SectionCardProps extends CardFaceProps {
 }
 
 /**
- * A real button: click, Enter and Space play the card; a finger tap lifts it first (the fanned hand
- * overlaps on phones) and a second tap or a swipe up plays it. With a mouse it can also be dragged
- * onto the battlefield (P6). Only the mouse listeners are wired — dnd-kit's draggable ARIA
- * attributes would rename the button, and drag is never the keyboard path.
+ * A card in the hand, as a real button: click, Enter and Space play it; a finger tap lifts it
+ * first (the fanned hand overlaps on phones) and a second tap or a swipe up plays it. With a mouse
+ * it can also be dragged onto the battlefield (P6). Only the mouse listeners are wired — dnd-kit's
+ * draggable ARIA attributes would rename the button, and drag is never the keyboard path.
  */
 export function SectionCard({
-  section,
-  stat,
+  card,
   selected,
   played,
   onActivate,
@@ -57,14 +63,16 @@ export function SectionCard({
   onIntent,
   ref,
 }: SectionCardProps) {
-  const { listeners, setNodeRef, isDragging } = useDraggable({
-    id: section.id,
-  });
+  const { listeners, setNodeRef, isDragging } = useDraggable({ id: card });
   const press = useRef<{ touch: boolean; y: number } | null>(null);
   const swiped = useRef(false);
-  const action = cardActions[section.id];
+  const face = cardFace(card);
+  const action = cardAction(card);
   const aim =
     action.target === "bug" ? `hits ${BUG.name}` : `acts on ${HERO.name}`;
+  const kind = isSectionCard(card)
+    ? `${face.label} — ${face.title}`
+    : `${face.title} — ${card.startsWith("project:") ? "project" : "skill"} card, opens ${sectionOf(card)}`;
 
   function onPointerDown(event: PointerEvent<HTMLButtonElement>) {
     press.current = { touch: event.pointerType === "touch", y: event.clientY };
@@ -86,7 +94,7 @@ export function SectionCard({
         ref(element);
       }}
       type="button"
-      id={`card-${section.id}`}
+      id={cardElementId(card)}
       aria-current={selected ? "true" : undefined}
       aria-haspopup="dialog"
       onPointerDown={onPointerDown}
@@ -108,10 +116,10 @@ export function SectionCard({
       className="section-card"
     >
       <span className="sr-only">
-        {section.classicLabel} — {section.cardLabel}. {stat}. {action.type}{" "}
-        card, {aim}.{played ? " Played." : ""}
+        {kind}. {face.stat}. {action.type} card, {aim}.
+        {played ? " Played." : ""}
       </span>
-      <CardFace section={section} stat={stat} selected={selected} />
+      <CardFace card={card} selected={selected} />
     </button>
   );
 }

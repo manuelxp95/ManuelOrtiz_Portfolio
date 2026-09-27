@@ -1,4 +1,9 @@
 // @vitest-environment jsdom
+import { vi } from "vitest";
+
+vi.mock("@/features/rogue/battle", async (importOriginal) =>
+  (await import("@/test/card-deal")).dealAllSections(importOriginal),
+);
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";

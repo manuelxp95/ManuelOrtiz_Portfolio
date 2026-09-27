@@ -40,7 +40,19 @@
 }
 
 .board-header {
+  position: relative;
   flex: none;
+}
+
+.deck-count {
+  position: absolute;
+  top: 0.25rem;
+  right: 0;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-size: 0.7rem;
+  color: var(--muted);
 }
 
 .hint-pointer {
@@ -78,9 +90,12 @@
   transition: transform var(--duration-fast) ease-out;
 }
 
-/* Percent margins resolve against the hand's width: seven cards always fit in one row. */
+/* Percent margins resolve against the hand's width: every card of the hand fits in one row. */
 .card-slot + .card-slot {
-  margin-left: min(-1.5rem, calc((100% - 7 * var(--card-w)) / 6));
+  margin-left: min(
+    -1.5rem,
+    calc((100% - var(--hand-count) * var(--card-w)) / (var(--hand-count) - 1))
+  );
 }
 
 .card-slot:has([aria-current="true"]) {

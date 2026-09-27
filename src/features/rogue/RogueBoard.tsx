@@ -17,26 +17,17 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
-import {
-  contactLinks,
-  cv,
-  education,
-  experience,
-  profile,
-  projects,
-  skills,
-} from "@/content";
-import { sections } from "@/domain/sections";
-import type { SectionId } from "@/domain/types";
+import { profile } from "@/content";
 import {
   consumePendingModeFocus,
   selectSection,
   usePortfolioStore,
 } from "@/state/portfolio-store";
 import { parseSectionHash } from "@/state/section-hash";
-import { boardReducer, cardActions, initialBoardState } from "./battle";
+import { boardReducer, createBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
+import { cardAction, isSectionCard, sectionOf, type CardId } from "./cards";
 import {
   DRAG_ACTIVATION_DISTANCE,
   dragAnnouncements,
@@ -52,23 +43,19 @@ import "./rogue.css";
 const BOSS_DELAY_MS = 400;
 const BOSS_MOVE_MS = 1200;
 
-/** One-line summary per card, derived from the content (never a second copy of it). */
-const cardStats: Record<SectionId, string> = {
-  about: profile.location.split(",")[0],
-  skills: `${skills.length} skills`,
-  experience: `${experience.length} roles`,
-  projects: `${projects.length} projects`,
-  education: `${education.length} entries`,
-  contact: `${contactLinks.length} channels`,
-  cv: cv ? "PDF ready" : "PDF coming soon",
-};
+/** Center-out index of each card in the fan; CSS turns it into rotation, drop and overlap. */
+const fanStyle = (index: number, count: number) =>
+  ({ "--fan-offset": index - (count - 1) / 2 }) as CSSProperties;
 
-const sectionMeta = (id: SectionId) =>
-  sections.find((section) => section.id === id)!;
-
-/** Center-out index of each card in the fan (-3 … 3); CSS turns it into rotation and drop. */
-const fanStyle = (index: number) =>
-  ({ "--fan-offset": index - (sections.length - 1) / 2 }) as CSSProperties;
+/** Shows what a played card opens: its section, or for a project card that project's relic. */
+function selectFor(card: CardId) {
+  if (card.startsWith("project:")) {
+    window.history.pushState(null, "", `#project-${card.slice(8)}`);
+    usePortfolioStore.getState().setActiveSection("projects");
+  } else {
+    selectSection(sectionOf(card), "push");
+  }
+}
 
 /** Where a played card lands: the lower middle of the battlefield. */
 function measureFlight(
@@ -87,25 +74,43 @@ export function RogueBoard() {
   const activeSection = usePortfolioStore((state) => state.activeSection);
   const reducedMotion = useReducedMotion();
   const deal = useEntrance({ opacity: 0, y: 24 });
-  const [board, dispatch] = useReducer(boardReducer, initialBoardState);
+  // Each visit deals a new hand; the seed keeps every later shuffle a pure reducer step.
+  const [board, dispatch] = useReducer(boardReducer, undefined, () =>
+    createBoardState(Math.floor(Math.random() * 2 ** 32)),
+  );
   const state = board.card;
   const [flight, setFlight] = useState<Flight | null>(null);
-  const cards = useRef(new Map<SectionId, HTMLButtonElement>());
+  const cards = useRef(new Map<CardId, HTMLButtonElement>());
   const field = useRef<HTMLDivElement>(null);
   const mounted = useRef(false);
-  const lastOpen = useRef<SectionId | null>(null);
+  const lastOpen = useRef<CardId | null>(null);
   // Mouse only: touch keeps tap-to-play and native scrolling (P6, ADR-006).
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE },
     }),
   );
-  const dragged = state.status === "dragging" ? sectionMeta(state.card) : null;
+  const dragged = state.status === "dragging" ? state.card : null;
   const aiming =
     state.status === "dragging" || state.status === "inspecting"
       ? state.card
       : null;
-  const aimed = aiming ? cardActions[aiming].target : null;
+  const aimed = aiming ? cardAction(aiming).target : null;
+  const hand = board.hand;
+
+  /** Where the last played card sat in the hand. */
+  const playedSlot = useRef(0);
+
+  /** Focus a card or, when it went back into the deck, the card now in its slot. */
+  const focusCard = useCallback((card: CardId | null) => {
+    const slots = document.querySelectorAll<HTMLElement>(
+      ".card-hand .section-card",
+    );
+    const element =
+      (card && cards.current.get(card)) ??
+      slots[Math.min(playedSlot.current, slots.length - 1)];
+    element?.focus({ preventScroll: true });
+  }, []);
 
   // Entering Card Mode: a user switch focuses the selected card; a page load with a section hash
   // (shared deep link, reload) opens that card directly.
@@ -114,17 +119,17 @@ export function RogueBoard() {
     mounted.current = true;
     const active = usePortfolioStore.getState().activeSection;
     if (consumePendingModeFocus()) {
-      cards.current.get(active)?.focus({ preventScroll: true });
+      focusCard(active);
     } else if (parseSectionHash(window.location.hash)) {
       dispatch({ type: "OPEN", card: active });
     }
-  }, []);
+  }, [focusCard]);
 
   // The open card always shows the active section (back/forward, links inside a card).
   useEffect(() => {
     if (
       (state.status === "expanded" || state.status === "closing") &&
-      state.card !== activeSection
+      sectionOf(state.card) !== activeSection
     ) {
       dispatch({ type: "OPEN", card: activeSection });
     }
@@ -133,13 +138,12 @@ export function RogueBoard() {
   // Restoring: once the dialog is fully closed, focus returns to the card it came from.
   useEffect(() => {
     if (state.status === "idle") {
-      if (lastOpen.current)
-        cards.current.get(lastOpen.current)?.focus({ preventScroll: true });
+      if (lastOpen.current) focusCard(lastOpen.current);
       lastOpen.current = null;
     } else if (state.status === "expanded" || state.status === "closing") {
       lastOpen.current = state.card;
     }
-  }, [state]);
+  }, [state, focusCard]);
 
   // The bug takes its turn once the board is back to idle (never over an open card), shows its
   // move, then hands the turn back. Playing a card meanwhile resolves it at once (see `play`).
@@ -179,18 +183,19 @@ export function RogueBoard() {
   }, [boss]);
 
   const play = useCallback(
-    (card: SectionId) => {
+    (card: CardId) => {
       settleBoss();
+      playedSlot.current = Math.max(0, hand.indexOf(card));
       const element = cards.current.get(card);
       setFlight(
         element && field.current
           ? measureFlight(element.getBoundingClientRect(), field.current)
           : null,
       );
-      selectSection(card, "push");
+      selectFor(card);
       dispatch({ type: "PLAY", card, reducedMotion });
     },
-    [reducedMotion, settleBoss],
+    [reducedMotion, settleBoss, hand],
   );
 
   const close = useCallback(
@@ -200,11 +205,11 @@ export function RogueBoard() {
   const closed = useCallback(() => dispatch({ type: "CLOSED" }), []);
   const effectDone = useCallback(() => dispatch({ type: "EFFECT_DONE" }), []);
   const cardElement = useCallback(
-    (card: SectionId) => cards.current.get(card),
+    (card: CardId) => cards.current.get(card),
     [],
   );
 
-  function activate(card: SectionId, touch: boolean) {
+  function activate(card: CardId, touch: boolean) {
     if (state.status === "playing") dispatch({ type: "EFFECT_DONE" });
     else if (touch && !(state.status === "inspecting" && state.card === card))
       dispatch({ type: "INSPECT", card });
@@ -215,13 +220,12 @@ export function RogueBoard() {
   function onHandKeyDown(event: KeyboardEvent<HTMLUListElement>) {
     const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
     if (!step) return;
-    const ids = sections.map((section) => section.id);
-    const current = ids.findIndex(
+    const current = hand.findIndex(
       (id) => cards.current.get(id) === document.activeElement,
     );
     if (current < 0) return;
     event.preventDefault();
-    const next = ids[(current + step + ids.length) % ids.length];
+    const next = hand[(current + step + hand.length) % hand.length];
     cards.current.get(next)?.focus();
   }
 
@@ -255,13 +259,16 @@ export function RogueBoard() {
               &gt; click a card to play it, or drag it onto the bug_
             </span>
           </p>
+          <p className="deck-count font-mono">
+            Deck {board.deck.length} · Hand {hand.length}
+          </p>
         </header>
         {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
         <DndContext
           sensors={sensors}
           accessibility={{ announcements: dragAnnouncements }}
           onDragStart={({ active }) =>
-            dispatch({ type: "DRAG_START", card: active.id as SectionId })
+            dispatch({ type: "DRAG_START", card: active.id as CardId })
           }
           onDragOver={({ over }) =>
             dispatch({
@@ -281,7 +288,11 @@ export function RogueBoard() {
                   : null,
               );
               settleBoss();
-              selectSection(active.id as SectionId, "push");
+              playedSlot.current = Math.max(
+                0,
+                hand.indexOf(active.id as CardId),
+              );
+              selectFor(active.id as CardId);
             }
             dispatch({ type: "DROP", reducedMotion });
           }}
@@ -302,30 +313,29 @@ export function RogueBoard() {
               onEffectDone={effectDone}
               onReset={() => dispatch({ type: "RESET_BATTLE" })}
               renderFace={(card) => (
-                <CardFace
-                  section={sectionMeta(card)}
-                  stat={cardStats[card]}
-                  selected={card === activeSection}
-                />
+                <CardFace card={card} selected={card === activeSection} />
               )}
             />
           </div>
           <ul
-            aria-label="Sections"
+            aria-label="Hand"
             className="card-hand"
+            style={{ "--hand-count": hand.length } as CSSProperties}
             onKeyDown={onHandKeyDown}
           >
-            {sections.map((section, index) => (
+            {hand.map((card, index) => (
               <li
-                key={section.id}
+                key={card}
                 className="card-slot"
-                style={fanStyle(index)}
+                style={fanStyle(index, hand.length)}
                 data-inspecting={
-                  (state.status === "inspecting" &&
-                    state.card === section.id) ||
+                  (state.status === "inspecting" && state.card === card) ||
                   undefined
                 }
-                data-played={board.played.includes(section.id) || undefined}
+                data-played={
+                  (isSectionCard(card) && board.played.includes(card)) ||
+                  undefined
+                }
               >
                 {/* Dealt into the hand once on entry; the fan transform stays on the slot. */}
                 <m.div
@@ -335,16 +345,15 @@ export function RogueBoard() {
                 >
                   <SectionCard
                     ref={(element) => {
-                      if (element) cards.current.set(section.id, element);
-                      else cards.current.delete(section.id);
+                      if (element) cards.current.set(card, element);
+                      else cards.current.delete(card);
                     }}
-                    section={section}
-                    stat={cardStats[section.id]}
-                    selected={section.id === activeSection}
-                    played={board.played.includes(section.id)}
-                    onActivate={(touch) => activate(section.id, touch)}
-                    onSwipeUp={() => play(section.id)}
-                    onIntent={() => preloadSectionPanel(section.id)}
+                    card={card}
+                    selected={card === activeSection}
+                    played={isSectionCard(card) && board.played.includes(card)}
+                    onActivate={(touch) => activate(card, touch)}
+                    onSwipeUp={() => play(card)}
+                    onIntent={() => preloadSectionPanel(sectionOf(card))}
                   />
                 </m.div>
               </li>
@@ -366,11 +375,7 @@ export function RogueBoard() {
           >
             {dragged && (
               <div className="section-card card-overlay">
-                <CardFace
-                  section={dragged}
-                  stat={cardStats[dragged.id]}
-                  selected={dragged.id === activeSection}
-                />
+                <CardFace card={dragged} selected={dragged === activeSection} />
               </div>
             )}
           </DragOverlay>

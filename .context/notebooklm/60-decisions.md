@@ -429,3 +429,18 @@ Decision:
   shows "Play again"; content is never gated.
 Consequences: Card Mode load 71.9 kB gz; replaying cards now counts (P9.1's "damage once" rule
 superseded).
+
+## Decision: Deck (Roadmap P9.4, ADR-011)
+
+Status: Accepted (project owner request; owner chose skill cards per category, 5-card hand, project
+cards that attack and open their project)
+Date: 2026-09-27
+Source: ADR-011; Vitest (205 tests) and headless Chrome
+Decision:
+- 27 cards (`cards.ts`): sections, one per project, one upgrade per skill category; `CardId`.
+- Opening hand = 5 section cards; played cards go back into the deck at a random position; hand
+  refills to 5 (max 7); seeded PRNG in the board state keeps the reducer pure.
+- Projects/Skills draw 2 project/skill cards; project cards attack by rarity and open their relic;
+  skill cards give Strength +2, +1 card this turn, or a Block shield by category.
+- Sections not in hand stay reachable through the site header.
+Consequences: Card Mode load 73.0 kB gz; component tests pin the deal (`src/test/card-deal.ts`).

@@ -1,4 +1,8 @@
 // @vitest-environment jsdom
+
+vi.mock("@/features/rogue/battle", async (importOriginal) =>
+  (await import("@/test/card-deal")).dealAllSections(importOriginal),
+);
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -81,14 +85,21 @@ describe("mode system", () => {
     expectSingleRenderer();
   });
 
-  it("Card Mode Skills → Classic scrolls to #skills and focuses its heading", async () => {
+  it("a card played in Card Mode → Classic scrolls to its section and focuses its heading", async () => {
     const user = userEvent.setup();
     const { store } = await loadPage("/", "rogue");
-    await waitFor(() => expect(card("skills")).not.toBeNull());
+    // The opening hand is dealt at random from the section cards; play the first one.
+    await waitFor(() =>
+      expect(document.querySelector(".card-hand .section-card")).not.toBeNull(),
+    );
     expect(classicMounted()).toBe(false);
+    const first = document.querySelector<HTMLButtonElement>(
+      ".card-hand .section-card",
+    )!;
+    const section = first.id.replace("card-", "");
 
     const historyLength = window.history.length;
-    await user.click(card("skills")!);
+    await user.click(first);
     await waitFor(() =>
       expect(document.querySelector("dialog[open]")).not.toBeNull(),
     );
@@ -96,17 +107,17 @@ describe("mode system", () => {
     await waitFor(() =>
       expect(document.querySelector("dialog[open]")).toBeNull(),
     );
-    expect(window.location.hash).toBe("#skills");
+    expect(window.location.hash).toBe(`#${section}`);
     expect(window.history.length).toBe(historyLength + 1);
-    expect(store.getState().activeSection).toBe("skills");
+    expect(store.getState().activeSection).toBe(section);
 
     await user.click(toggle());
 
-    const skills = document.getElementById("skills");
-    expect(skills).not.toBeNull();
-    expect(scrollIntoView.mock.contexts).toContain(skills);
+    const target = document.getElementById(section);
+    expect(target).not.toBeNull();
+    expect(scrollIntoView.mock.contexts).toContain(target);
     expect(document.activeElement).toBe(
-      document.getElementById("skills-heading"),
+      document.getElementById(`${section}-heading`),
     );
     expectSingleRenderer();
   });

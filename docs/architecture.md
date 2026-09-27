@@ -162,6 +162,12 @@ idle again, never over an open card. Statuses are mechanics (Strength, Block, Do
 or a loss offers "Play again"; cards always open their sections. `battle.ts` owns the fight; the
 board only schedules the bug's turn.
 
+Deck (Roadmap P9.4, ADR-011): 27 cards — 7 sections, one per project, one upgrade per skill
+category (`cards.ts`). The opening hand is 5 section cards; each played card returns to the deck at
+a random position and the hand refills. Projects and Skills draw their kind of card; project cards
+attack and open their relic; skill cards upgrade the hero. A section whose card is in the deck
+stays one click away in the site header.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

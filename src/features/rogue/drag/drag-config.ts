@@ -1,12 +1,11 @@
 import type { Announcements } from "@dnd-kit/core";
-import { sections } from "@/domain/sections";
 import { BATTLEFIELD_ID } from "../Battlefield";
+import { cardFace, type CardId } from "../cards";
 
 /** Pointer must travel this far before a press becomes a drag, so plain clicks still open cards. */
 export const DRAG_ACTIVATION_DISTANCE = 8;
 
-const cardName = (id: string | number) =>
-  sections.find((section) => section.id === id)?.cardLabel ?? String(id);
+const cardName = (id: string | number) => cardFace(id as CardId).title;
 
 /** dnd-kit live-region messages for the mouse drag enhancement. */
 export const dragAnnouncements: Announcements = {

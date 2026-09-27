@@ -1,4 +1,9 @@
 // @vitest-environment jsdom
+import { vi } from "vitest";
+
+vi.mock("@/features/rogue/battle", async (importOriginal) =>
+  (await import("@/test/card-deal")).dealAllSections(importOriginal),
+);
 import {
   act,
   cleanup,
@@ -28,6 +33,7 @@ import {
 beforeAll(() => {
   installMatchMedia();
   installDialog();
+  Element.prototype.scrollIntoView = () => {};
   // A played card runs its effect (EFFECT_MS) before its dialog opens.
   configure({ asyncUtilTimeout: 3000 });
 });
@@ -47,9 +53,9 @@ const openDialog = () =>
   document.querySelector<HTMLDialogElement>("dialog[open]");
 
 describe("Card Mode board", () => {
-  it("renders every section as a card button, in registry order", () => {
+  it("renders the dealt hand as card buttons", () => {
     render(<RogueBoard />);
-    const hand = screen.getByRole("list", { name: "Sections" });
+    const hand = screen.getByRole("list", { name: "Hand" });
     const ids = [...hand.querySelectorAll("button")].map((button) => button.id);
     expect(ids).toEqual(SECTION_IDS.map((id) => `card-${id}`));
     expect(card("about").getAttribute("aria-current")).toBe("true");
@@ -75,7 +81,7 @@ describe("Card Mode board", () => {
     },
   );
 
-  it("Escape closes the card and focus returns to it", async () => {
+  it("Escape closes the card; focus goes to the card now in its slot", async () => {
     const user = userEvent.setup();
     render(<RogueBoard />);
     await user.click(card("skills"));
@@ -83,8 +89,9 @@ describe("Card Mode board", () => {
 
     await user.keyboard("{Escape}");
     await waitFor(() => expect(openDialog()).toBeNull());
-    expect(document.activeElement).toBe(card("skills"));
-    expect(card("skills").getAttribute("aria-current")).toBe("true");
+    // The played card went back into the deck; its neighbour slid into its slot.
+    expect(card("skills")).toBeNull();
+    expect(document.activeElement).toBe(card("experience"));
   });
 
   it("the close button and a backdrop click both close", async () => {
@@ -94,7 +101,7 @@ describe("Card Mode board", () => {
     await user.click(await screen.findByRole("button", { name: /close/i }));
     await waitFor(() => expect(openDialog()).toBeNull());
 
-    await user.click(card("contact"));
+    await user.click(card("education"));
     await waitFor(() => expect(openDialog()).not.toBeNull());
     fireEvent.click(openDialog()!);
     await waitFor(() => expect(openDialog()).toBeNull());
@@ -212,7 +219,8 @@ describe("playing cards on the battlefield (P9.1)", () => {
     expect(
       await screen.findByRole("dialog", { name: /experience/i }),
     ).toBeTruthy();
-    expect(slot("experience").hasAttribute("data-played")).toBe(true);
+    // Played: back into the deck, replaced in the hand.
+    expect(card("experience")).toBeNull();
   });
 
   it("each combatant keeps a single art once an effect has played", async () => {
@@ -243,7 +251,8 @@ describe("playing cards on the battlefield (P9.1)", () => {
 
   it("every card names its type and target", () => {
     render(<RogueBoard />);
-    expect(card("projects").textContent).toMatch(/attack card, hits/);
+    expect(card("cv").textContent).toMatch(/attack card, hits/);
+    expect(card("projects").textContent).toMatch(/skill card, acts on/);
     expect(card("contact").textContent).toMatch(/skill card, acts on/);
     expect(card("about").textContent).toMatch(/power card, acts on/);
   });
@@ -322,7 +331,6 @@ describe("playing cards on the battlefield (P9.1)", () => {
       pointerType: "touch",
       clientY: 200,
     });
-    fireEvent.click(card("education"), { detail: 1 });
     expect(
       document.querySelector(".battlefield")?.getAttribute("data-playing"),
     ).toBe("education");
@@ -411,5 +419,49 @@ describe("turns (P9.3)", () => {
       document.querySelector('[data-combatant="hero"] .combatant-statuses')
         ?.textContent,
     ).not.toContain("Dodge");
+  });
+});
+
+describe("the deck (P9.4)", () => {
+  const handIds = () =>
+    [
+      ...screen.getByRole("list", { name: "Hand" }).querySelectorAll("button"),
+    ].map((button) => button.id);
+  const deckCount = () =>
+    Number(
+      document.querySelector(".deck-count")?.textContent?.match(/\d+/)?.[0],
+    );
+
+  beforeEach(() => setReducedMotion(true));
+
+  it("Projects pulls project cards into the hand, and one opens its relic", async () => {
+    render(<RogueBoard />);
+    const before = deckCount();
+    fireEvent.click(card("projects"));
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+
+    const projectIds = handIds().filter((id) => id.startsWith("card-project-"));
+    expect(projectIds).toHaveLength(1);
+    // Projects went back into the deck, one project card came out (hand capped at 7).
+    expect(deckCount()).toBe(before);
+
+    const id = projectIds[0].replace("card-project-", "");
+    fireEvent.click(document.getElementById(projectIds[0])!);
+    expect(window.location.hash).toBe(`#project-${id}`);
+    const dialog = await screen.findByRole("dialog", { name: /projects/i });
+    await waitFor(() =>
+      expect(
+        dialog
+          .querySelector(`#relic-${id} button`)
+          ?.getAttribute("aria-expanded"),
+      ).toBe("true"),
+    );
+  });
+
+  it("the header count follows the deck and the hand", () => {
+    render(<RogueBoard />);
+    expect(document.querySelector(".deck-count")?.textContent).toMatch(
+      /Deck \d+ · Hand 7/,
+    );
   });
 });

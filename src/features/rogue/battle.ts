@@ -1,11 +1,5 @@
-import {
-  contactLinks,
-  education,
-  experience,
-  profile,
-  projects,
-  skills,
-} from "@/content";
+import { profile } from "@/content";
+import { sections } from "@/domain/sections";
 import type { SectionId } from "@/domain/types";
 import {
   cardReducer,
@@ -13,100 +7,29 @@ import {
   type CardEvent,
   type CardState,
 } from "./card-machine";
+import {
+  cardAction,
+  projectCards,
+  sectionOf,
+  skillCards,
+  type CardId,
+} from "./cards";
 
 /**
- * The battlefield of Card Mode (Roadmap P9.1–P9.3): a turn-based duel between the hero (the
- * portfolio's owner) and an original ASCII bug. Every two cards the hero plays, the bug takes a
- * turn. Game data only — the professional content stays in the section panels, and card effects
- * draw their numbers and tokens from it, never a second copy. The game never gates content: a card
- * always opens its dialog, whatever the state of the fight.
+ * The battlefield of Card Mode (Roadmap P9.1–P9.4): a turn-based duel between the hero (the
+ * portfolio's owner) and an original ASCII bug, played from a deck. Every two cards the hero plays,
+ * the bug takes a turn. The game never gates content: a card always opens its dialog, whatever
+ * the state of the fight, and the site header reaches every section even when its card is in
+ * the deck.
  */
 export const BUG = { name: "The Legacy Bug", maxHp: 100 } as const;
 export const HERO = { name: profile.name.split(" ")[0], maxHp: 50 } as const;
 
 /** Cards the hero plays before the bug acts. */
 export const ACTIONS_PER_TURN = 2;
-
-export type CardType = "attack" | "skill" | "power";
-export type Target = "bug" | "hero";
-
-export type EffectKind =
-  "summon" | "buff" | "combo" | "burst" | "runes" | "coins" | "scroll";
-
-export interface CardAction {
-  type: CardType;
-  target: Target;
-  kind: EffectKind;
-  /** What the card does, shown on the battlefield. */
-  verb: string;
-  /** Glyphs or words the effect throws at its target. */
-  tokens: string[];
-  /** Attacks: hits × (damage per hit + Strength). */
-  attack?: { hits: number; perHit: number };
-  block?: number;
-  heal?: number;
-  strength?: number;
-  dodge?: boolean;
-}
-
-export const cardActions: Record<SectionId, CardAction> = {
-  about: {
-    type: "power",
-    target: "hero",
-    kind: "summon",
-    verb: "Dodge the next attack",
-    tokens: ["@"],
-    dodge: true,
-  },
-  skills: {
-    type: "power",
-    target: "hero",
-    kind: "buff",
-    verb: "Strength +2",
-    tokens: skills.slice(0, 6).map((skill) => skill.name),
-    strength: 2,
-  },
-  experience: {
-    type: "attack",
-    target: "bug",
-    kind: "combo",
-    verb: `${experience.length}-hit combo`,
-    tokens: experience.map((entry) => String(entry.startYear)),
-    attack: { hits: experience.length, perHit: 4 },
-  },
-  projects: {
-    type: "attack",
-    target: "bug",
-    kind: "burst",
-    verb: `Relic burst ×${projects.length}`,
-    tokens: projects.slice(0, 8).map(() => "✦"),
-    attack: { hits: 1, perHit: projects.length * 2 },
-  },
-  education: {
-    type: "skill",
-    target: "hero",
-    kind: "runes",
-    verb: `Block +${education.length}`,
-    tokens: education.map((_, index) => (index % 2 ? "◆" : "◇")),
-    block: education.length,
-  },
-  contact: {
-    type: "skill",
-    target: "hero",
-    kind: "coins",
-    verb: `Merchant potion: heal ${contactLinks.length * 3}`,
-    tokens: [...contactLinks, ...contactLinks].map(() => "$"),
-    heal: contactLinks.length * 3,
-  },
-  cv: {
-    type: "attack",
-    target: "bug",
-    kind: "scroll",
-    verb: "Résumé scroll",
-    tokens: ["≡", "≡", "≡"],
-    attack: { hits: 1, perHit: 15 },
-  },
-};
+/** The hand refills to this after each play; draw effects can push it up to the maximum. */
+export const HAND_SIZE = 5;
+export const MAX_HAND = 7;
 
 export type BossMove = "attack" | "charge" | "heal";
 
@@ -153,8 +76,10 @@ export const initialCombat: Combat = {
 export type Hit =
   | {
       by: "card";
-      card: SectionId;
+      card: CardId;
       damage: number;
+      /** Cards the play pulled from the deck into the hand. */
+      drawn: CardId[];
       /** Increments per event, so each one restarts its animation. */
       count: number;
     }
@@ -170,18 +95,64 @@ export type Hit =
 
 export interface BoardState {
   card: CardState;
-  /** Cards opened this session (read), in order. */
+  /** Draw pile, top first. */
+  deck: CardId[];
+  hand: CardId[];
+  /** Sections opened this session (read), in order. */
   played: SectionId[];
   combat: Combat;
   lastHit: Hit | null;
+  /** PRNG state: shuffles and reinsertions stay a pure function of the events. */
+  seed: number;
 }
 
-export const initialBoardState: BoardState = {
-  card: initialCardState,
-  played: [],
-  combat: initialCombat,
-  lastHit: null,
-};
+/** mulberry32: [a number in [0, 1), the next seed]. */
+export function random(seed: number): [number, number] {
+  const next = (seed + 0x6d2b79f5) >>> 0;
+  let t = next;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return [((t ^ (t >>> 14)) >>> 0) / 4294967296, next];
+}
+
+function shuffle<T>(items: readonly T[], seed: number): [T[], number] {
+  const result = [...items];
+  let state = seed;
+  for (let index = result.length - 1; index > 0; index--) {
+    const [value, next] = random(state);
+    state = next;
+    const swap = Math.floor(value * (index + 1));
+    [result[index], result[swap]] = [result[swap], result[index]];
+  }
+  return [result, state];
+}
+
+/**
+ * The opening hand is dealt from the section cards only, so the first thing a visitor sees is the
+ * portfolio's sections; project and skill cards wait in the shuffled deck.
+ */
+function deal(seed: number): Pick<BoardState, "deck" | "hand" | "seed"> {
+  const [shuffledSections, afterSections] = shuffle(
+    sections.map((section) => section.id),
+    seed,
+  );
+  const hand = shuffledSections.slice(0, HAND_SIZE);
+  const [deck, afterDeck] = shuffle(
+    [...shuffledSections.slice(HAND_SIZE), ...projectCards, ...skillCards],
+    afterSections,
+  );
+  return { hand, deck, seed: afterDeck };
+}
+
+export function createBoardState(seed: number): BoardState {
+  return {
+    card: initialCardState,
+    played: [],
+    combat: initialCombat,
+    lastHit: null,
+    ...deal(seed),
+  };
+}
 
 export type BoardEvent =
   | CardEvent
@@ -189,7 +160,7 @@ export type BoardEvent =
   | { type: "BOSS_ACT" }
   /** The bug's move has shown (or was skipped): the hero's next turn starts. */
   | { type: "BOSS_DONE" }
-  /** "Play again" after a win or a loss. */
+  /** "Play again" after a win or a loss: the fight restarts with a fresh deal. */
   | { type: "RESET_BATTLE" };
 
 export function bossMove(combat: Pick<Combat, "turn">): BossMove {
@@ -207,18 +178,53 @@ export function bossIntent(combat: Combat): { move: BossMove; amount: number } {
   return { move, amount: move === "heal" ? BOSS_HEAL : 0 };
 }
 
-export function cardDamage(card: SectionId, strength: number): number {
-  const attack = cardActions[card].attack;
+export function cardDamage(card: CardId, strength: number): number {
+  const attack = cardAction(card).attack;
   return attack ? attack.hits * (attack.perHit + strength) : 0;
 }
 
+const isKind = (card: CardId, kind: "project" | "skill") =>
+  card.startsWith(`${kind}:`);
+
+/**
+ * A card leaves the hand: its draw effect pulls matching cards from the deck, the hand refills to
+ * its size from the top, and the played card goes back into the deck at a random position.
+ */
+function cycle(
+  state: BoardState,
+  card: CardId,
+): Pick<BoardState, "deck" | "hand" | "seed"> & { drawn: CardId[] } {
+  let hand = state.hand.filter((held) => held !== card);
+  let deck = [...state.deck];
+  const drawn: CardId[] = [];
+  const draw = cardAction(card).draw;
+  if (draw) {
+    for (const candidate of state.deck) {
+      if (drawn.length === draw.count || hand.length >= MAX_HAND) break;
+      if (!isKind(candidate, draw.from)) continue;
+      drawn.push(candidate);
+      hand = [...hand, candidate];
+      deck = deck.filter((held) => held !== candidate);
+    }
+  }
+  while (hand.length < HAND_SIZE && deck.length > 0) {
+    drawn.push(deck[0]);
+    hand = [...hand, deck[0]];
+    deck = deck.slice(1);
+  }
+  const [value, seed] = random(state.seed);
+  const at = Math.floor(value * (deck.length + 1));
+  deck = [...deck.slice(0, at), card, ...deck.slice(at)];
+  return { hand, deck, seed, drawn };
+}
+
 /** A played card: its effect on the fight, and one of the turn's actions spent. */
-function applyCard(combat: Combat, card: SectionId): [Combat, number] {
+function applyCard(combat: Combat, card: CardId): [Combat, number] {
   if (combat.outcome || combat.boss !== "waiting") return [combat, 0];
-  const action = cardActions[card];
+  const action = cardAction(card);
   const damage = Math.min(combat.bugHp, cardDamage(card, combat.strength));
   const bugHp = combat.bugHp - damage;
-  const actionsLeft = combat.actionsLeft - 1;
+  const actionsLeft = combat.actionsLeft - 1 + (action.energy ?? 0);
   return [
     {
       ...combat,
@@ -228,7 +234,7 @@ function applyCard(combat: Combat, card: SectionId): [Combat, number] {
       dodge: combat.dodge || !!action.dodge,
       heroHp: Math.min(HERO.maxHp, combat.heroHp + (action.heal ?? 0)),
       actionsLeft,
-      boss: bugHp > 0 && actionsLeft === 0 ? "pending" : "waiting",
+      boss: bugHp > 0 && actionsLeft <= 0 ? "pending" : "waiting",
       outcome: bugHp === 0 ? "won" : null,
     },
     damage,
@@ -281,8 +287,9 @@ function bossAct(state: BoardState): BoardState {
 }
 
 /**
- * The card machine plus the fight. A card played from the hand (PLAY, or a drop on the
- * battlefield) is an action; opening a card directly (URL hash, back/forward) only marks it read.
+ * The card machine plus the deck and the fight. A card played from the hand (PLAY, or a drop on
+ * the battlefield) is an action and cycles through the deck; opening a section directly (URL hash,
+ * back/forward, header links) only marks it read.
  */
 export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
   switch (event.type) {
@@ -302,7 +309,12 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
         },
       };
     case "RESET_BATTLE":
-      return { ...state, combat: initialCombat, lastHit: null };
+      return {
+        ...state,
+        combat: initialCombat,
+        lastHit: null,
+        ...deal(state.seed),
+      };
   }
 
   const card = cardReducer(state.card, event);
@@ -318,23 +330,32 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
       : null;
   if (!entering) return { ...state, card };
 
-  const played = state.played.includes(entering)
+  const section = sectionOf(entering);
+  const played = state.played.includes(section)
     ? state.played
-    : [...state.played, entering];
-  const fromHand = event.type === "PLAY" || event.type === "DROP";
+    : [...state.played, section];
+  const fromHand =
+    (event.type === "PLAY" || event.type === "DROP") &&
+    state.hand.includes(entering);
   if (!fromHand) return { ...state, card, played };
 
+  const { drawn, ...cycled } = cycle(state, entering);
   const [combat, damage] = applyCard(state.combat, entering);
-  if (combat === state.combat) return { ...state, card, played };
   return {
+    ...state,
+    ...cycled,
     card,
     played,
     combat,
-    lastHit: {
-      by: "card",
-      card: entering,
-      damage,
-      count: (state.lastHit?.count ?? 0) + 1,
-    },
+    lastHit:
+      combat === state.combat && drawn.length === 0
+        ? state.lastHit
+        : {
+            by: "card",
+            card: entering,
+            damage,
+            drawn,
+            count: (state.lastHit?.count ?? 0) + 1,
+          },
   };
 }

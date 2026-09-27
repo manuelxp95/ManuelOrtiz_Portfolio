@@ -1,7 +1,6 @@
 import { useDndMonitor, type ClientRect } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
-import type { SectionId } from "@/domain/types";
-import type { Target } from "./battle";
+import type { CardId, Target } from "./cards";
 
 interface Point {
   x: number;
@@ -10,7 +9,7 @@ interface Point {
 
 interface Aim {
   /** What the arrow starts from: the dragged card, or the card lifted by a tap. */
-  source: "drag" | SectionId;
+  source: "drag" | CardId;
   from: Point;
   to: Point;
 }
@@ -36,9 +35,9 @@ interface TargetArrowProps {
   /** Who the aimed card acts on; null hides the arrow. */
   target: Target | null;
   /** The card lifted by a tap (touch aiming); dragging is followed through dnd-kit. */
-  lifted: SectionId | null;
+  lifted: CardId | null;
   /** Looks up a card's element in the hand. */
-  cardElement: (card: SectionId) => HTMLElement | undefined;
+  cardElement: (card: CardId) => HTMLElement | undefined;
   dragging: boolean;
 }
 

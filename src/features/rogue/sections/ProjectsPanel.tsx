@@ -8,24 +8,10 @@ import {
   ProjectSummary,
 } from "@/components/sections/ProjectDetails";
 import { projects } from "@/content";
-import type { Project } from "@/domain/types";
 import { RELIC_MODELS } from "../ascii/scenes";
+import { rarityLabels, rarityOf } from "../cards";
 import { RelicModel } from "../inspector/RelicModel";
 import { enter, layoutSpring, stagger, useEntrance } from "../motion-config";
-
-type Rarity = "legendary" | "rare" | "common";
-
-/** Presentation only: shipped professional work outranks featured work, which outranks the rest. */
-function rarityOf(project: Project): Rarity {
-  if (project.context === "professional" || project.impact) return "legendary";
-  return project.featured ? "rare" : "common";
-}
-
-const rarityLabels: Record<Rarity, string> = {
-  legendary: "Legendary",
-  rare: "Rare",
-  common: "Common",
-};
 
 /** `#project-<id>` (a Classic anchor, also linked from the quest path) opens that relic. */
 function projectFromHash(): string | null {

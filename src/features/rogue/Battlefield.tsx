@@ -1,19 +1,22 @@
 import { useDroppable } from "@dnd-kit/core";
 import { m, type TargetAndTransition, type Transition } from "motion/react";
 import { useEffect, type ReactNode } from "react";
-import type { SectionId } from "@/domain/types";
 import {
   BUG,
   bossIntent,
-  cardActions,
   HERO,
   type BoardState,
   type BossMove,
   type Combat,
-  type EffectKind,
   type Hit,
-  type Target,
 } from "./battle";
+import {
+  cardAction,
+  cardFace,
+  type CardId,
+  type EffectKind,
+  type Target,
+} from "./cards";
 
 export const BATTLEFIELD_ID = "battlefield";
 
@@ -153,7 +156,7 @@ interface CombatantProps {
   aimed: boolean;
   defeated: boolean;
   /** The card whose effect is landing on this combatant. */
-  cardEffect: { card: SectionId; key: number } | null;
+  cardEffect: { card: CardId; key: number } | null;
   popup: Popup | null;
   /** Shakes when hit (key restarts it). */
   shakeKey: number | null;
@@ -178,7 +181,7 @@ function Combatant({
   lunge,
   reducedMotion,
 }: CombatantProps) {
-  const action = cardEffect ? cardActions[cardEffect.card] : null;
+  const action = cardEffect ? cardAction(cardEffect.card) : null;
   const moving = !reducedMotion && (shakeKey !== null || lunge !== null);
 
   return (
@@ -284,10 +287,13 @@ const intentLabel = (intent: { move: BossMove; amount: number }) =>
 /** What the live region says about the last card or bug move. */
 function describe(hit: Hit, combat: Combat): string {
   if (hit.by === "card") {
-    const action = cardActions[hit.card];
+    const action = cardAction(hit.card);
+    const drew = hit.drawn.length
+      ? ` Drew ${hit.drawn.map((card) => cardFace(card).title).join(", ")}.`
+      : "";
     return action.target === "hero"
-      ? `${action.verb}. ${HERO.name} has ${combat.heroHp} HP.`
-      : `${action.verb}: ${BUG.name} takes ${hit.damage} damage, ${combat.bugHp} HP left.`;
+      ? `${action.verb}. ${HERO.name} has ${combat.heroHp} HP.${drew}`
+      : `${action.verb}: ${BUG.name} takes ${hit.damage} damage, ${combat.bugHp} HP left.${drew}`;
   }
   if (hit.move === "charge")
     return `${BUG.name} charges up: its next attack deals double damage.`;
@@ -312,7 +318,7 @@ interface BattlefieldProps {
   /** "Play again" after a win or a loss. */
   onReset: () => void;
   /** Renders the played card's face for the flight. */
-  renderFace: (card: SectionId) => ReactNode;
+  renderFace: (card: CardId) => ReactNode;
 }
 
 /**
@@ -347,7 +353,7 @@ export function Battlefield({
   }, [playing, onEffectDone]);
 
   const effectOn = (side: Target) =>
-    playing && cardHit?.card === playing && cardActions[playing].target === side
+    playing && cardHit?.card === playing && cardAction(playing).target === side
       ? { card: playing, key: cardHit.count }
       : null;
 
