@@ -12,7 +12,17 @@ import {
   type BoardState,
   type Combat,
 } from "@/features/rogue/battle";
-import type { CardId } from "@/features/rogue/cards";
+import {
+  allCards,
+  baseOf,
+  cardAction,
+  cardElementId,
+  goldenOf,
+  isGolden,
+  projectCards,
+  sectionOf,
+  type CardId,
+} from "@/features/rogue/cards";
 import {
   OFFER_SIZE,
   REWARD_EVERY,
@@ -105,12 +115,13 @@ describe("modifier offers (P9.7)", () => {
     }
   });
 
-  it("every modifier has a name, a text and a stat or a one-off effect", () => {
+  it("every modifier has a name, a glyph, a text and a stat or a one-off effect", () => {
     for (const id of modifierIds) {
       const def = modifier(id);
       expect(def.name).toBeTruthy();
+      expect(def.glyph).toBeTruthy();
       expect(def.text).toBeTruthy();
-      expect(def.stats ?? def.onPick).toBeDefined();
+      expect(def.stats ?? def.onPick ?? def.goldenCards).toBeDefined();
     }
     expect(Object.keys(modifiers).length).toBeGreaterThanOrEqual(4);
   });
@@ -202,5 +213,46 @@ describe("modifier effects", () => {
     const damage = cardDamage("cv", 0);
     expect(hit.combat.heroHp).toBe(20 + Math.round(damage * 0.15));
     expect(hit.lastHit).toMatchObject({ healed: Math.round(damage * 0.15) });
+  });
+});
+
+describe("golden cards", () => {
+  it("a golden card opens the same section with every number ×1.5, rounded up", () => {
+    const golden = goldenOf("cv");
+    expect(isGolden(golden)).toBe(true);
+    expect(baseOf(golden)).toBe("cv");
+    expect(sectionOf(goldenOf(projectCards[0]))).toBe("projects");
+    expect(cardAction(golden).attack).toEqual({ hits: 1, perHit: 23 });
+    expect(cardDamage(golden, 0)).toBe(23);
+    expect(cardAction(goldenOf("contact")).heal).toBe(
+      Math.ceil(cardAction("contact").heal! * 1.5),
+    );
+    expect(cardAction(goldenOf("projects")).draw?.count).toBe(3);
+    expect(cardAction(goldenOf("about")).dodge).toBe(true);
+    expect(cardElementId(goldenOf("skill:ai"))).toBe("card-gold-skill-ai");
+  });
+
+  it("Gold Standard shuffles 3 golden copies of distinct random cards into the deck", () => {
+    const board = offering(["gold-standard", "linter", "refactor"]);
+    const picked = run([{ type: "PICK_MODIFIER", id: "gold-standard" }], board);
+    const added = picked.deck.filter(isGolden);
+    expect(added).toHaveLength(3);
+    expect(new Set(added).size).toBe(3);
+    for (const card of added) expect(allCards).toContain(baseOf(card));
+    expect(picked.deck).toHaveLength(board.deck.length + 3);
+    const again = run([{ type: "PICK_MODIFIER", id: "gold-standard" }], {
+      ...picked,
+      combat: { ...picked.combat, reward: ["gold-standard"] },
+    });
+    const all = again.deck.filter(isGolden);
+    expect(new Set(all).size).toBe(6);
+  });
+
+  it("a golden card played from the hand hits harder and goes back into the deck golden", () => {
+    const golden = goldenOf("cv");
+    const hit = run(play(golden), holding([golden, "about"]));
+    expect(hit.combat.bugHp).toBe(100 - 23);
+    expect(hit.played).toContain("cv");
+    expect(hit.deck).toContain(golden);
   });
 });

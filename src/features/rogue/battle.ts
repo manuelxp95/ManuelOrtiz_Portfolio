@@ -8,7 +8,10 @@ import {
   type CardState,
 } from "./card-machine";
 import {
+  allCards,
+  baseOf,
   cardAction,
+  goldenOf,
   projectCards,
   sectionOf,
   skillCards,
@@ -213,7 +216,7 @@ export function cardDamage(card: CardId, strength: number): number {
 }
 
 const isKind = (card: CardId, kind: "project" | "skill") =>
-  card.startsWith(`${kind}:`);
+  baseOf(card).startsWith(`${kind}:`);
 
 /**
  * A card leaves the hand: its draw effect pulls matching cards from the deck, the hand refills to
@@ -405,18 +408,44 @@ function nextTurn(state: BoardState): BoardState {
   };
 }
 
-/** A picked modifier stacks and applies its one-off effect; the fight resumes. */
-function pickModifier(combat: Combat, id: ModifierId): Combat {
-  if (!combat.reward?.includes(id)) return combat;
+/** Golden copies of random cards not golden yet, each shuffled into the deck. */
+function addGoldenCards(
+  state: BoardState,
+  count: number,
+): Pick<BoardState, "deck" | "seed"> {
+  const owned = new Set([...state.hand, ...state.deck]);
+  let candidates = allCards.filter((card) => !owned.has(goldenOf(card)));
+  let { deck, seed } = state;
+  for (let added = 0; added < count && candidates.length > 0; added++) {
+    const [pick, afterPick] = random(seed);
+    const [place, afterPlace] = random(afterPick);
+    seed = afterPlace;
+    const base = candidates[Math.floor(pick * candidates.length)];
+    candidates = candidates.filter((card) => card !== base);
+    const at = Math.floor(place * (deck.length + 1));
+    deck = [...deck.slice(0, at), goldenOf(base), ...deck.slice(at)];
+  }
+  return { deck, seed };
+}
+
+/** A picked modifier stacks and applies its one-off effects; the fight resumes. */
+function pickModifier(state: BoardState, id: ModifierId): BoardState {
+  const { combat } = state;
+  if (!combat.reward?.includes(id)) return state;
   const picked: Combat = {
     ...combat,
     modifiers: { ...combat.modifiers, [id]: (combat.modifiers[id] ?? 0) + 1 },
     reward: null,
   };
-  const { onPick } = modifier(id);
-  if (!onPick) return picked;
+  const { onPick, goldenCards } = modifier(id);
   const { heroHp, block } = picked;
-  return { ...picked, ...onPick({ heroHp, block }, statsOf(picked)) };
+  return {
+    ...state,
+    ...(goldenCards ? addGoldenCards(state, goldenCards) : {}),
+    combat: onPick
+      ? { ...picked, ...onPick({ heroHp, block }, statsOf(picked)) }
+      : picked,
+  };
 }
 
 /**
@@ -432,10 +461,8 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
         : state;
     case "BOSS_DONE":
       return state.combat.boss === "acting" ? nextTurn(state) : state;
-    case "PICK_MODIFIER": {
-      const combat = pickModifier(state.combat, event.id);
-      return combat === state.combat ? state : { ...state, combat };
-    }
+    case "PICK_MODIFIER":
+      return pickModifier(state, event.id);
     case "SKIP_REWARD":
       return state.combat.reward
         ? { ...state, combat: { ...state.combat, reward: null } }

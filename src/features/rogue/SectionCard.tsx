@@ -4,9 +4,11 @@ import { cardGlyphs } from "./ascii/glyphs.generated";
 import { BUG, HERO } from "./battle";
 import { buildCardFace } from "./card-face";
 import {
+  baseOf,
   cardAction,
   cardElementId,
   cardFace,
+  isGolden,
   isSectionCard,
   sectionOf,
   type CardId,
@@ -24,7 +26,11 @@ interface CardFaceProps {
 export function CardFace({ card, selected }: CardFaceProps) {
   const face = cardFace(card);
   return (
-    <span aria-hidden="true" className="card-face">
+    <span
+      aria-hidden="true"
+      className="card-face"
+      data-golden={isGolden(card) || undefined}
+    >
       {buildCardFace({
         title: face.title,
         glyph: cardGlyphs[face.glyph],
@@ -70,9 +76,11 @@ export function SectionCard({
   const action = cardAction(card);
   const aim =
     action.target === "bug" ? `hits ${BUG.name}` : `acts on ${HERO.name}`;
-  const kind = isSectionCard(card)
-    ? `${face.label} — ${face.title}`
-    : `${face.title} — ${card.startsWith("project:") ? "project" : "skill"} card, opens ${sectionOf(card)}`;
+  const base = baseOf(card);
+  const golden = isGolden(card) ? "Golden " : "";
+  const kind = isSectionCard(base)
+    ? `${golden}${face.label} — ${face.title}`
+    : `${golden}${face.title} — ${base.startsWith("project:") ? "project" : "skill"} card, opens ${sectionOf(card)}`;
 
   function onPointerDown(event: PointerEvent<HTMLButtonElement>) {
     press.current = { touch: event.pointerType === "touch", y: event.clientY };

@@ -302,3 +302,15 @@ Headless Chrome (1280 px and 390 px), keyboard only: after four plays (two round
 reads "Round 2 cleared · choose an upgrade" and the offer dialog opens with focus on the first
 offer; Tab + Enter picks, the dialog closes, focus returns to a hand card and the hero shows the
 modifier's status chip; no console errors. The Card Mode load now has 2.9 kB of headroom.
+
+### P9.7 follow-up — floating offer and golden cards (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 77.7 kB (+0.6 kB: golden cards, offer glyphs and rise) |
+| All Card Mode chunks | ≤ 120 kB | 88.4 kB |
+
+Headless Chrome (1280 px and 390 px): the offer cards rise from below the screen one after another
+and settle at the top; picking Gold Standard puts golden cards into the deck, and one later drawn
+into the hand shows the gold face and "★ golden ×1.5"; no console errors.

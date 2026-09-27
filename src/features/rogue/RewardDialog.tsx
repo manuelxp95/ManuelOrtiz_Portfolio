@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { modifier, type ModifierId, type Stacks } from "./modifiers";
 
 interface RewardDialogProps {
@@ -11,7 +11,8 @@ interface RewardDialogProps {
 
 /**
  * The upgrade pick (Roadmap P9.7) as a native modal <dialog>: the fight is paused while it is open.
- * Every offer is a button; Escape or "Skip" declines, so the pause never traps the visitor.
+ * The offers are cards floating at the top of the screen that rise one after another from below
+ * it. Every offer is a button; Escape or "Skip" declines, so the pause never traps the visitor.
  */
 export function RewardDialog({
   offer,
@@ -52,11 +53,15 @@ export function RewardDialog({
             &gt; it stacks for the rest of the fight_
           </p>
           <ul className="reward-offers">
-            {offer.map((id) => {
-              const { name, text, rarity } = modifier(id);
+            {offer.map((id, index) => {
+              const { name, glyph, text, rarity } = modifier(id);
               const stacks = held[id] ?? 0;
               return (
-                <li key={id}>
+                <li
+                  key={id}
+                  className="reward-slot"
+                  style={{ "--rise-index": index } as CSSProperties}
+                >
                   <button
                     type="button"
                     className="reward-card"
@@ -64,6 +69,9 @@ export function RewardDialog({
                     onClick={() => onPick(id)}
                   >
                     <span className="reward-rarity">{rarity}</span>
+                    <span aria-hidden="true" className="reward-glyph">
+                      {glyph}
+                    </span>
                     <span className="reward-name">{name}</span>
                     <span className="reward-text">{text}</span>
                     {stacks > 0 && (

@@ -48,6 +48,8 @@ export type Rarity = "common" | "rare";
 
 export interface ModifierDef {
   name: string;
+  /** Big symbol on its card. */
+  glyph: string;
   /** What one pick does, on its card. */
   text: string;
   rarity: Rarity;
@@ -57,6 +59,8 @@ export interface ModifierDef {
   stats?: Partial<HeroStats>;
   /** One-off effect when picked, applied after the stack is counted. */
   onPick?: (vitals: Vitals, stats: HeroStats) => Vitals;
+  /** One-off: golden copies of this many random cards are shuffled into the deck. */
+  goldenCards?: number;
   /** Status chip for a held modifier; one-off modifiers have none. */
   badge?: (stacks: number) => string;
 }
@@ -66,6 +70,7 @@ const percent = (value: number) => `${Math.round(value * 100)}%`;
 export const modifiers = {
   refactor: {
     name: "Refactor",
+    glyph: "⚒",
     text: "+0.5× damage on every card, for good",
     rarity: "rare",
     stats: { damageMultiplier: 0.5 },
@@ -73,6 +78,7 @@ export const modifiers = {
   },
   "coffee-break": {
     name: "Coffee Break",
+    glyph: "☕",
     text: "Heal 25% of your max HP",
     rarity: "common",
     onPick: (vitals, stats) => ({
@@ -85,6 +91,7 @@ export const modifiers = {
   },
   multithreading: {
     name: "Multithreading",
+    glyph: "⇉",
     text: "+10% chance an attack strikes once more",
     rarity: "common",
     maxStacks: 5,
@@ -93,6 +100,7 @@ export const modifiers = {
   },
   "edge-case": {
     name: "Edge Case",
+    glyph: "✷",
     text: "+10% critical chance (critical hits deal ×2)",
     rarity: "common",
     maxStacks: 5,
@@ -101,6 +109,7 @@ export const modifiers = {
   },
   "rubber-duck": {
     name: "Rubber Duck",
+    glyph: "◔",
     text: "+10% chance to dodge the bug's attacks",
     rarity: "common",
     maxStacks: 5,
@@ -109,6 +118,7 @@ export const modifiers = {
   },
   "unit-tests": {
     name: "Unit Tests",
+    glyph: "✔",
     text: "Start each turn with +3 Block",
     rarity: "common",
     stats: { turnBlock: 3 },
@@ -116,6 +126,7 @@ export const modifiers = {
   },
   linter: {
     name: "Linter",
+    glyph: "⚠",
     text: "The bug takes 3 damage whenever it attacks",
     rarity: "common",
     stats: { thorns: 3 },
@@ -123,6 +134,7 @@ export const modifiers = {
   },
   "garbage-collector": {
     name: "Garbage Collector",
+    glyph: "♻",
     text: "Heal 15% of the damage your cards deal",
     rarity: "common",
     maxStacks: 3,
@@ -131,6 +143,7 @@ export const modifiers = {
   },
   scalability: {
     name: "Scalability",
+    glyph: "▲",
     text: "+10 max HP, and heal 10",
     rarity: "common",
     stats: { maxHp: 10 },
@@ -142,11 +155,19 @@ export const modifiers = {
   },
   "pair-programming": {
     name: "Pair Programming",
+    glyph: "⚇",
     text: "Play one more card each turn",
     rarity: "rare",
     maxStacks: 1,
     stats: { actions: 1 },
     badge: () => "+1 action",
+  },
+  "gold-standard": {
+    name: "Gold Standard",
+    glyph: "★",
+    text: "Add 3 random golden cards to the deck: their effects ×1.5",
+    rarity: "rare",
+    goldenCards: 3,
   },
 } satisfies Record<string, ModifierDef>;
 

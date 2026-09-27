@@ -13,25 +13,41 @@ import type { Project, SectionId, SkillCategory } from "@/domain/types";
 
 /**
  * Every card of Card Mode's deck (Roadmap P9.4): the seven section cards, one card per project and
- * one upgrade card per skill category. Faces, numbers and tokens derive from the content; the
- * content itself stays in the section panels.
+ * one upgrade card per skill category, plus golden copies a modifier adds (P9.7). Faces, numbers
+ * and tokens derive from the content; the content itself stays in the section panels.
  */
 export type ProjectCardId = `project:${string}`;
 export type SkillCardId = `skill:${SkillCategory}`;
-export type CardId = SectionId | ProjectCardId | SkillCardId;
+export type BaseCardId = SectionId | ProjectCardId | SkillCardId;
+/** A golden copy of a card: same section, every number of its effect ×1.5 (rounded up). */
+export type GoldenCardId = `gold:${BaseCardId}`;
+export type CardId = BaseCardId | GoldenCardId;
+
+export const GOLDEN_BOOST = 1.5;
+
+export const isGolden = (card: CardId): card is GoldenCardId =>
+  card.startsWith("gold:");
+
+/** The card a golden copy was made from; a plain card is its own base. */
+export const baseOf = (card: CardId): BaseCardId =>
+  isGolden(card) ? (card.slice("gold:".length) as BaseCardId) : card;
+
+export const goldenOf = (card: BaseCardId): GoldenCardId => `gold:${card}`;
 
 export const isSectionCard = (card: CardId): card is SectionId =>
   !card.includes(":");
 
 /** The section a card opens when played. */
 export function sectionOf(card: CardId): SectionId {
-  if (card.startsWith("project:")) return "projects";
-  if (card.startsWith("skill:")) return "skills";
-  return card as SectionId;
+  const base = baseOf(card);
+  if (base.startsWith("project:")) return "projects";
+  if (base.startsWith("skill:")) return "skills";
+  return base as SectionId;
 }
 
 /** Element id of a card in the hand. */
-export const cardElementId = (card: CardId) => `card-${card.replace(":", "-")}`;
+export const cardElementId = (card: CardId) =>
+  `card-${card.replaceAll(":", "-")}`;
 
 export const projectCards: ProjectCardId[] = projects.map(
   (project) => `project:${project.id}` as const,
@@ -42,7 +58,7 @@ export const skillCards: SkillCardId[] = categories.map(
   (category) => `skill:${category}` as const,
 );
 
-export const allCards: CardId[] = [
+export const allCards: BaseCardId[] = [
   ...sections.map((section) => section.id),
   ...projectCards,
   ...skillCards,
@@ -188,7 +204,27 @@ function upgradeAction(category: SkillCategory): CardAction {
   return { ...base, kind: "runes", verb: `Shield: Block +${block}`, block };
 }
 
+const boost = (value: number) => Math.ceil(value * GOLDEN_BOOST);
+
+/** A golden card's action: every number of its effect boosted; dodge stays a dodge. */
+function goldenAction(action: CardAction): CardAction {
+  const golden: CardAction = {
+    ...action,
+    verb: `★ ${action.verb} ×${GOLDEN_BOOST}`,
+  };
+  if (action.attack)
+    golden.attack = { ...action.attack, perHit: boost(action.attack.perHit) };
+  if (action.block) golden.block = boost(action.block);
+  if (action.heal) golden.heal = boost(action.heal);
+  if (action.strength) golden.strength = boost(action.strength);
+  if (action.energy) golden.energy = boost(action.energy);
+  if (action.draw)
+    golden.draw = { ...action.draw, count: boost(action.draw.count) };
+  return golden;
+}
+
 export function cardAction(card: CardId): CardAction {
+  if (isGolden(card)) return goldenAction(cardAction(baseOf(card)));
   if (isSectionCard(card)) return sectionActions[card];
   if (card.startsWith("project:")) {
     const project = projectOf(card as ProjectCardId);
@@ -225,6 +261,11 @@ export interface CardFaceData {
 }
 
 export function cardFace(card: CardId): CardFaceData {
+  if (isGolden(card))
+    return {
+      ...cardFace(baseOf(card)),
+      stat: `★ golden ×${GOLDEN_BOOST}`,
+    };
   if (isSectionCard(card)) {
     const meta = sections.find((section) => section.id === card)!;
     return {

@@ -473,3 +473,16 @@ Decision:
   thorns, lifesteal, max HP, +1 action.
 - While an offer is pending a card still opens its section but stays in the hand.
 Consequences: Card Mode load 77.1 kB gz (2.9 kB headroom under the 80 kB budget).
+
+## Decision: Floating modifier offer and golden cards (Roadmap P9.7 follow-up, ADR-012)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-012 (follow-up section); Vitest and headless Chrome
+Decision:
+- Offer cards float at the top of the screen and rise one after another from below it
+  (transform/opacity); still a native modal dialog with Skip/Escape; reduced motion shows them.
+- New rare modifier Gold Standard: golden copies of 3 distinct random cards shuffled into the deck.
+  Golden card = own id `gold:<card>`; same section; every effect number ×1.5 rounded up; gold face
+  with "★ golden ×1.5" text. Registry gained a `goldenCards` field.
+Consequences: Card Mode load 77.7 kB gz (2.3 kB headroom under the 80 kB budget).

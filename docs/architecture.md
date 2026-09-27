@@ -177,7 +177,9 @@ Modifiers (Roadmap P9.7, ADR-012): every two rounds (hero turn + bug turn) the f
 modal offer of three random modifiers; the picked one stacks for the rest of the fight (Escape or
 "Skip" declines). Modifiers are data in a registry (`modifiers.ts`): per-stack stats added to the
 hero's `HeroStats`, and/or a one-off effect; the fight stores only stack counts and derives the
-stats, so adding a modifier is one entry.
+stats, so adding a modifier is one entry. The offer cards float at the top of the screen, rising
+from below it. Gold Standard shuffles golden copies (`gold:<card>`, effect ×1.5) of 3 random cards
+into the deck.
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns

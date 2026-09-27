@@ -28,7 +28,13 @@ import { parseSectionHash } from "@/state/section-hash";
 import { boardReducer, createBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
-import { cardAction, isSectionCard, sectionOf, type CardId } from "./cards";
+import {
+  baseOf,
+  cardAction,
+  isSectionCard,
+  sectionOf,
+  type CardId,
+} from "./cards";
 import {
   DRAG_ACTIVATION_DISTANCE,
   dragAnnouncements,
@@ -56,8 +62,9 @@ const fanStyle = (index: number, count: number) =>
 
 /** Shows what a played card opens: its section, or for a project card that project's relic. */
 function selectFor(card: CardId) {
-  if (card.startsWith("project:")) {
-    window.history.pushState(null, "", `#project-${card.slice(8)}`);
+  const base = baseOf(card);
+  if (base.startsWith("project:")) {
+    window.history.pushState(null, "", `#project-${base.slice(8)}`);
     usePortfolioStore.getState().setActiveSection("projects");
   } else {
     selectSection(sectionOf(card), "push");
