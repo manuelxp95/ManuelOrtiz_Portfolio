@@ -15,6 +15,8 @@
   --card-w: clamp(5.75rem, min(27vw, 19dvh), 11rem);
   --fan-step: 3deg;
   --fan-drop-step: 4px;
+  /* How far the hand's cards reach up into the battlefield (P9.6). */
+  --hand-overlap: calc(var(--card-w) * 0.35);
   --danger: #b91c1c;
   display: flex;
   flex-direction: column;
@@ -58,14 +60,23 @@
   }
 }
 
-/* The deck sits beside the hand (P9.5). */
+/* The deck sits beside the hand (P9.5). The hand rises into the borderless battlefield (P9.6):
+   its cards may cover the combatants, while taps between them still reach the field. */
 .hand-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex: none;
   align-items: flex-end;
   gap: 0.5rem;
   /* Room above for a lifted card, below for the outer cards' drop (offset 3 → 9 steps). */
+  margin-top: calc(-2.5rem - var(--hand-overlap));
   padding: 2.5rem 0 calc(9 * var(--fan-drop-step) + 0.75rem);
+  pointer-events: none;
+}
+
+.hand-row > * {
+  pointer-events: auto;
 }
 
 .card-hand {
@@ -711,7 +722,8 @@ a.merchant-offer:focus-visible {
   border-color: var(--accent);
 }
 
-/* Battlefield (P9.1): the bug, its health, the effect layer and the drop target. */
+/* Battlefield (P9.1): the bug, its health, the effect layer and the drop target. Borderless and
+   unclipped since P9.6, so played cards and effects travel freely over the hand. */
 .battlefield-slot {
   flex: 1;
   min-height: 0;
@@ -723,29 +735,35 @@ a.merchant-offer:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* The combatants stand on the hand: its cards cover their feet, and a lifted card more. */
+  justify-content: flex-end;
   height: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+  padding-bottom: calc(var(--hand-overlap) * 0.4);
   background: radial-gradient(
     ellipse at 50% 40%,
     var(--surface),
     var(--bg) 70%
   );
-  overflow: hidden;
-  transition:
-    border-color var(--duration-fast) ease-out,
-    background-color var(--duration-fast) ease-out;
 }
 
-.battlefield[data-dragging] {
-  border-style: dashed;
-  border-color: var(--accent);
+/* The drop target stops above the hand (and a hovered card's lift), so a card picked up from the
+   hand is never already over the field. A glow, plus the hint text, marks it while dragging. */
+.drop-zone {
+  position: absolute;
+  inset: 0 0 calc(var(--hand-overlap) + 1.75rem);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(closest-side, var(--accent-soft), transparent);
+  transition: opacity var(--duration-fast) ease-out;
 }
 
-.battlefield[data-candidate] {
-  border-style: solid;
-  background: var(--accent-soft);
+.battlefield[data-dragging] .drop-zone {
+  opacity: 0.6;
+}
+
+.battlefield[data-candidate] .drop-zone {
+  opacity: 1;
 }
 
 /* Duel (P9.2): hero on the left, bug on the right. */
@@ -918,9 +936,10 @@ a.merchant-offer:focus-visible {
   color: var(--rarity-legendary);
 }
 
+/* Over the head: the hand covers the combatants' feet (P9.6). */
 .effect-verb {
-  align-self: end;
-  translate: 0 2.5rem;
+  align-self: start;
+  translate: 0 -0.5rem;
   padding: 0.125rem 0.5rem;
   border-radius: var(--radius-control);
   background: var(--bg);
@@ -941,13 +960,13 @@ a.merchant-offer:focus-visible {
 
 .battlefield-hint {
   position: absolute;
-  bottom: 0.5rem;
+  top: 2rem;
   font-size: 0.75rem;
   color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .battlefield,
+  .drop-zone,
   .combatant,
   .combatant-hp > span {
     transition: none;
@@ -978,7 +997,7 @@ a.merchant-offer:focus-visible {
 
 .outcome {
   position: absolute;
-  bottom: 0.5rem;
+  top: 2rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

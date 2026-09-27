@@ -168,6 +168,10 @@ a random position and the hand refills. Projects and Skills draw their kind of c
 attack and open their relic; skill cards upgrade the hero. A section whose card is in the deck
 stays one click away in the site header. The deck is drawn as a pile beside the hand; cards fly from
 it into the hand and the fan re-spaces smoothly (P9.5).
+The battlefield has no frame and does not clip (P9.6): the hand rises into it, so its cards may
+cover the combatants' feet, and played cards and effects travel freely over the hand. The drop
+target is the field above the hand, decided by the pointer (`pointerWithin`), so a card picked up
+from the hand is never already over the field.
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns

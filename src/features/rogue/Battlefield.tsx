@@ -207,6 +207,11 @@ function Combatant({
       <div aria-hidden="true" className="combatant-hp">
         <span style={{ width: `${(hp / maxHp) * 100}%` }} />
       </div>
+      <ul aria-label={`${name}'s statuses`} className="combatant-statuses">
+        {statuses.map((status) => (
+          <li key={status}>{status}</li>
+        ))}
+      </ul>
       <div className="combatant-body">
         <m.pre
           key={`art-${shakeKey ?? lunge ?? 0}`}
@@ -268,11 +273,6 @@ function Combatant({
           </m.span>
         )}
       </div>
-      <ul aria-label={`${name}'s statuses`} className="combatant-statuses">
-        {statuses.map((status) => (
-          <li key={status}>{status}</li>
-        ))}
-      </ul>
     </div>
   );
 }
@@ -393,7 +393,6 @@ export function Battlefield({
 
   return (
     <div
-      ref={setNodeRef}
       data-dragging={dragging || undefined}
       data-candidate={candidate || undefined}
       data-playing={playing ?? undefined}
@@ -401,6 +400,7 @@ export function Battlefield({
       className="battlefield"
       onClick={onActivate}
     >
+      <div ref={setNodeRef} aria-hidden="true" className="drop-zone" />
       <p className="turn-bar font-mono">{turnText}</p>
       <div className="combatants">
         <Combatant

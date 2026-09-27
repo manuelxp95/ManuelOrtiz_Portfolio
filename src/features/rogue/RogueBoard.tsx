@@ -4,6 +4,7 @@ import {
   DndContext,
   DragOverlay,
   MouseSensor,
+  pointerWithin,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -268,6 +269,8 @@ export function RogueBoard() {
         {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
         <DndContext
           sensors={sensors}
+          // The pointer, not the card's outline, decides the drop: the hand overlaps the field.
+          collisionDetection={pointerWithin}
           accessibility={{ announcements: dragAnnouncements }}
           onDragStart={({ active }) =>
             dispatch({ type: "DRAG_START", card: active.id as CardId })
