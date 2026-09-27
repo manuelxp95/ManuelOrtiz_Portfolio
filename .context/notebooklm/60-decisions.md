@@ -444,3 +444,16 @@ Decision:
   skill cards give Strength +2, +1 card this turn, or a Block shield by category.
 - Sections not in hand stay reachable through the site header.
 Consequences: Card Mode load 73.0 kB gz; component tests pin the deal (`src/test/card-deal.ts`).
+
+## Decision: Deck pile and draw animation (Roadmap P9.5, ADR-011 implementation note)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-011 (P9.5 section); Vitest and headless Chrome
+Decision:
+- Deck shown as a pile of card backs left of the hand with its count; header counter removed.
+- Cards fly from the pile into their slot (opening deal staggered, draws after a play) via Motion
+  `useAnimateMini` (WAAPI, transform/opacity); inline styles always cleared so cards never stay
+  hidden; no WAAPI or reduced motion → placed directly.
+- Hand slots are `m.li layout="position"`; the fan transform moved to an inner `.card-fan`.
+Consequences: Card Mode load 75.0 kB gz (5 kB headroom left under the 80 kB budget).

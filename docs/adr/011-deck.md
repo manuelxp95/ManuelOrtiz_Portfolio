@@ -32,6 +32,19 @@
 - **UI:** a "Deck N · Hand N" counter; the fan and its overlap follow the hand's size
   (`--hand-count`); after a play, focus returns to the card now in the played card's slot.
 
+## Implementation (Roadmap P9.5): the deck on screen
+
+- The deck is a pile of card backs to the left of the hand (`DeckPile.tsx`), labelled with its size
+  ("Deck: 22 cards" for assistive tech), pulsing when its size changes; the header counter is gone.
+- Every card entering the hand — the opening deal one after another, and each draw — flies from the
+  pile to its slot, turning and growing into place (`DrawnCard`: Motion's WAAPI `useAnimateMini`,
+  transform and opacity only; a card waits hidden only while its flight is delayed, and inline
+  styles are always cleared, so a failed or missing animation can never leave it invisible).
+- The other cards slide to their new places as the hand grows or shrinks: each slot is an
+  `m.li` with `layout="position"`, and the fan's rotation moved to an inner `.card-fan` element
+  (with a 250 ms transition) so the two transforms never compete.
+- Reduced motion or no Web Animations API: cards are simply placed.
+
 ## Alternatives
 
 - Dealing the opening hand from the whole deck — a first visit could show only project/skill

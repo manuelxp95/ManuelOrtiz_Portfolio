@@ -277,3 +277,15 @@ again"; no console errors; no horizontal overflow at 390 px.
 Headless Chrome: opening hand of 5 section cards (deck 22); Projects drew 2 project cards (hand 6);
 a project card opened `#project-psx-robbery` with its relic expanded and went back into the deck;
 no console errors; no horizontal overflow at 390 px.
+
+## P9.5 — Deck pile and draw animation (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 75.0 kB (+2.0 kB: Motion WAAPI animate, pile, layout slots) |
+| All Card Mode chunks | ≤ 120 kB | 85.7 kB |
+
+Headless Chrome (1280 px and 390 px): the opening hand deals from the pile, a draw flies in after a
+play and the hand re-spaces; afterwards every card is at opacity 1 with no leftover inline
+transform; no console errors; no horizontal overflow.

@@ -166,7 +166,8 @@ Deck (Roadmap P9.4, ADR-011): 27 cards — 7 sections, one per project, one upgr
 category (`cards.ts`). The opening hand is 5 section cards; each played card returns to the deck at
 a random position and the hand refills. Projects and Skills draw their kind of card; project cards
 attack and open their relic; skill cards upgrade the hero. A section whose card is in the deck
-stays one click away in the site header.
+stays one click away in the site header. The deck is drawn as a pile beside the hand; cards fly from
+it into the hand and the fan re-spaces smoothly (P9.5).
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns

@@ -32,12 +32,16 @@ import {
   DRAG_ACTIVATION_DISTANCE,
   dragAnnouncements,
 } from "./drag/drag-config";
-import { CardMotion, stagger, useEntrance } from "./motion-config";
+import { DeckPile, DrawnCard } from "./DeckPile";
+import { CardMotion, layoutSpring } from "./motion-config";
 import { preloadSectionPanel } from "./sections/SectionPanel";
 import { CardFace, SectionCard } from "./SectionCard";
 import { TargetArrow } from "./TargetArrow";
 import { useReducedMotion } from "./use-reduced-motion";
 import "./rogue.css";
+
+/** A card drawn after a play waits for the played card to leave the hand first. */
+const DRAW_AFTER_PLAY_S = 0.15;
 
 /** The bug acts this long after the board is idle again, and its move shows for this long. */
 const BOSS_DELAY_MS = 400;
@@ -73,7 +77,8 @@ function measureFlight(
 export function RogueBoard() {
   const activeSection = usePortfolioStore((state) => state.activeSection);
   const reducedMotion = useReducedMotion();
-  const deal = useEntrance({ opacity: 0, y: 24 });
+  const pile = useRef<HTMLDivElement>(null);
+  const pileRect = useCallback(() => pile.current?.getBoundingClientRect(), []);
   // Each visit deals a new hand; the seed keeps every later shuffle a pure reducer step.
   const [board, dispatch] = useReducer(boardReducer, undefined, () =>
     createBoardState(Math.floor(Math.random() * 2 ** 32)),
@@ -259,9 +264,6 @@ export function RogueBoard() {
               &gt; click a card to play it, or drag it onto the bug_
             </span>
           </p>
-          <p className="deck-count font-mono">
-            Deck {board.deck.length} · Hand {hand.length}
-          </p>
         </header>
         {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
         <DndContext
@@ -317,48 +319,57 @@ export function RogueBoard() {
               )}
             />
           </div>
-          <ul
-            aria-label="Hand"
-            className="card-hand"
-            style={{ "--hand-count": hand.length } as CSSProperties}
-            onKeyDown={onHandKeyDown}
-          >
-            {hand.map((card, index) => (
-              <li
-                key={card}
-                className="card-slot"
-                style={fanStyle(index, hand.length)}
-                data-inspecting={
-                  (state.status === "inspecting" && state.card === card) ||
-                  undefined
-                }
-                data-played={
-                  (isSectionCard(card) && board.played.includes(card)) ||
-                  undefined
-                }
-              >
-                {/* Dealt into the hand once on entry; the fan transform stays on the slot. */}
-                <m.div
-                  initial={deal}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={stagger(index)}
+          <div className="hand-row">
+            <DeckPile ref={pile} count={board.deck.length} />
+            <ul
+              aria-label="Hand"
+              className="card-hand"
+              style={{ "--hand-count": hand.length } as CSSProperties}
+              onKeyDown={onHandKeyDown}
+            >
+              {hand.map((card, index) => (
+                // The slot slides to its new place when the hand grows or shrinks; the fan's
+                // rotation lives on the inner element, so the two transforms never compete.
+                <m.li
+                  key={card}
+                  layout="position"
+                  transition={{ layout: layoutSpring }}
+                  className="card-slot"
+                  style={fanStyle(index, hand.length)}
+                  data-inspecting={
+                    (state.status === "inspecting" && state.card === card) ||
+                    undefined
+                  }
+                  data-played={
+                    (isSectionCard(card) && board.played.includes(card)) ||
+                    undefined
+                  }
                 >
-                  <SectionCard
-                    ref={(element) => {
-                      if (element) cards.current.set(card, element);
-                      else cards.current.delete(card);
-                    }}
-                    card={card}
-                    selected={card === activeSection}
-                    played={isSectionCard(card) && board.played.includes(card)}
-                    onActivate={(touch) => activate(card, touch)}
-                    onSwipeUp={() => play(card)}
-                    onIntent={() => preloadSectionPanel(sectionOf(card))}
-                  />
-                </m.div>
-              </li>
-            ))}
-          </ul>
+                  <div className="card-fan">
+                    <DrawnCard
+                      pile={pileRect}
+                      delay={board.lastHit ? DRAW_AFTER_PLAY_S : index * 0.09}
+                    >
+                      <SectionCard
+                        ref={(element) => {
+                          if (element) cards.current.set(card, element);
+                          else cards.current.delete(card);
+                        }}
+                        card={card}
+                        selected={card === activeSection}
+                        played={
+                          isSectionCard(card) && board.played.includes(card)
+                        }
+                        onActivate={(touch) => activate(card, touch)}
+                        onSwipeUp={() => play(card)}
+                        onIntent={() => preloadSectionPanel(sectionOf(card))}
+                      />
+                    </DrawnCard>
+                  </div>
+                </m.li>
+              ))}
+            </ul>
+          </div>
           <TargetArrow
             target={aimed}
             dragging={state.status === "dragging"}

@@ -429,7 +429,10 @@ describe("the deck (P9.4)", () => {
     ].map((button) => button.id);
   const deckCount = () =>
     Number(
-      document.querySelector(".deck-count")?.textContent?.match(/\d+/)?.[0],
+      screen
+        .getByRole("img", { name: /^Deck:/ })
+        .getAttribute("aria-label")!
+        .match(/\d+/)![0],
     );
 
   beforeEach(() => setReducedMotion(true));
@@ -458,10 +461,33 @@ describe("the deck (P9.4)", () => {
     );
   });
 
-  it("the header count follows the deck and the hand", () => {
+  it("the deck is shown beside the hand with its size", () => {
     render(<RogueBoard />);
-    expect(document.querySelector(".deck-count")?.textContent).toMatch(
-      /Deck \d+ · Hand 7/,
+    const pile = screen.getByRole("img", { name: /^Deck: \d+ cards$/ });
+    expect(pile.textContent).toBe(String(deckCount()));
+    expect(pile.nextElementSibling).toBe(
+      screen.getByRole("list", { name: "Hand" }),
     );
+  });
+
+  it("drawn cards join the hand visible, even without an animation API", async () => {
+    setReducedMotion(false);
+    render(<RogueBoard />);
+    // Seven in hand: three plays bring it under five, so it draws from the deck.
+    for (const id of ["cv", "experience", "about"]) {
+      fireEvent.click(card(id));
+      // Skip the effect (tap on the battlefield), then close the card.
+      fireEvent.click(document.querySelector(".battlefield")!);
+      fireEvent.click(await screen.findByRole("button", { name: /close/i }));
+      await waitFor(() => expect(openDialog()).toBeNull());
+    }
+    // Down to four, one card was drawn back to five (maybe a section just shuffled back in).
+    const hand = handIds();
+    expect(hand).toHaveLength(5);
+    for (const id of hand)
+      expect(
+        document.getElementById(id)!.closest<HTMLElement>(".card-fan > div")!
+          .style.opacity,
+      ).not.toBe("0");
   });
 });
