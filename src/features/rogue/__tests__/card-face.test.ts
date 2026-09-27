@@ -4,7 +4,7 @@ import { buildCardFace, CARD_COLS } from "@/features/rogue/card-face";
 
 const face = (
   selected: boolean,
-  overrides: Partial<{ title: string; stat: string }> = {},
+  overrides: Partial<{ title: string; stat: string; type: string }> = {},
 ) =>
   buildCardFace({
     title: "Relic Collection",
@@ -30,6 +30,15 @@ describe("buildCardFace", () => {
     expect(face(false).startsWith("┌")).toBe(true);
     expect(face(true)).toContain("> SELECTED");
     expect(face(true).startsWith("╔")).toBe(true);
+  });
+
+  it("sets the card type into the top border", () => {
+    const top = face(false, { type: "attack" }).split("\n")[0];
+    expect(top).toContain(" ATTACK ");
+    expect([...top]).toHaveLength(CARD_COLS);
+    expect([...face(true, { type: "power" }).split("\n")[0]]).toHaveLength(
+      CARD_COLS,
+    );
   });
 
   it("truncates text that would break the frame", () => {

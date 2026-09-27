@@ -34,7 +34,7 @@ import {
   usePortfolioStore,
 } from "@/state/portfolio-store";
 import { parseSectionHash } from "@/state/section-hash";
-import { boardReducer, initialBoardState } from "./battle";
+import { boardReducer, cardActions, initialBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
 import {
@@ -44,6 +44,7 @@ import {
 import { CardMotion, stagger, useEntrance } from "./motion-config";
 import { preloadSectionPanel } from "./sections/SectionPanel";
 import { CardFace, SectionCard } from "./SectionCard";
+import { TargetArrow } from "./TargetArrow";
 import { useReducedMotion } from "./use-reduced-motion";
 import "./rogue.css";
 
@@ -65,9 +66,11 @@ const sectionMeta = (id: SectionId) =>
 const fanStyle = (index: number) =>
   ({ "--fan-offset": index - (sections.length - 1) / 2 }) as CSSProperties;
 
-/** Where a card played from the hand lands: the lower middle of the battlefield. */
-function measureFlight(card: HTMLElement, field: HTMLElement): Flight {
-  const from = card.getBoundingClientRect();
+/** Where a played card lands: the lower middle of the battlefield. */
+function measureFlight(
+  from: { left: number; top: number; width: number; height: number },
+  field: HTMLElement,
+): Flight {
   const to = field.getBoundingClientRect();
   return {
     dx: from.left + from.width / 2 - (to.left + to.width / 2),
@@ -94,6 +97,11 @@ export function RogueBoard() {
     }),
   );
   const dragged = state.status === "dragging" ? sectionMeta(state.card) : null;
+  const aiming =
+    state.status === "dragging" || state.status === "inspecting"
+      ? state.card
+      : null;
+  const aimed = aiming ? cardActions[aiming].target : null;
 
   // Entering Card Mode: a user switch focuses the selected card; a page load with a section hash
   // (shared deep link, reload) opens that card directly.
@@ -143,7 +151,9 @@ export function RogueBoard() {
     (card: SectionId) => {
       const element = cards.current.get(card);
       setFlight(
-        element && field.current ? measureFlight(element, field.current) : null,
+        element && field.current
+          ? measureFlight(element.getBoundingClientRect(), field.current)
+          : null,
       );
       selectSection(card, "push");
       dispatch({ type: "PLAY", card, reducedMotion });
@@ -157,6 +167,10 @@ export function RogueBoard() {
   );
   const closed = useCallback(() => dispatch({ type: "CLOSED" }), []);
   const effectDone = useCallback(() => dispatch({ type: "EFFECT_DONE" }), []);
+  const cardElement = useCallback(
+    (card: SectionId) => cards.current.get(card),
+    [],
+  );
 
   function activate(card: SectionId, touch: boolean) {
     if (state.status === "playing") dispatch({ type: "EFFECT_DONE" });
@@ -227,7 +241,13 @@ export function RogueBoard() {
             const onField = over?.id === BATTLEFIELD_ID;
             dispatch({ type: "DRAG_OVER", overZone: onField });
             if (onField) {
-              setFlight(null);
+              // The card flies on from where it was released.
+              const released = active.rect.current.translated;
+              setFlight(
+                released && field.current
+                  ? measureFlight(released, field.current)
+                  : null,
+              );
               selectSection(active.id as SectionId, "push");
             }
             dispatch({ type: "DROP", reducedMotion });
@@ -239,6 +259,7 @@ export function RogueBoard() {
               board={board}
               dragging={state.status === "dragging"}
               candidate={state.status === "dragging" && state.overZone}
+              aimed={aimed}
               flight={flight}
               reducedMotion={reducedMotion}
               onActivate={() => {
@@ -295,6 +316,12 @@ export function RogueBoard() {
               </li>
             ))}
           </ul>
+          <TargetArrow
+            target={aimed}
+            dragging={state.status === "dragging"}
+            lifted={state.status === "inspecting" ? state.card : null}
+            cardElement={cardElement}
+          />
           {/* A successful drop plays the card in place of a snap-back; reduced motion never animates. */}
           <DragOverlay
             dropAnimation={

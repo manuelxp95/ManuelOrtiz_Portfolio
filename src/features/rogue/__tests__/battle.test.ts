@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { experience, skills } from "@/content";
-import { SECTION_IDS } from "@/domain/types";
+import { contactLinks, education, experience, skills } from "@/content";
+import { SECTION_IDS, type SectionId } from "@/domain/types";
 import {
   BUG,
   boardReducer,
   bugHp,
-  cardDamage,
-  cardEffects,
+  cardActions,
+  heroStatuses,
   initialBoardState,
   type BoardState,
 } from "@/features/rogue/battle";
@@ -14,57 +14,83 @@ import type { CardEvent } from "@/features/rogue/card-machine";
 
 const run = (events: CardEvent[], from: BoardState = initialBoardState) =>
   events.reduce(boardReducer, from);
-const play = (card: (typeof SECTION_IDS)[number]): CardEvent[] => [
+const play = (card: SectionId): CardEvent[] => [
   { type: "PLAY", card, reducedMotion: false },
   { type: "EFFECT_DONE" },
   { type: "CLOSE", reducedMotion: true },
 ];
+const attacks = SECTION_IDS.filter((id) => cardActions[id].type === "attack");
 
 describe("battle data", () => {
-  it("the seven cards together deal exactly the bug's HP", () => {
-    const total = SECTION_IDS.reduce((sum, id) => sum + cardDamage[id], 0);
+  it("attack cards hit the bug and together deal exactly its HP", () => {
+    const total = attacks.reduce(
+      (sum, id) => sum + (cardActions[id].damage ?? 0),
+      0,
+    );
     expect(total).toBe(BUG.maxHp);
+    for (const id of attacks) expect(cardActions[id].target).toBe("bug");
   });
 
-  it("every card has an effect with tokens drawn from the content", () => {
-    for (const id of SECTION_IDS) {
-      expect(cardEffects[id].tokens.length).toBeGreaterThan(0);
-      expect(cardEffects[id].verb.trim()).not.toBe("");
+  it("skill and power cards act on the hero with a status and no damage", () => {
+    for (const id of SECTION_IDS.filter((id) => !attacks.includes(id))) {
+      expect(cardActions[id].target).toBe("hero");
+      expect(cardActions[id].status).toBeTruthy();
+      expect(cardActions[id].damage).toBeUndefined();
     }
-    expect(cardEffects.experience.tokens).toHaveLength(experience.length);
+  });
+
+  it("every effect is drawn from the content", () => {
+    for (const id of SECTION_IDS) {
+      expect(cardActions[id].tokens.length).toBeGreaterThan(0);
+      expect(cardActions[id].verb.trim()).not.toBe("");
+    }
+    expect(cardActions.experience.tokens).toHaveLength(experience.length);
     expect(skills.map((skill) => skill.name)).toEqual(
-      expect.arrayContaining(cardEffects.skills.tokens),
+      expect.arrayContaining(cardActions.skills.tokens),
     );
+    expect(cardActions.education.status).toBe(`Block ${education.length}`);
+    expect(cardActions.contact.status).toBe(`Gold ${contactLinks.length}`);
   });
 });
 
 describe("boardReducer", () => {
-  it("a played card lands once: hit on PLAY, none when its effect ends", () => {
+  it("an attack lands once: hit on PLAY, none when its effect ends", () => {
     const playing = run([
-      { type: "PLAY", card: "skills", reducedMotion: false },
+      { type: "PLAY", card: "experience", reducedMotion: false },
     ]);
-    expect(playing.played).toEqual(["skills"]);
-    expect(playing.lastHit).toEqual({ card: "skills", damage: 20, count: 1 });
+    expect(playing.played).toEqual(["experience"]);
+    expect(playing.lastHit).toEqual({
+      card: "experience",
+      damage: 40,
+      count: 1,
+    });
     const open = run([{ type: "EFFECT_DONE" }], playing);
-    expect(open.card).toEqual({ status: "expanded", card: "skills" });
+    expect(open.card).toEqual({ status: "expanded", card: "experience" });
     expect(open.lastHit).toBe(playing.lastHit);
   });
 
-  it("replaying a card replays its effect without damage", () => {
-    const again = run([...play("skills"), ...play("skills")]);
-    expect(again.played).toEqual(["skills"]);
-    expect(again.lastHit).toEqual({ card: "skills", damage: 0, count: 2 });
-    expect(bugHp(again.played)).toBe(BUG.maxHp - cardDamage.skills);
+  it("a hero card lands without damage and grants its status", () => {
+    const state = run(play("education"));
+    expect(state.lastHit?.damage).toBe(0);
+    expect(bugHp(state.played)).toBe(BUG.maxHp);
+    expect(heroStatuses(state.played)).toEqual([`Block ${education.length}`]);
+  });
+
+  it("replaying an attack replays its effect without damage", () => {
+    const again = run([...play("projects"), ...play("projects")]);
+    expect(again.played).toEqual(["projects"]);
+    expect(again.lastHit).toEqual({ card: "projects", damage: 0, count: 2 });
+    expect(bugHp(again.played)).toBe(BUG.maxHp - 40);
   });
 
   it("a direct open (deep link) counts as played", () => {
     const opened = run([{ type: "OPEN", card: "cv" }]);
     expect(opened.played).toEqual(["cv"]);
-    expect(opened.lastHit?.damage).toBe(cardDamage.cv);
+    expect(opened.lastHit?.damage).toBe(cardActions.cv.damage);
   });
 
-  it("playing every card defeats the bug", () => {
-    const done = run(SECTION_IDS.flatMap(play));
+  it("playing the three attacks defeats the bug", () => {
+    const done = run(attacks.flatMap(play));
     expect(bugHp(done.played)).toBe(0);
     expect(done.card).toEqual({ status: "idle" });
   });

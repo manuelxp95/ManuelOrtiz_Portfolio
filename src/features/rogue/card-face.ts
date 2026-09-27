@@ -9,6 +9,8 @@ interface CardFaceInput {
   label: string;
   stat: string;
   selected: boolean;
+  /** Card type (ATTACK / SKILL / POWER), set into the top border. */
+  type?: string;
 }
 
 function fit(text: string, width: number): string {
@@ -27,6 +29,7 @@ export function buildCardFace({
   label,
   stat,
   selected,
+  type,
 }: CardFaceInput): string {
   const [tl, tr, bl, br, h, v] = selected
     ? ["╔", "╗", "╚", "╝", "═", "║"]
@@ -37,8 +40,9 @@ export function buildCardFace({
     ? `${bl}${h} > SELECTED ${h.repeat(INNER - 13)}${br}`
     : `${bl}${h.repeat(INNER)}${br}`;
 
+  const tag = type ? `${h} ${type.toUpperCase()} ` : "";
   return [
-    `${tl}${h.repeat(INNER)}${tr}`,
+    `${tl}${tag}${h.repeat(INNER - tag.length)}${tr}`,
     row(center(`» ${fit(title.toUpperCase(), TEXT - 4)} «`, INNER)),
     row(" ".repeat(INNER)),
     ...glyph.split("\n").map((line) => row(center(line, INNER))),

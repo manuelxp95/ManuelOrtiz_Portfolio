@@ -148,7 +148,13 @@ card (tokens derived from the content, `src/features/rogue/battle.ts`), deals it
 opens the card's dialog; a tap, Enter or Escape skips the effect and reduced motion skips it
 entirely. Mouse click and keyboard play at once; a finger tap first lifts the card out of the fan
 (`inspecting`), and a second tap, a swipe up or a tap on the battlefield plays it. Direct opens (URL
-hash, back/forward) skip the effect but still count as played; all seven cards defeat the bug.
+hash, back/forward) skip the effect but still count as played.
+
+Duel (Roadmap P9.2, ADR-009): the battlefield holds the hero (the owner; placeholder ASCII until
+his model is converted) on the left and the bug on the right. ATTACK cards hit the bug (the three
+attacks add up to its HP); SKILL and POWER cards act on the hero and grant statuses. While a card
+is dragged — or lifted by a tap — a targeting arrow (`TargetArrow.tsx`) runs from the card to its
+target, which glows; releasing anywhere over the battlefield plays the card.
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns

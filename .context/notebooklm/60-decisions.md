@@ -399,3 +399,18 @@ Decision:
 - Effect 0.9 s then dialog; skip by tap, Enter or Escape; reduced motion skips; hash/back opens
   skip the effect but count as played.
 Consequences: Card Mode load 69.4 kB gz; content reached ~0.9 s later after a play unless skipped.
+
+## Decision: Duel with card targets and aiming arrow (Roadmap P9.2, ADR-009)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-009; Vitest (189 tests) and headless Chrome
+Decision:
+- Hero (owner, placeholder ASCII) left, bug right. `cardActions` gives each card a type and target:
+  attacks Experience 40 / Projects 40 / CV 20 hit the bug; About, Skills (power) and Education,
+  Contact (skill) grant hero statuses derived from the content.
+- `TargetArrow` draws a curve from the dragged (or tap-lifted) card to its target; the target glows;
+  release anywhere over the battlefield plays the card; drops fly on from the release point.
+- The hero art is a placeholder until the owner supplies a model (`assets/models/`, `.obj`
+  preferred; converted to ASCII at build time). Boss behaviour work deferred by the owner.
+Consequences: Card Mode load 70.5 kB gz. Fixed duplicate bug art caused by sibling React keys.

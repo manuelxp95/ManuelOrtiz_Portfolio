@@ -2,6 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useRef, type PointerEvent } from "react";
 import type { SectionMeta } from "@/domain/types";
 import { cardGlyphs } from "./ascii/glyphs.generated";
+import { BUG, cardActions, HERO } from "./battle";
 import { buildCardFace } from "./card-face";
 
 /** A touch that travels this far upwards before lifting plays the card (swipe up). */
@@ -23,6 +24,7 @@ export function CardFace({ section, stat, selected }: CardFaceProps) {
         label: section.classicLabel,
         stat,
         selected,
+        type: cardActions[section.id].type,
       })}
     </span>
   );
@@ -60,6 +62,9 @@ export function SectionCard({
   });
   const press = useRef<{ touch: boolean; y: number } | null>(null);
   const swiped = useRef(false);
+  const action = cardActions[section.id];
+  const aim =
+    action.target === "bug" ? `hits ${BUG.name}` : `acts on ${HERO.name}`;
 
   function onPointerDown(event: PointerEvent<HTMLButtonElement>) {
     press.current = { touch: event.pointerType === "touch", y: event.clientY };
@@ -103,8 +108,8 @@ export function SectionCard({
       className="section-card"
     >
       <span className="sr-only">
-        {section.classicLabel} — {section.cardLabel}. {stat}.
-        {played ? " Played." : ""}
+        {section.classicLabel} — {section.cardLabel}. {stat}. {action.type}{" "}
+        card, {aim}.{played ? " Played." : ""}
       </span>
       <CardFace section={section} stat={stat} selected={selected} />
     </button>

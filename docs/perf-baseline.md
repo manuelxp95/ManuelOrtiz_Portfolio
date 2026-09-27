@@ -242,3 +242,15 @@ Headless Chrome, production build, audit harness re-run (`docs/audit-checklist.m
 play → effect → dialog → focus restore; touch tap lifts, second tap plays, horizontal swipe does
 nothing, swipe up plays; mouse drag onto the bug plays; 20× toggle, idle (0 animation frames),
 slow network and 16/16 deep links unchanged; no horizontal overflow at 390 px; no console errors.
+
+## P9.2 — Duel and aiming arrow (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 141.9 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 70.5 kB (+1.1 kB) |
+| All Card Mode chunks | ≤ 120 kB | 81.2 kB |
+
+Headless Chrome: dragging an attack aims at the bug (red arrow, bug framed), a skill at the hero
+(teal); drops play and fly from the release point; a tap-lifted card on a 390 px screen shows its
+arrow; no horizontal overflow; no console errors.

@@ -5,15 +5,30 @@ import type { SectionId } from "@/domain/types";
 import {
   BUG,
   bugHp,
-  cardEffects,
+  cardActions,
+  HERO,
+  heroStatuses,
   type BoardState,
   type EffectKind,
+  type Hit,
+  type Target,
 } from "./battle";
 
 export const BATTLEFIELD_ID = "battlefield";
 
 /** How long a played card's effect runs before its dialog opens (any tap, Enter or Escape skips). */
 export const EFFECT_MS = 900;
+
+/** Placeholder hero until the owner's model is converted to ASCII (ADR-009). */
+const HERO_ART = String.raw`
+    .---.
+   ( o o )
+    \ - /
+  .-'---'-.
+ / |  M  | \
+   |_____|
+   /  |  \
+  /   |   \ `.slice(1);
 
 const BUG_ART = String.raw`
       \       /
@@ -33,7 +48,7 @@ const SQUASHED_ART = String.raw`
     '-._________.-'
      [ BUG  FIXED ]`.slice(1);
 
-/** Where the card lands relative to its place in the hand, measured when it is played. */
+/** Where the card lands relative to where it was played from, measured on play or drop. */
 export interface Flight {
   dx: number;
   dy: number;
@@ -46,7 +61,7 @@ type TokenMotion = {
   transition: Transition;
 };
 
-/** One motion per token, relative to the bug's center; every kind reads differently. */
+/** One motion per token, relative to the target's center; every kind reads differently. */
 function tokenMotion(
   kind: EffectKind,
   index: number,
@@ -64,14 +79,14 @@ function tokenMotion(
       };
     case "buff":
       return {
-        initial: { opacity: 0, y: 90, x: `${spread}rem` },
-        animate: { opacity: [0, 1, 0], y: [90, -10, -40] },
+        initial: { opacity: 0, y: 70, x: `${spread * 0.5}rem` },
+        animate: { opacity: [0, 1, 0], y: [70, -10, -40] },
         transition: { duration: 0.55, delay, times: [0, 0.6, 1] },
       };
     case "combo":
       return {
-        initial: { opacity: 0, y: 110, x: `${spread}rem` },
-        animate: { opacity: [0, 1, 0], y: [110, 0, 0], scale: [1, 1, 1.6] },
+        initial: { opacity: 0, x: -140, y: (index % 3) * 14 - 14 },
+        animate: { opacity: [0, 1, 0], x: [-140, 0, 0], scale: [1, 1, 1.6] },
         transition: {
           duration: 0.3,
           delay: 0.3 + index * 0.08,
@@ -83,8 +98,8 @@ function tokenMotion(
         initial: { opacity: 0, x: 0, y: 0 },
         animate: {
           opacity: [0, 1, 0],
-          x: [0, Math.cos(angle) * 110],
-          y: [0, Math.sin(angle) * 70],
+          x: [0, Math.cos(angle) * 90],
+          y: [0, Math.sin(angle) * 60],
         },
         transition: { duration: 0.5, delay: 0.35 },
       };
@@ -94,15 +109,15 @@ function tokenMotion(
         animate: {
           opacity: [0, 1, 0],
           scale: [0, 1.4, 1],
-          x: Math.cos(angle) * 95,
-          y: Math.sin(angle) * 60,
+          x: Math.cos(angle) * 60,
+          y: Math.sin(angle) * 55,
         },
         transition: { duration: 0.55, delay },
       };
     case "coins":
       return {
-        initial: { opacity: 0, y: -110, x: `${spread}rem` },
-        animate: { opacity: [0, 1, 0], y: [-110, 0, 10] },
+        initial: { opacity: 0, y: -90, x: `${spread * 0.6}rem` },
+        animate: { opacity: [0, 1, 0], y: [-90, 0, 10] },
         transition: {
           duration: 0.45,
           delay: 0.3 + index * 0.05,
@@ -111,17 +126,131 @@ function tokenMotion(
       };
     case "scroll":
       return {
-        initial: { opacity: 0, scaleX: 0, y: 70 + index * 14 },
+        initial: { opacity: 0, scaleX: 0, y: 40 + index * 14 },
         animate: { opacity: [0, 1, 0], scaleX: [0, 1, 1] },
         transition: { duration: 0.55, delay: 0.3 + index * 0.05 },
       };
   }
 }
 
+interface CombatantProps {
+  side: Target;
+  name: string;
+  hp: number;
+  maxHp: number;
+  art: string;
+  statuses?: string[];
+  aimed: boolean;
+  defeated?: boolean;
+  /** The card whose effect is landing on this combatant, if any. */
+  effect: { card: SectionId; hit: Hit | null } | null;
+  reducedMotion: boolean;
+}
+
+function Combatant({
+  side,
+  name,
+  hp,
+  maxHp,
+  art,
+  statuses = [],
+  aimed,
+  defeated = false,
+  effect,
+  reducedMotion,
+}: CombatantProps) {
+  const action = effect ? cardActions[effect.card] : null;
+  const hit = effect?.hit ?? null;
+  const struck = !!hit && hit.damage > 0 && !reducedMotion;
+
+  return (
+    <div
+      className="combatant"
+      data-combatant={side}
+      data-aimed={aimed || undefined}
+      data-defeated={defeated || undefined}
+    >
+      <p className="combatant-name">
+        {name}
+        <span className="combatant-hp-text">
+          {" "}
+          · HP {hp}/{maxHp}
+        </span>
+      </p>
+      <div aria-hidden="true" className="combatant-hp">
+        <span style={{ width: `${(hp / maxHp) * 100}%` }} />
+      </div>
+      <div className="combatant-body">
+        <m.pre
+          key={`art-${hit?.count ?? 0}`}
+          aria-hidden="true"
+          className="combatant-art"
+          initial={false}
+          animate={
+            struck
+              ? { x: [0, -8, 8, -5, 5, 0] }
+              : action && !reducedMotion
+                ? { y: [0, -6, 0] }
+                : undefined
+          }
+          transition={{ duration: 0.4, delay: 0.45 }}
+        >
+          {art}
+        </m.pre>
+        {action && !reducedMotion && (
+          <div
+            key={`effect-${hit?.count}`}
+            aria-hidden="true"
+            className="effect-layer"
+          >
+            {action.tokens.map((token, index) => (
+              <m.span
+                key={index}
+                className="effect-token"
+                data-kind={action.kind}
+                {...tokenMotion(action.kind, index, action.tokens.length)}
+              >
+                {token}
+              </m.span>
+            ))}
+            {struck && (
+              <m.span
+                className="damage"
+                initial={{ opacity: 0, y: 0 }}
+                animate={{ opacity: [0, 1, 1, 0], y: [0, -30, -40, -50] }}
+                transition={{ duration: 0.6, delay: 0.45 }}
+              >
+                −{hit.damage}
+              </m.span>
+            )}
+            <m.span
+              className="effect-verb"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: [0, 1, 1], y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              {action.verb}
+            </m.span>
+          </div>
+        )}
+      </div>
+      {statuses.length > 0 && (
+        <ul aria-label={`${name}'s statuses`} className="combatant-statuses">
+          {statuses.map((status) => (
+            <li key={status}>{status}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 interface BattlefieldProps {
   board: BoardState;
   dragging: boolean;
   candidate: boolean;
+  /** The target of the card being dragged or lifted, highlighted while aiming. */
+  aimed: Target | null;
   flight: Flight | null;
   reducedMotion: boolean;
   /** Tap on the field: skips a running effect, or plays the lifted card. */
@@ -133,14 +262,16 @@ interface BattlefieldProps {
 }
 
 /**
- * The battlefield above the hand (Roadmap P9.1): the drop target of the drag enhancement, the
- * stage of each card's effect, and the bug's health. Decorative for assistive tech except the live
- * region, which states what each played card did.
+ * The battlefield above the hand (Roadmap P9.1–P9.2): the hero on the left, the bug on the right,
+ * and the drop target of the drag enhancement. Attack cards land on the bug, skill and power cards
+ * on the hero. Decorative for assistive tech except the statuses and a polite live region stating
+ * what each played card did.
  */
 export function Battlefield({
   board,
   dragging,
   candidate,
+  aimed,
   flight,
   reducedMotion,
   onActivate,
@@ -152,7 +283,11 @@ export function Battlefield({
   const defeated = hp === 0;
   const playing = board.card.status === "playing" ? board.card.card : null;
   const hit = board.lastHit;
-  const effect = playing ? cardEffects[playing] : null;
+  const target = playing ? cardActions[playing].target : null;
+  const effectOn = (side: Target) =>
+    playing && target === side
+      ? { card: playing, hit: hit?.card === playing ? hit : null }
+      : null;
 
   useEffect(() => {
     if (!playing) return;
@@ -160,17 +295,16 @@ export function Battlefield({
     return () => window.clearTimeout(timer);
   }, [playing, onEffectDone]);
 
-  const message = hit
-    ? [
-        `${cardEffects[hit.card].verb}.`,
-        hit.damage > 0
-          ? `${BUG.name} takes ${hit.damage} damage, ${hp} HP left.`
-          : `${BUG.name} already took that hit.`,
-        defeated ? "Bug fixed: every section has been read." : "",
-      ]
-        .filter(Boolean)
-        .join(" ")
-    : "";
+  let message = "";
+  if (hit) {
+    const action = cardActions[hit.card];
+    message =
+      action.target === "hero"
+        ? `${action.verb}: ${HERO.name} gains ${action.status}.`
+        : hit.damage > 0
+          ? `${action.verb}: ${BUG.name} takes ${hit.damage} damage, ${hp} HP left.${defeated ? " Bug fixed." : ""}`
+          : `${action.verb}: ${BUG.name} already took that hit.`;
+  }
 
   return (
     <div
@@ -181,72 +315,29 @@ export function Battlefield({
       className="battlefield"
       onClick={onActivate}
     >
-      <div className="bug" data-defeated={defeated || undefined}>
-        <p className="bug-name">
-          {BUG.name}
-          <span className="bug-hp-text">
-            {" "}
-            · HP {hp}/{BUG.maxHp}
-          </span>
-        </p>
-        <div aria-hidden="true" className="bug-hp">
-          <span style={{ width: `${(hp / BUG.maxHp) * 100}%` }} />
-        </div>
-        <div className="bug-body">
-          <m.pre
-            key={hit?.count ?? 0}
-            aria-hidden="true"
-            className="bug-art"
-            initial={false}
-            animate={
-              hit && hit.damage > 0 && !reducedMotion
-                ? { x: [0, -8, 8, -5, 5, 0] }
-                : undefined
-            }
-            transition={{ duration: 0.4, delay: playing ? 0.45 : 0 }}
-          >
-            {defeated ? SQUASHED_ART : BUG_ART}
-          </m.pre>
-          {effect && !reducedMotion && (
-            <div key={hit?.count} aria-hidden="true" className="effect-layer">
-              {effect.tokens.map((token, index) => {
-                const motion = tokenMotion(
-                  effect.kind,
-                  index,
-                  effect.tokens.length,
-                );
-                return (
-                  <m.span
-                    key={index}
-                    className="effect-token"
-                    data-kind={effect.kind}
-                    {...motion}
-                  >
-                    {token}
-                  </m.span>
-                );
-              })}
-              {hit && hit.damage > 0 && (
-                <m.span
-                  className="damage"
-                  initial={{ opacity: 0, y: 0 }}
-                  animate={{ opacity: [0, 1, 1, 0], y: [0, -30, -40, -50] }}
-                  transition={{ duration: 0.6, delay: 0.45 }}
-                >
-                  −{hit.damage}
-                </m.span>
-              )}
-              <m.span
-                className="effect-verb"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: [0, 1, 1], y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                {effect.verb}
-              </m.span>
-            </div>
-          )}
-        </div>
+      <div className="combatants">
+        <Combatant
+          side="hero"
+          name={HERO.name}
+          hp={HERO.maxHp}
+          maxHp={HERO.maxHp}
+          art={HERO_ART}
+          statuses={heroStatuses(board.played)}
+          aimed={aimed === "hero"}
+          effect={effectOn("hero")}
+          reducedMotion={reducedMotion}
+        />
+        <Combatant
+          side="bug"
+          name={BUG.name}
+          hp={hp}
+          maxHp={BUG.maxHp}
+          art={defeated ? SQUASHED_ART : BUG_ART}
+          aimed={aimed === "bug"}
+          defeated={defeated}
+          effect={effectOn("bug")}
+          reducedMotion={reducedMotion}
+        />
       </div>
       {playing && flight && !reducedMotion && (
         <m.div
@@ -271,10 +362,10 @@ export function Battlefield({
         {candidate
           ? "[ release to play ]"
           : dragging
-            ? "[ drop the card on the bug ]"
+            ? "[ drop the card on the field ]"
             : defeated
               ? "> bug fixed. replay any card to reread it_"
-              : "> play a card on the bug_"}
+              : "> attacks hit the bug, skills and powers help you_"}
       </p>
       <p className="sr-only" aria-live="polite">
         {message}

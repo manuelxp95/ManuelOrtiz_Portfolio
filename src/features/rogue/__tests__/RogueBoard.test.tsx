@@ -189,25 +189,81 @@ describe("playing cards on the battlefield (P9.1)", () => {
     fireEvent.pointerUp(card(id), { pointerType: "touch", clientY: 300 });
     fireEvent.click(card(id), { detail: 1 });
   };
-  const hp = () => document.querySelector(".bug-hp-text")?.textContent;
+  const hp = () =>
+    document.querySelector('[data-combatant="bug"] .combatant-hp-text')
+      ?.textContent;
 
-  it("a click runs the card's effect on the bug, then opens its dialog", async () => {
+  it("a click runs an attack's effect on the bug, then opens its dialog", async () => {
     const user = userEvent.setup();
     render(<RogueBoard />);
     expect(hp()).toContain("HP 100/100");
 
-    await user.click(card("skills"));
+    await user.click(card("experience"));
     expect(openDialog()).toBeNull();
     expect(
       document.querySelector(".battlefield")?.getAttribute("data-playing"),
-    ).toBe("skills");
-    expect(hp()).toContain("HP 80/100");
+    ).toBe("experience");
+    expect(hp()).toContain("HP 60/100");
     expect(document.querySelector("[aria-live]")?.textContent).toMatch(
-      /takes 20 damage, 80 HP left/,
+      /takes 40 damage, 60 HP left/,
     );
 
-    expect(await screen.findByRole("dialog", { name: /skills/i })).toBeTruthy();
-    expect(slot("skills").hasAttribute("data-played")).toBe(true);
+    expect(
+      await screen.findByRole("dialog", { name: /experience/i }),
+    ).toBeTruthy();
+    expect(slot("experience").hasAttribute("data-played")).toBe(true);
+  });
+
+  it("each combatant keeps a single art once an effect has played", async () => {
+    const user = userEvent.setup();
+    render(<RogueBoard />);
+    await user.click(card("projects"));
+    await screen.findByRole("dialog", { name: /projects/i });
+    for (const side of ["hero", "bug"])
+      expect(
+        document.querySelectorAll(`[data-combatant="${side}"] .combatant-art`),
+      ).toHaveLength(1);
+  });
+
+  it("skill and power cards act on the hero instead of the bug", async () => {
+    const user = userEvent.setup();
+    render(<RogueBoard />);
+    await user.click(card("education"));
+    expect(hp()).toContain("HP 100/100");
+    const statuses = screen.getByRole("list", { name: /statuses/i });
+    expect(statuses.textContent).toMatch(/Block \d+/);
+    expect(document.querySelector("[aria-live]")?.textContent).toMatch(
+      /gains Block/,
+    );
+    await screen.findByRole("dialog", { name: /education/i });
+  });
+
+  it("every card names its type and target", () => {
+    render(<RogueBoard />);
+    expect(card("projects").textContent).toMatch(/attack card, hits/);
+    expect(card("contact").textContent).toMatch(/skill card, acts on/);
+    expect(card("about").textContent).toMatch(/power card, acts on/);
+  });
+
+  it("a lifted card aims at its target", async () => {
+    render(<RogueBoard />);
+    tap("cv");
+    expect(
+      document
+        .querySelector('[data-combatant="bug"]')
+        ?.hasAttribute("data-aimed"),
+    ).toBe(true);
+    tap("skills");
+    expect(
+      document
+        .querySelector('[data-combatant="hero"]')
+        ?.hasAttribute("data-aimed"),
+    ).toBe(true);
+    expect(
+      document
+        .querySelector('[data-combatant="bug"]')
+        ?.hasAttribute("data-aimed"),
+    ).toBe(false);
   });
 
   it("a tap on the battlefield or Escape skips the effect", async () => {
@@ -275,9 +331,9 @@ describe("playing cards on the battlefield (P9.1)", () => {
   it("reduced motion opens the dialog at once and still scores the hit", () => {
     setReducedMotion(true);
     render(<RogueBoard />);
-    fireEvent.click(card("about"));
+    fireEvent.click(card("cv"));
     expect(openDialog()).not.toBeNull();
-    expect(hp()).toContain("HP 90/100");
+    expect(hp()).toContain("HP 80/100");
   });
 
   it("Left/Right arrows move along the hand", async () => {
@@ -291,10 +347,10 @@ describe("playing cards on the battlefield (P9.1)", () => {
   });
 
   it("a deep link counts as played", async () => {
-    window.history.replaceState(null, "", "/#education");
-    usePortfolioStore.setState({ activeSection: "education" });
+    window.history.replaceState(null, "", "/#projects");
+    usePortfolioStore.setState({ activeSection: "projects" });
     render(<RogueBoard />);
-    await screen.findByRole("dialog", { name: /education/i });
-    expect(hp()).toContain("HP 90/100");
+    await screen.findByRole("dialog", { name: /projects/i });
+    expect(hp()).toContain("HP 60/100");
   });
 });

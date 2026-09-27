@@ -679,57 +679,123 @@ a.merchant-offer:focus-visible {
   background: var(--accent-soft);
 }
 
-.bug {
+/* Duel (P9.2): hero on the left, bug on the right. */
+.combatants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 0.5rem;
+  width: 100%;
+  padding-inline: 0.5rem;
+}
+
+.combatant {
+  --combatant-color: var(--text);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.375rem;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  transition:
+    border-color var(--duration-fast) ease-out,
+    box-shadow var(--duration-fast) ease-out;
 }
 
-.bug-name {
+.combatant[data-combatant="hero"] {
+  --combatant-color: var(--accent);
+}
+
+.combatant[data-combatant="bug"] {
+  --combatant-color: var(--danger);
+}
+
+/* The aimed combatant glows in the arrow's color, and says so in its frame, not only color. */
+.combatant[data-aimed] {
+  border-color: var(--combatant-color);
+  border-style: dashed;
+  box-shadow: 0 0 1.5rem -0.5rem var(--combatant-color);
+}
+
+.combatant-name {
   font-family: var(--card-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-align: center;
   text-transform: uppercase;
 }
 
-.bug-hp-text {
+.combatant-hp-text {
   color: var(--muted);
 }
 
-.bug-hp {
-  width: min(14rem, 60vw);
+.combatant-hp {
+  width: min(10rem, 80%);
   height: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 
-.bug-hp > span {
+.combatant-hp > span {
   display: block;
   height: 100%;
-  background: var(--danger);
+  background: var(--combatant-color);
   transition: width 400ms ease-out;
 }
 
-.bug-body {
+.combatant-body {
   position: relative;
   display: grid;
   place-items: center;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
-.bug-art {
+.combatant-art {
   font-family: var(--card-mono);
-  font-size: clamp(0.8rem, 3.4vw, 1.1rem);
+  font-size: clamp(0.55rem, 2.3vw, 1rem);
   line-height: 1.15;
   color: var(--text);
 }
 
-.bug[data-defeated] .bug-art {
+.combatant[data-combatant="hero"] .combatant-art,
+.combatant[data-defeated] .combatant-art {
   color: var(--accent);
 }
 
+.combatant-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 1.25rem;
+}
+
+.combatant-statuses li {
+  padding: 0 0.375rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  font-family: var(--card-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+}
+
+/* Targeting arrow: fixed over the page, just under the dragged card. */
+.target-arrow {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  width: 100vw;
+  height: 100dvh;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--accent);
+}
+
+.target-arrow[data-target="bug"] {
+  color: var(--danger);
+}
 .effect-layer {
   position: absolute;
   inset: 0;
@@ -803,7 +869,8 @@ a.merchant-offer:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .battlefield,
-  .bug-hp > span {
+  .combatant,
+  .combatant-hp > span {
     transition: none;
   }
 }
