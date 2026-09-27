@@ -6,63 +6,120 @@
     monospace;
 }
 
-/* Hand: tap-first grid below lg, fanned hand from lg. */
-.card-hand {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-top: 2rem;
+/*
+ * Game screen (P9.1): header, battlefield and a fanned hand fill the viewport under the site
+ * header at every width. The fan overlaps its cards as much as the width requires.
+ */
+.rogue-board {
+  /* Bounded by height too, so the hand never pushes the battlefield off short screens. */
+  --card-w: clamp(5.75rem, min(27vw, 19dvh), 11rem);
+  --fan-step: 3deg;
+  --fan-drop-step: 4px;
+  --danger: #b91c1c;
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--header-height));
+  min-height: 34rem;
+  padding-top: 0.75rem;
+  /* Rotated edge cards are clipped at the board's sides, never scrolled to; lifted cards may
+     still rise above the hand. */
+  overflow-x: clip;
 }
 
-@media (min-width: 40rem) {
-  .card-hand {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (prefers-color-scheme: dark) {
+  .rogue-board {
+    --danger: #f87171;
   }
-}
-
-@media (min-width: 48rem) {
-  .card-hand {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.card-slot {
-  container-type: inline-size;
 }
 
 @media (min-width: 64rem) {
-  .card-hand {
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    padding-top: 2.5rem;
-    padding-bottom: 3.5rem;
+  .rogue-board {
+    --fan-step: 5deg;
+    --fan-drop-step: 6px;
+  }
+}
+
+.board-header {
+  flex: none;
+}
+
+.hint-pointer {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hint-touch {
+    display: none;
   }
 
-  .card-slot {
-    width: 11rem;
-    flex: none;
-    transform-origin: 50% 120%;
-    transform: translateY(var(--fan-drop)) rotate(var(--fan-rotate));
-    transition: transform var(--duration-fast) ease-out;
+  .hint-pointer {
+    display: inline;
   }
+}
 
-  .card-slot + .card-slot {
-    margin-left: -2rem;
-  }
+.card-hand {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  /* Room above for a lifted card, below for the outer cards' drop (offset 3 → 9 steps). */
+  padding: 2.5rem 0 calc(9 * var(--fan-drop-step) + 0.75rem);
+}
 
-  .card-slot:has([aria-current="true"]) {
-    transform: translateY(calc(var(--fan-drop) - 0.75rem))
-      rotate(var(--fan-rotate));
-  }
+.card-slot {
+  position: relative;
+  flex: none;
+  width: var(--card-w);
+  container-type: inline-size;
+  transform-origin: 50% 120%;
+  transform: translateY(
+      calc(var(--fan-offset) * var(--fan-offset) * var(--fan-drop-step))
+    )
+    rotate(calc(var(--fan-offset) * var(--fan-step)));
+  transition: transform var(--duration-fast) ease-out;
+}
 
-  .card-slot:hover,
-  .card-slot:focus-within {
+/* Percent margins resolve against the hand's width: seven cards always fit in one row. */
+.card-slot + .card-slot {
+  margin-left: min(-1.5rem, calc((100% - 7 * var(--card-w)) / 6));
+}
+
+.card-slot:has([aria-current="true"]) {
+  transform: translateY(
+      calc(
+        var(--fan-offset) * var(--fan-offset) * var(--fan-drop-step) - 0.75rem
+      )
+    )
+    rotate(calc(var(--fan-offset) * var(--fan-step)));
+}
+
+.card-slot:has(:focus-visible) {
+  z-index: 10;
+  transform: translateY(-1.75rem) rotate(0deg) scale(1.04);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-slot:hover {
     z-index: 10;
     transform: translateY(-1.75rem) rotate(0deg) scale(1.04);
   }
 }
 
+/* A tapped card lifts out of the overlapping fan so it can be read before it is played. */
+.card-slot[data-inspecting] {
+  z-index: 20;
+  transform: translateY(-3.5rem) rotate(0deg) scale(1.3);
+}
+
+.card-slot[data-played]::before {
+  content: "✓";
+  position: absolute;
+  top: -1.1rem;
+  left: 50%;
+  translate: -50% 0;
+  font-family: var(--card-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+}
 .section-card {
   display: block;
   width: 100%;
@@ -189,44 +246,16 @@ html:has(.card-dialog[open]) {
   }
 }
 
-/* Drag enhancement (P6): mouse/pen only — hidden where the primary pointer is coarse. */
-.play-zone {
-  display: none;
+/* Drag enhancement (P6) and touch play (P9.1). */
+.section-card {
+  touch-action: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .play-zone {
-    display: grid;
-    place-items: center;
-    height: 4.5rem;
-    margin-top: 1.5rem;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-card);
-    font-family: var(--card-mono);
-    font-size: 0.8rem;
-    color: var(--muted);
-    transition:
-      border-color var(--duration-fast) ease-out,
-      background-color var(--duration-fast) ease-out,
-      color var(--duration-fast) ease-out;
-  }
-
-  .play-zone[data-dragging] {
-    border-color: var(--accent);
-    color: var(--text);
-  }
-
-  .play-zone[data-candidate] {
-    border-style: solid;
-    background: var(--accent-soft);
-    color: var(--text);
-  }
-
   .section-card {
     touch-action: manipulation;
   }
 }
-
 .section-card[data-dragging] {
   opacity: 0.35;
 }
@@ -239,10 +268,6 @@ html:has(.card-dialog[open]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .play-zone {
-    transition: none;
-  }
-
   .card-overlay {
     transform: none;
   }
@@ -615,4 +640,170 @@ a.merchant-offer:focus-visible {
 
 .relic-inspector-controls button:hover {
   border-color: var(--accent);
+}
+
+/* Battlefield (P9.1): the bug, its health, the effect layer and the drop target. */
+.battlefield-slot {
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.75rem;
+}
+
+.battlefield {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    var(--surface),
+    var(--bg) 70%
+  );
+  overflow: hidden;
+  transition:
+    border-color var(--duration-fast) ease-out,
+    background-color var(--duration-fast) ease-out;
+}
+
+.battlefield[data-dragging] {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.battlefield[data-candidate] {
+  border-style: solid;
+  background: var(--accent-soft);
+}
+
+.bug {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.bug-name {
+  font-family: var(--card-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bug-hp-text {
+  color: var(--muted);
+}
+
+.bug-hp {
+  width: min(14rem, 60vw);
+  height: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bug-hp > span {
+  display: block;
+  height: 100%;
+  background: var(--danger);
+  transition: width 400ms ease-out;
+}
+
+.bug-body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-top: 0.5rem;
+}
+
+.bug-art {
+  font-family: var(--card-mono);
+  font-size: clamp(0.8rem, 3.4vw, 1.1rem);
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.bug[data-defeated] .bug-art {
+  color: var(--accent);
+}
+
+.effect-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.effect-layer > * {
+  grid-area: 1 / 1;
+}
+
+.effect-token {
+  font-family: var(--card-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.effect-token[data-kind="summon"] {
+  font-size: 2rem;
+}
+
+.effect-token[data-kind="burst"],
+.effect-token[data-kind="coins"] {
+  color: var(--rarity-legendary);
+}
+
+.effect-token[data-kind="scroll"] {
+  width: 10rem;
+  text-align: center;
+  letter-spacing: 0.5em;
+  border-block: 1px solid var(--accent);
+}
+
+.damage {
+  font-family: var(--card-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.effect-verb {
+  align-self: end;
+  translate: 0 2.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  font-family: var(--card-mono);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.played-card {
+  position: absolute;
+  top: 70%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 5;
+  container-type: inline-size;
+  pointer-events: none;
+}
+
+.battlefield-hint {
+  position: absolute;
+  bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battlefield,
+  .bug-hp > span {
+    transition: none;
+  }
 }

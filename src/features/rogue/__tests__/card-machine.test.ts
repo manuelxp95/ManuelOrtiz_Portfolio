@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { SectionId } from "@/domain/types";
 import {
   cardReducer,
   initialCardState,
   type CardState,
 } from "@/features/rogue/card-machine";
 
-const expanded = (card: "skills" | "projects"): CardState => ({
+const expanded = (card: SectionId): CardState => ({
   status: "expanded",
   card,
 });
@@ -58,6 +59,86 @@ describe("cardReducer", () => {
     expect(cardReducer(state, { type: "CLOSED" })).toBe(state);
   });
 
+  describe("playing a card (P9.1)", () => {
+    it("click or keyboard plays at once; the effect ends in the dialog", () => {
+      const playing = cardReducer(initialCardState, {
+        type: "PLAY",
+        card: "skills",
+        reducedMotion: false,
+      });
+      expect(playing).toEqual({ status: "playing", card: "skills" });
+      expect(cardReducer(playing, { type: "EFFECT_DONE" })).toEqual(
+        expanded("skills"),
+      );
+    });
+
+    it("reduced motion skips the effect", () => {
+      expect(
+        cardReducer(initialCardState, {
+          type: "PLAY",
+          card: "skills",
+          reducedMotion: true,
+        }),
+      ).toEqual(expanded("skills"));
+    });
+
+    it("a tap lifts a card, another card replaces it, and a tap outside drops it", () => {
+      const lifted = cardReducer(initialCardState, {
+        type: "INSPECT",
+        card: "skills",
+      });
+      expect(lifted).toEqual({ status: "inspecting", card: "skills" });
+      expect(cardReducer(lifted, { type: "INSPECT", card: "skills" })).toBe(
+        lifted,
+      );
+      expect(
+        cardReducer(lifted, { type: "INSPECT", card: "projects" }),
+      ).toEqual({ status: "inspecting", card: "projects" });
+      expect(cardReducer(lifted, { type: "RELEASE" })).toEqual(
+        initialCardState,
+      );
+    });
+
+    it("a lifted card plays and can still be dragged", () => {
+      const lifted: CardState = { status: "inspecting", card: "skills" };
+      expect(
+        cardReducer(lifted, {
+          type: "PLAY",
+          card: "skills",
+          reducedMotion: false,
+        }),
+      ).toEqual({ status: "playing", card: "skills" });
+      expect(
+        cardReducer(lifted, { type: "DRAG_START", card: "skills" }),
+      ).toEqual({ status: "dragging", card: "skills", overZone: false });
+    });
+
+    it("ignores plays and lifts while a card is playing or open", () => {
+      const playing: CardState = { status: "playing", card: "skills" };
+      const open = expanded("projects");
+      for (const state of [playing, open]) {
+        expect(
+          cardReducer(state, {
+            type: "PLAY",
+            card: "cv",
+            reducedMotion: false,
+          }),
+        ).toBe(state);
+        expect(cardReducer(state, { type: "INSPECT", card: "cv" })).toBe(state);
+      }
+      expect(cardReducer(open, { type: "EFFECT_DONE" })).toBe(open);
+    });
+
+    it("a direct open (hash, back/forward) interrupts an effect", () => {
+      expect(
+        cardReducer(
+          { status: "playing", card: "skills" },
+          { type: "OPEN", card: "cv" },
+        ),
+      ).toEqual(expanded("cv"));
+    });
+  });
+
   describe("drag enhancement", () => {
     const dragging = (overZone: boolean): CardState => ({
       status: "dragging",
@@ -75,7 +156,7 @@ describe("cardReducer", () => {
       );
     });
 
-    it("becomes a drop candidate over the play zone and back", () => {
+    it("becomes a drop candidate over the battlefield and back", () => {
       const over = cardReducer(dragging(false), {
         type: "DRAG_OVER",
         overZone: true,
@@ -89,13 +170,16 @@ describe("cardReducer", () => {
       );
     });
 
-    it("dropping on the play zone opens the card; elsewhere returns it", () => {
-      expect(cardReducer(dragging(true), { type: "DROP" })).toEqual(
-        expanded("projects"),
-      );
-      expect(cardReducer(dragging(false), { type: "DROP" })).toEqual(
-        initialCardState,
-      );
+    it("dropping on the battlefield plays the card; elsewhere returns it", () => {
+      expect(
+        cardReducer(dragging(true), { type: "DROP", reducedMotion: false }),
+      ).toEqual({ status: "playing", card: "projects" });
+      expect(
+        cardReducer(dragging(true), { type: "DROP", reducedMotion: true }),
+      ).toEqual(expanded("projects"));
+      expect(
+        cardReducer(dragging(false), { type: "DROP", reducedMotion: false }),
+      ).toEqual(initialCardState);
     });
 
     it("cancelling (Escape, resize, hidden tab, pointer cancel) returns the card", () => {
@@ -110,9 +194,9 @@ describe("cardReducer", () => {
       expect(cardReducer(state, { type: "CLOSE", reducedMotion: false })).toBe(
         state,
       );
-      expect(cardReducer(initialCardState, { type: "DROP" })).toBe(
-        initialCardState,
-      );
+      expect(
+        cardReducer(initialCardState, { type: "DROP", reducedMotion: false }),
+      ).toBe(initialCardState);
       expect(cardReducer(initialCardState, { type: "DRAG_CANCEL" })).toBe(
         initialCardState,
       );

@@ -382,3 +382,20 @@ Decision:
   SEO 66 because of their `noindex` header.
 Consequences: all automated walkthroughs pass; NVDA and physical-phone passes remain manual. The
 owner plans a corrections round after P9 for plan-vs-result discrepancies.
+
+## Decision: Battlefield board and mobile fan (Roadmap P9.1, ADR-008)
+
+Status: Accepted (project owner request after P9; rival = technical bug, effect then dialog, touch
+= tap to lift / tap or swipe up to play — all chosen by the owner)
+Date: 2026-09-27
+Source: ADR-008; verified by Vitest (182 tests) and the headless-Chrome audit harness
+Decision:
+- Supersedes P4's "mobile: grid or snap list": the fanned hand is used at every width; the board is
+  a viewport-tall game screen (header, battlefield, hand).
+- Battlefield with "The Legacy Bug" (100 HP); per-card damage sums to 100 and per-card effects use
+  tokens derived from the content (`src/features/rogue/battle.ts`).
+- Card machine gains `inspecting` and `playing` (INSPECT / RELEASE / PLAY / EFFECT_DONE; DROP now
+  plays); `boardReducer` tracks played cards and the last hit. `PlayZone` removed.
+- Effect 0.9 s then dialog; skip by tap, Enter or Escape; reduced motion skips; hash/back opens
+  skip the effect but count as played.
+Consequences: Card Mode load 69.4 kB gz; content reached ~0.9 s later after a play unless skipped.

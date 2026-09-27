@@ -81,6 +81,19 @@ html[data-mode="rogue"] [data-renderer="classic"] {
   min-height: calc(100dvh - var(--header-height));
 }
 
+.rogue-skeleton {
+  flex-direction: column;
+  height: calc(100dvh - var(--header-height));
+  min-height: 34rem;
+  padding-top: 0.75rem;
+  overflow: hidden;
+}
+
+.rogue-skeleton:not(.rogue-prepaint),
+html[data-mode="rogue"] .rogue-prepaint.rogue-skeleton {
+  display: flex;
+}
+
 section[id] {
   scroll-margin-top: calc(var(--header-height) + 1rem);
 }

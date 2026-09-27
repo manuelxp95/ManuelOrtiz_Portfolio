@@ -8,7 +8,15 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { m } from "motion/react";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 import {
   contactLinks,
   cv,
@@ -26,13 +34,13 @@ import {
   usePortfolioStore,
 } from "@/state/portfolio-store";
 import { parseSectionHash } from "@/state/section-hash";
+import { boardReducer, initialBoardState } from "./battle";
+import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
-import { cardReducer, initialCardState } from "./card-machine";
 import {
   DRAG_ACTIVATION_DISTANCE,
   dragAnnouncements,
 } from "./drag/drag-config";
-import { PLAY_ZONE_ID, PlayZone } from "./drag/PlayZone";
 import { CardMotion, stagger, useEntrance } from "./motion-config";
 import { preloadSectionPanel } from "./sections/SectionPanel";
 import { CardFace, SectionCard } from "./SectionCard";
@@ -50,33 +58,42 @@ const cardStats: Record<SectionId, string> = {
   cv: cv ? "PDF ready" : "PDF coming soon",
 };
 
-/** Center-out index of each card in the desktop fan (-3 … 3). */
-function fanStyle(index: number) {
-  const offset = index - (sections.length - 1) / 2;
+const sectionMeta = (id: SectionId) =>
+  sections.find((section) => section.id === id)!;
+
+/** Center-out index of each card in the fan (-3 … 3); CSS turns it into rotation and drop. */
+const fanStyle = (index: number) =>
+  ({ "--fan-offset": index - (sections.length - 1) / 2 }) as CSSProperties;
+
+/** Where a card played from the hand lands: the lower middle of the battlefield. */
+function measureFlight(card: HTMLElement, field: HTMLElement): Flight {
+  const from = card.getBoundingClientRect();
+  const to = field.getBoundingClientRect();
   return {
-    "--fan-rotate": `${offset * 5}deg`,
-    "--fan-drop": `${offset * offset * 6}px`,
-  } as React.CSSProperties;
+    dx: from.left + from.width / 2 - (to.left + to.width / 2),
+    dy: from.top + from.height / 2 - (to.top + to.height * 0.7),
+    width: from.width,
+  };
 }
 
 export function RogueBoard() {
   const activeSection = usePortfolioStore((state) => state.activeSection);
   const reducedMotion = useReducedMotion();
   const deal = useEntrance({ opacity: 0, y: 24 });
-  const [state, dispatch] = useReducer(cardReducer, initialCardState);
+  const [board, dispatch] = useReducer(boardReducer, initialBoardState);
+  const state = board.card;
+  const [flight, setFlight] = useState<Flight | null>(null);
   const cards = useRef(new Map<SectionId, HTMLButtonElement>());
+  const field = useRef<HTMLDivElement>(null);
   const mounted = useRef(false);
   const lastOpen = useRef<SectionId | null>(null);
-  // Mouse only: touch keeps tap-to-open and native scrolling (P6, ADR-006).
+  // Mouse only: touch keeps tap-to-play and native scrolling (P6, ADR-006).
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE },
     }),
   );
-  const dragged =
-    state.status === "dragging"
-      ? sections.find((section) => section.id === state.card)
-      : undefined;
+  const dragged = state.status === "dragging" ? sectionMeta(state.card) : null;
 
   // Entering Card Mode: a user switch focuses the selected card; a page load with a section hash
   // (shared deep link, reload) opens that card directly.
@@ -85,7 +102,7 @@ export function RogueBoard() {
     mounted.current = true;
     const active = usePortfolioStore.getState().activeSection;
     if (consumePendingModeFocus()) {
-      cards.current.get(active)?.focus();
+      cards.current.get(active)?.focus({ preventScroll: true });
     } else if (parseSectionHash(window.location.hash)) {
       dispatch({ type: "OPEN", card: active });
     }
@@ -93,7 +110,10 @@ export function RogueBoard() {
 
   // The open card always shows the active section (back/forward, links inside a card).
   useEffect(() => {
-    if (state.status !== "idle" && state.card !== activeSection) {
+    if (
+      (state.status === "expanded" || state.status === "closing") &&
+      state.card !== activeSection
+    ) {
       dispatch({ type: "OPEN", card: activeSection });
     }
   }, [activeSection, state]);
@@ -101,34 +121,95 @@ export function RogueBoard() {
   // Restoring: once the dialog is fully closed, focus returns to the card it came from.
   useEffect(() => {
     if (state.status === "idle") {
-      if (lastOpen.current) cards.current.get(lastOpen.current)?.focus();
+      if (lastOpen.current)
+        cards.current.get(lastOpen.current)?.focus({ preventScroll: true });
       lastOpen.current = null;
-    } else {
+    } else if (state.status === "expanded" || state.status === "closing") {
       lastOpen.current = state.card;
     }
   }, [state]);
+
+  // Escape skips a running effect.
+  useEffect(() => {
+    if (state.status !== "playing") return;
+    const skip = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") dispatch({ type: "EFFECT_DONE" });
+    };
+    window.addEventListener("keydown", skip);
+    return () => window.removeEventListener("keydown", skip);
+  }, [state.status]);
+
+  const play = useCallback(
+    (card: SectionId) => {
+      const element = cards.current.get(card);
+      setFlight(
+        element && field.current ? measureFlight(element, field.current) : null,
+      );
+      selectSection(card, "push");
+      dispatch({ type: "PLAY", card, reducedMotion });
+    },
+    [reducedMotion],
+  );
 
   const close = useCallback(
     () => dispatch({ type: "CLOSE", reducedMotion }),
     [reducedMotion],
   );
   const closed = useCallback(() => dispatch({ type: "CLOSED" }), []);
+  const effectDone = useCallback(() => dispatch({ type: "EFFECT_DONE" }), []);
+
+  function activate(card: SectionId, touch: boolean) {
+    if (state.status === "playing") dispatch({ type: "EFFECT_DONE" });
+    else if (touch && !(state.status === "inspecting" && state.card === card))
+      dispatch({ type: "INSPECT", card });
+    else play(card);
+  }
+
+  /** Left/Right move along the hand, like the fan reads. */
+  function onHandKeyDown(event: KeyboardEvent<HTMLUListElement>) {
+    const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+    if (!step) return;
+    const ids = sections.map((section) => section.id);
+    const current = ids.findIndex(
+      (id) => cards.current.get(id) === document.activeElement,
+    );
+    if (current < 0) return;
+    event.preventDefault();
+    const next = ids[(current + step + ids.length) % ids.length];
+    cards.current.get(next)?.focus();
+  }
 
   return (
     <CardMotion>
       <section
         aria-labelledby="card-board-heading"
-        className="rogue-board rogue-stage py-12"
+        className="rogue-board rogue-stage"
+        onPointerDown={(event) => {
+          // A tap anywhere but a card or the battlefield drops a lifted card back into the hand.
+          const target = event.target as Element;
+          if (
+            state.status === "inspecting" &&
+            !target.closest(".section-card, .battlefield")
+          )
+            dispatch({ type: "RELEASE" });
+        }}
       >
-        <h1 id="card-board-heading" className="text-3xl font-bold">
-          {profile.name}{" "}
-          <span className="font-mono text-lg font-normal text-muted">
-            · Card Mode
-          </span>
-        </h1>
-        <p className="mt-2 font-mono text-sm text-muted">
-          &gt; choose a card to open it_
-        </p>
+        <header className="board-header">
+          <h1 id="card-board-heading" className="text-xl font-bold sm:text-2xl">
+            {profile.name}{" "}
+            <span className="font-mono text-sm font-normal text-muted sm:text-base">
+              · Card Mode
+            </span>
+          </h1>
+          <p className="font-mono text-xs text-muted sm:text-sm">
+            <span className="hint-touch">
+              &gt; tap a card to lift it, tap again or swipe up to play_
+            </span>
+            <span className="hint-pointer">
+              &gt; click a card to play it, or drag it onto the bug_
+            </span>
+          </p>
+        </header>
         {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}
         <DndContext
           sensors={sensors}
@@ -137,26 +218,59 @@ export function RogueBoard() {
             dispatch({ type: "DRAG_START", card: active.id as SectionId })
           }
           onDragOver={({ over }) =>
-            dispatch({ type: "DRAG_OVER", overZone: over?.id === PLAY_ZONE_ID })
+            dispatch({
+              type: "DRAG_OVER",
+              overZone: over?.id === BATTLEFIELD_ID,
+            })
           }
           onDragEnd={({ active, over }) => {
-            const onZone = over?.id === PLAY_ZONE_ID;
-            dispatch({ type: "DRAG_OVER", overZone: onZone });
-            if (onZone) selectSection(active.id as SectionId, "push");
-            dispatch({ type: "DROP" });
+            const onField = over?.id === BATTLEFIELD_ID;
+            dispatch({ type: "DRAG_OVER", overZone: onField });
+            if (onField) {
+              setFlight(null);
+              selectSection(active.id as SectionId, "push");
+            }
+            dispatch({ type: "DROP", reducedMotion });
           }}
           onDragCancel={() => dispatch({ type: "DRAG_CANCEL" })}
         >
-          <PlayZone
-            dragging={state.status === "dragging"}
-            candidate={state.status === "dragging" && state.overZone}
-          />
-          <ul aria-label="Sections" className="card-hand">
+          <div ref={field} className="battlefield-slot">
+            <Battlefield
+              board={board}
+              dragging={state.status === "dragging"}
+              candidate={state.status === "dragging" && state.overZone}
+              flight={flight}
+              reducedMotion={reducedMotion}
+              onActivate={() => {
+                if (state.status === "playing") effectDone();
+                else if (state.status === "inspecting") play(state.card);
+              }}
+              onEffectDone={effectDone}
+              renderFace={(card) => (
+                <CardFace
+                  section={sectionMeta(card)}
+                  stat={cardStats[card]}
+                  selected={card === activeSection}
+                />
+              )}
+            />
+          </div>
+          <ul
+            aria-label="Sections"
+            className="card-hand"
+            onKeyDown={onHandKeyDown}
+          >
             {sections.map((section, index) => (
               <li
                 key={section.id}
                 className="card-slot"
                 style={fanStyle(index)}
+                data-inspecting={
+                  (state.status === "inspecting" &&
+                    state.card === section.id) ||
+                  undefined
+                }
+                data-played={board.played.includes(section.id) || undefined}
               >
                 {/* Dealt into the hand once on entry; the fan transform stays on the slot. */}
                 <m.div
@@ -172,17 +286,16 @@ export function RogueBoard() {
                     section={section}
                     stat={cardStats[section.id]}
                     selected={section.id === activeSection}
-                    onOpen={() => {
-                      selectSection(section.id, "push");
-                      dispatch({ type: "OPEN", card: section.id });
-                    }}
+                    played={board.played.includes(section.id)}
+                    onActivate={(touch) => activate(section.id, touch)}
+                    onSwipeUp={() => play(section.id)}
                     onIntent={() => preloadSectionPanel(section.id)}
                   />
                 </m.div>
               </li>
             ))}
           </ul>
-          {/* A successful drop opens the dialog in place of a snap-back; reduced motion never animates. */}
+          {/* A successful drop plays the card in place of a snap-back; reduced motion never animates. */}
           <DragOverlay
             dropAnimation={
               reducedMotion || (state.status === "dragging" && state.overZone)

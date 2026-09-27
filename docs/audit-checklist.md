@@ -109,3 +109,14 @@ Motion exports no layout-only feature bundle and its `exports` map blocks deep i
   also applies to the initial anchor scroll.
 - `preloadSectionPanel` does not honour Save-Data / `prefers-reduced-data` (panels are ~1 kB).
 - Manual NVDA and physical-phone passes.
+
+## 2026-09-27 — P9.1 re-run (battlefield, mobile fan)
+
+- [x] Keyboard: Enter plays (effect, then dialog), focus on Close, Escape returns focus without
+  scrolling the page; Left/Right move along the hand.
+- [x] Touch: first tap lifts the card, second tap plays; horizontal swipe does nothing; swipe up
+  plays; relic and 3D inspector unchanged.
+- [x] Mouse drag onto the battlefield: drop candidate shown, card plays, dialog opens.
+- [x] Reduced motion: no flight or effect; dialog at once; HP still updates.
+- [x] Accessibility tree: 0 unnamed controls; live region states each hit and the defeat.
+- [x] Stress, idle, slow network, deep links: as in the P9 run.

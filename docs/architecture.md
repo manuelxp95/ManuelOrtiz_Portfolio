@@ -119,9 +119,11 @@ Byte budgets: `docs/Roadmap.md` §7 is the single source; CI enforces them from 
 Card Mode components are reasoned about as a state machine, not just CSS. Canonical states:
 
 ```
-idle → hovered/focused → selected → expanded → closing/restoring → idle
-                  ↘ grabbed/dragging → drop candidate → expanded   (drag enhancement, Roadmap P6)
+idle → hovered/focused → selected → [inspecting] → playing → expanded → closing/restoring → idle
+                  ↘ grabbed/dragging → drop candidate → playing       (drag enhancement, Roadmap P6)
 ```
+
+`inspecting` (touch only) and `playing` were added in Roadmap P9.1 (ADR-008).
 
 `selected` is the card matching `activeSection`. Every non-drag state needs a mouse, keyboard
 and touch path; drag states are desktop-pointer only and always have a click/keyboard/tap
@@ -135,9 +137,18 @@ expanded card is a native modal `<dialog>` rendering the same section bodies as 
 (`src/components/sections/*`). Card Mode's look is ASCII art: fixed character-grid faces plus
 build-time rendered rotations (`npm run ascii`).
 
-Drag (Roadmap P6): mouse-only `MouseSensor`, drop a card on the play zone above the hand to open
+Drag (Roadmap P6): mouse-only `MouseSensor`, drop a card on the battlefield above the hand to play
 it; releasing elsewhere, Escape, resize or a hidden tab return it to the hand. Every card still
-opens by click, Enter/Space and tap.
+plays by click, Enter/Space and tap.
+
+Battlefield (Roadmap P9.1, ADR-008): the board is a viewport-tall game screen at every width — a
+battlefield with an original ASCII bug and its HP above a fanned hand (overlapping as much as the
+width needs). Playing a card flies it to the battlefield and runs a short effect specific to the
+card (tokens derived from the content, `src/features/rogue/battle.ts`), deals its damage, then
+opens the card's dialog; a tap, Enter or Escape skips the effect and reduced motion skips it
+entirely. Mouse click and keyboard play at once; a finger tap first lifts the card out of the fan
+(`inspecting`), and a second tap, a swipe up or a tap on the battlefield plays it. Direct opens (URL
+hash, back/forward) skip the effect but still count as played; all seven cards defeat the bug.
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
