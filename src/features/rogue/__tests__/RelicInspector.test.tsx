@@ -12,6 +12,7 @@ import {
 } from "vitest";
 import { projects } from "@/content";
 import { renderAscii } from "@/features/rogue/ascii/renderer";
+import { shownAscii } from "@/test/ascii-text";
 import {
   INSPECTOR_POSE,
   INSPECTOR_SIZE,
@@ -37,9 +38,9 @@ afterEach(() => {
 const STEP = Math.PI / 12;
 const potato = RELIC_MODELS.sopa!;
 const artAt = (yaw: number, pitch: number) =>
-  renderAscii({ shape: potato.shape, ...INSPECTOR_SIZE, yaw, pitch });
+  renderAscii({ shape: potato.shape, ...INSPECTOR_SIZE, yaw, pitch }).chars;
 const shownArt = () =>
-  document.querySelector(".relic-inspector-art")!.textContent;
+  shownAscii(document.querySelector(".relic-inspector-art")!);
 
 describe("relic models", () => {
   it("only name real projects", () => {

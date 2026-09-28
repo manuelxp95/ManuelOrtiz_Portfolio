@@ -572,3 +572,20 @@ Decision:
   64 frames at 1× (153 ms), defeated lying on its side; loops like the boss (CLAUDE.md exception
   now covers both combatants).
 Consequences: Card Mode load 79.2 kB gz (0.8 kB headroom); hero loop chunk 4.5 kB gz.
+
+## Decision: Depth-cued ASCII as the pseudo-3D standard (Roadmap P9.10, ADR-015)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-015; CLAUDE.md (Styling); Vitest and headless Chrome
+Decision:
+- Technique: depth cueing (linear fog toward the background, quantized to 4 bands); characters
+  carry light, color carries depth.
+- Pattern: producer → `DepthArt` value (`chars` + parallel `depth` bands, `ascii/depth.ts`) →
+  presenter `AsciiArt.tsx` (one stacked text layer per band) → CSS fog
+  `color-mix(in oklab, currentColor 100/76/56/40 %, var(--bg))`, both themes.
+- Stable depth ranges: SDF fixed −1.2 … 0.3; models over the whole animation; card frame/text flat.
+- Applied to card glyphs, card rotations, relic inspector, combatants. CLAUDE.md requires it for new
+  pseudo-3D elements.
+- Combatants' rest/defeated frames moved into their lazy chunks to stay under the Card Mode budget.
+Consequences: Card Mode load 79.0 kB gz; all Card Mode chunks 106.5 kB.

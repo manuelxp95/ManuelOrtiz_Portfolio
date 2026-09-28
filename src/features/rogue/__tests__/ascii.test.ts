@@ -4,9 +4,13 @@ import {
   frameLoaders,
   modelFrameLoaders,
 } from "@/features/rogue/ascii/frame-loaders";
-import * as bossArt from "@/features/rogue/ascii/models/boss.generated";
-import * as heroArt from "@/features/rogue/ascii/models/hero.generated";
 import { cardGlyphs } from "@/features/rogue/ascii/glyphs.generated";
+import {
+  DEPTH_BANDS,
+  depthLayers,
+  flatArt,
+  type DepthArt,
+} from "@/features/rogue/ascii/depth";
 import { renderAscii } from "@/features/rogue/ascii/renderer";
 import {
   ANIMATION_FRAMES,
@@ -19,21 +23,57 @@ import {
   GLYPH_SIZE,
 } from "@/features/rogue/ascii/scenes";
 
-function expectGrid(art: string, cols: number, rows: number) {
-  const lines = art.split("\n");
-  expect(lines).toHaveLength(rows);
-  for (const line of lines) expect(line).toHaveLength(cols);
+function expectGrid(art: DepthArt, cols: number, rows: number) {
+  for (const text of [art.chars, art.depth]) {
+    const lines = text.split("\n");
+    expect(lines).toHaveLength(rows);
+    for (const line of lines) expect(line).toHaveLength(cols);
+  }
+  // A band exactly where a character is drawn.
+  for (let i = 0; i < art.chars.length; i++)
+    expect(art.depth[i] === " " || art.depth[i] === "\n").toBe(
+      art.chars[i] === " " || art.chars[i] === "\n",
+    );
+  expect(art.depth).toMatch(new RegExp(`^[0-${DEPTH_BANDS - 1} \\n]*$`));
 }
+
+describe("depth-cued ASCII (ADR-015)", () => {
+  const art: DepthArt = { chars: "ab \ncd ", depth: "03 \n21 " };
+
+  it("splits art into one layer per band on the same grid", () => {
+    expect(depthLayers(art)).toEqual([
+      "a  \n   ",
+      "   \n d ",
+      "   \nc  ",
+      " b \n   ",
+    ]);
+  });
+
+  it("flat art puts every character in front", () => {
+    expect(flatArt("a b\nc").depth).toBe("0 0\n0");
+  });
+
+  it("the renderer spreads an object over several bands", () => {
+    const { depth } = renderAscii({
+      shape: "torus",
+      ...GLYPH_SIZE,
+      ...GLYPH_POSE,
+    });
+    expect(new Set(depth.replace(/[ \n]/g, "")).size).toBeGreaterThan(2);
+  });
+});
 
 describe("ASCII renderer", () => {
   it("is deterministic", () => {
     const options = { shape: "torus", ...GLYPH_SIZE, ...GLYPH_POSE } as const;
-    expect(renderAscii(options)).toBe(renderAscii(options));
+    expect(renderAscii(options)).toEqual(renderAscii(options));
   });
 
   it("draws something for every scene", () => {
     for (const id of SECTION_IDS) {
-      expect(cardGlyphs[id].replace(/[\s\n]/g, "").length).toBeGreaterThan(10);
+      expect(
+        cardGlyphs[id].chars.replace(/[\s\n]/g, "").length,
+      ).toBeGreaterThan(10);
     }
   });
 });
@@ -41,7 +81,7 @@ describe("ASCII renderer", () => {
 describe("generated art is current (run `npm run ascii` when this fails)", () => {
   it.each(SECTION_IDS)("%s glyph matches the renderer", (id) => {
     expectGrid(cardGlyphs[id], GLYPH_SIZE.cols, GLYPH_SIZE.rows);
-    expect(cardGlyphs[id]).toBe(
+    expect(cardGlyphs[id]).toEqual(
       renderAscii({ shape: ASCII_SCENES[id], ...GLYPH_SIZE, ...GLYPH_POSE }),
     );
   });
@@ -51,7 +91,7 @@ describe("generated art is current (run `npm run ascii` when this fails)", () =>
     expect(frames).toHaveLength(ANIMATION_FRAMES);
     for (const index of [0, ANIMATION_FRAMES - 1]) {
       expectGrid(frames[index], ANIMATION_SIZE.cols, ANIMATION_SIZE.rows);
-      expect(frames[index]).toBe(
+      expect(frames[index]).toEqual(
         renderAscii({
           shape: ASCII_SCENES[id],
           ...ANIMATION_SIZE,
@@ -64,19 +104,19 @@ describe("generated art is current (run `npm run ascii` when this fails)", () =>
 });
 
 describe("combatant model art (P9.8–P9.9)", () => {
-  const statics = { boss: bossArt, hero: heroArt };
   it.each(Object.keys(ASCII_MODELS) as (keyof typeof ASCII_MODELS)[])(
     "%s: one loop of fixed-size frames that rests on its first frame",
     async (id) => {
       const model = ASCII_MODELS[id];
-      const { frames, frameMs } = await modelFrameLoaders[id]();
-      const { rest, defeated } = statics[id];
+      const { frames, frameMs, defeated } = await modelFrameLoaders[id]();
+      const rest = frames[0];
       expect(frames).toHaveLength(model.frames);
       for (const frame of [...frames, defeated])
         expectGrid(frame, model.size.cols, model.size.rows);
-      expect(rest).toBe(frames[0]);
-      expect(new Set(frames).size).toBeGreaterThan(1);
-      expect(defeated).not.toBe(rest);
+      expect(new Set(frames.map((frame) => frame.chars)).size).toBeGreaterThan(
+        1,
+      );
+      expect(defeated.chars).not.toBe(rest.chars);
       expect(frameMs).toBeGreaterThan(0);
     },
   );

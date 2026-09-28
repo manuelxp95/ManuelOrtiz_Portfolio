@@ -1,5 +1,6 @@
 /**
- * Generates the Card Mode ASCII art: one static glyph per card and a one-turn rotation per card.
+ * Generates the Card Mode ASCII art: one static glyph per card and a one-turn rotation per card, as
+ * depth-cued art (ADR-015).
  *   node scripts/ascii/generate.mts          write src/features/rogue/ascii/*.generated.ts
  *   node scripts/ascii/generate.mts --check  exit 1 if the committed files are stale
  */
@@ -32,7 +33,7 @@ const glyphs = Object.entries(ASCII_SCENES).map(
 );
 files.set(
   "glyphs.generated.ts",
-  `${header}import type { SectionId } from "@/domain/types";\n\nexport const cardGlyphs: Record<SectionId, string> = {\n${glyphs.join("\n")}\n};\n`,
+  `${header}import type { SectionId } from "@/domain/types";\nimport type { DepthArt } from "./depth";\n\nexport const cardGlyphs: Record<SectionId, DepthArt> = {\n${glyphs.join("\n")}\n};\n`,
 );
 
 for (const [id, shape] of Object.entries(ASCII_SCENES)) {
@@ -48,7 +49,7 @@ for (const [id, shape] of Object.entries(ASCII_SCENES)) {
   );
   files.set(
     `frames/${id}.generated.ts`,
-    `${header}export const frames: readonly string[] = [\n${frames.map((f) => `  ${f},`).join("\n")}\n];\n`,
+    `${header}import type { DepthArt } from "../depth";\n\nexport const frames: readonly DepthArt[] = [\n${frames.map((f) => `  ${f},`).join("\n")}\n];\n`,
   );
 }
 

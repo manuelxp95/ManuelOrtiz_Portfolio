@@ -66,8 +66,8 @@
 ## Current settings
 
 Since ADR-014 the boss is the `boss` entry of `ASCII_MODELS` (`src/features/rogue/ascii/scenes.ts`),
-rendered by `scripts/ascii/models.mts` (`npm run ascii:models`) into
-`ascii/models/boss.generated.ts` and `ascii/frames/boss.generated.ts`, played by `ModelArt.tsx`.
+rendered by `scripts/ascii/models.mts` (`npm run ascii:models`) into the lazy
+`ascii/frames/boss.generated.ts` (depth-cued, ADR-015), played by `ModelArt.tsx`.
 
 | Setting | Value | Field |
 |---|---|---|

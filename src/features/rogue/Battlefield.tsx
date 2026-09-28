@@ -1,8 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { m, type TargetAndTransition, type Transition } from "motion/react";
 import { useEffect, type ReactNode } from "react";
-import * as bossArt from "./ascii/models/boss.generated";
-import * as heroArt from "./ascii/models/hero.generated";
 import {
   BUG,
   bossIntent,
@@ -410,15 +408,11 @@ export function Battlefield({
           hp={combat.heroHp}
           maxHp={stats.maxHp}
           art={
-            combat.outcome === "lost" ? (
-              heroArt.defeated
-            ) : (
-              <ModelArt
-                model="hero"
-                rest={heroArt.rest}
-                reducedMotion={reducedMotion}
-              />
-            )
+            <ModelArt
+              model="hero"
+              defeated={combat.outcome === "lost"}
+              reducedMotion={reducedMotion}
+            />
           }
           statuses={heroStatuses}
           aimed={aimed === "hero"}
@@ -437,15 +431,11 @@ export function Battlefield({
           hp={combat.bugHp}
           maxHp={BUG.maxHp}
           art={
-            combat.outcome === "won" ? (
-              bossArt.defeated
-            ) : (
-              <ModelArt
-                model="boss"
-                rest={bossArt.rest}
-                reducedMotion={reducedMotion}
-              />
-            )
+            <ModelArt
+              model="boss"
+              defeated={combat.outcome === "won"}
+              reducedMotion={reducedMotion}
+            />
           }
           statuses={combat.charged ? ["Charged ×2"] : []}
           intent={combat.outcome ? undefined : intentLabel(bossIntent(combat))}

@@ -223,6 +223,31 @@
   cursor: pointer;
 }
 
+/*
+ * Depth-cued ASCII (ADR-015): one layer per depth band stacked in one grid cell. Linear fog,
+ * quantized: each farther band mixes the holder's color a step further toward the background.
+ */
+.ascii-depth {
+  display: inline-grid;
+}
+
+.ascii-depth > span {
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+
+.ascii-depth > [data-band="1"] {
+  color: color-mix(in oklab, currentColor 76%, var(--bg));
+}
+
+.ascii-depth > [data-band="2"] {
+  color: color-mix(in oklab, currentColor 56%, var(--bg));
+}
+
+.ascii-depth > [data-band="3"] {
+  color: color-mix(in oklab, currentColor 40%, var(--bg));
+}
+
 .card-face {
   display: block;
   font-family: var(--card-mono);

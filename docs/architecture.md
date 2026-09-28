@@ -190,6 +190,11 @@ the hero three-quarter toward the bug, near eye level, looping its IDLE at 1×. 
 one owner-approved idle animation; reduced motion shows the rest frames. Card Mode shows both
 models' CC BY 4.0 credits.
 
+Depth-cued ASCII (ADR-015) is the standard for every pseudo-3D element — card glyphs, card
+rotations, the relic inspector and the combatants. Renderers produce `DepthArt` (characters plus a
+depth band per character, normalized over a stable range); `AsciiArt.tsx` stacks one text layer per
+band; CSS fogs farther bands toward the background (`color-mix` with `--bg`, both themes).
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

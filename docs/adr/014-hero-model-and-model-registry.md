@@ -18,7 +18,8 @@
   (`npm run ascii:models`), rendering every model — or one with `--model=` — with the same skinning,
   rasterizing and shading as before; the boss's frames are byte-identical. Output per model:
   `ascii/models/<id>.generated.ts` (`rest`, `defeated`) and `ascii/frames/<id>.generated.ts`
-  (loop + `frameMs`). `ModelArt.tsx` (was `BossArt.tsx`) plays any model's loop;
+  (loop + `frameMs`) — since ADR-015 a single lazy `frames/<id>.generated.ts` (loop, `frameMs`,
+  `defeated`; rest = first frame), all depth-cued. `ModelArt.tsx` (was `BossArt.tsx`) plays any model's loop;
   `modelFrameLoaders` makes each loop its own chunk.
 - **Bind-space fix (`bindShape`).** This export bound its two meshes in different spaces: the head
   skins correctly, the body came out ~50× too large. Comparing the joints' bind positions (inverse

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cardGlyphs } from "@/features/rogue/ascii/glyphs.generated";
 import { buildCardFace, CARD_COLS } from "@/features/rogue/card-face";
 
-const face = (
+const art = (
   selected: boolean,
   overrides: Partial<{ title: string; stat: string; type: string }> = {},
 ) =>
@@ -14,6 +14,10 @@ const face = (
     selected,
     ...overrides,
   });
+const face = (
+  selected: boolean,
+  overrides: Partial<{ title: string; stat: string; type: string }> = {},
+) => art(selected, overrides).chars;
 
 describe("buildCardFace", () => {
   it.each([false, true])(
@@ -47,5 +51,20 @@ describe("buildCardFace", () => {
     }).split("\n");
     expect(lines.some((line) => line.includes("…"))).toBe(true);
     for (const line of lines) expect([...line]).toHaveLength(CARD_COLS);
+  });
+});
+
+describe("card face depth (ADR-015)", () => {
+  it("keeps the glyph's depth and puts the frame and text in front", () => {
+    const { chars, depth } = art(false);
+    expect(depth).toHaveLength(chars.length);
+    const charRows = chars.split("\n");
+    const depthRows = depth.split("\n");
+    // Border, title and text rows: every drawn character is in the nearest band.
+    for (const row of [0, 1, charRows.length - 3, charRows.length - 1])
+      for (let i = 0; i < charRows[row].length; i++)
+        expect(depthRows[row][i]).toBe(charRows[row][i] === " " ? " " : "0");
+    // The object keeps farther bands.
+    expect(depth).toMatch(/[123]/);
   });
 });

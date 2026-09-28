@@ -4,11 +4,15 @@ import { vi } from "vitest";
 vi.mock("@/features/rogue/battle", async (importOriginal) =>
   (await import("@/test/card-deal")).dealAllSections(importOriginal),
 );
-vi.mock("@/features/rogue/ascii/frames/boss.generated", async () =>
-  (await import("@/test/still-models")).stillModel("boss"),
+vi.mock(
+  "@/features/rogue/ascii/frames/boss.generated",
+  async (importOriginal) =>
+    (await import("@/test/still-models")).stillModel(importOriginal),
 );
-vi.mock("@/features/rogue/ascii/frames/hero.generated", async () =>
-  (await import("@/test/still-models")).stillModel("hero"),
+vi.mock(
+  "@/features/rogue/ascii/frames/hero.generated",
+  async (importOriginal) =>
+    (await import("@/test/still-models")).stillModel(importOriginal),
 );
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

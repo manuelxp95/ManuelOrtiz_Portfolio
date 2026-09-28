@@ -1,7 +1,8 @@
 import type { SectionId } from "@/domain/types";
+import type { DepthArt } from "./depth";
 import type { AsciiModelId } from "./scenes";
 
-type FrameModule = Promise<{ frames: readonly string[] }>;
+type FrameModule = Promise<{ frames: readonly DepthArt[] }>;
 
 /** Interaction tier: each card's rotation is its own chunk, fetched only when that card opens. */
 export const frameLoaders: Record<SectionId, () => FrameModule> = {
@@ -14,9 +15,13 @@ export const frameLoaders: Record<SectionId, () => FrameModule> = {
   cv: () => import("./frames/cv.generated"),
 };
 
-type ModelFrameModule = Promise<{ frames: readonly string[]; frameMs: number }>;
+type ModelFrameModule = Promise<{
+  frames: readonly DepthArt[];
+  frameMs: number;
+  defeated: DepthArt;
+}>;
 
-/** Each combatant's animation loop is its own chunk, fetched when the battlefield mounts. */
+/** Each combatant's art — loop, rest (its first frame), defeated — is its own chunk, fetched when the battlefield mounts. */
 export const modelFrameLoaders: Record<AsciiModelId, () => ModelFrameModule> = {
   boss: () => import("./frames/boss.generated"),
   hero: () => import("./frames/hero.generated"),

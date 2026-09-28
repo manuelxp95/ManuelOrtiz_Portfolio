@@ -1,10 +1,12 @@
 /**
  * ASCII renderer: raymarches a signed-distance shape and maps diffuse brightness to a character
- * ramp (the approach of alecjacobson/ascii3d, reduced to pure TypeScript). Card glyphs and
- * rotations are rendered at build time by `scripts/ascii/generate.mts`; the relic inspector
- * (Roadmap P8) also runs it in the browser, one frame per user input.
+ * ramp (the approach of alecjacobson/ascii3d, reduced to pure TypeScript), and the hit's distance
+ * to a depth band (ADR-015). Card glyphs and rotations are rendered at build time by
+ * `scripts/ascii/generate.mts`; the relic inspector (Roadmap P8) also runs it in the browser, one
+ * frame per user input.
  * Keep this module dependency-free: Node runs it directly with type stripping.
  */
+import { depthBand, type DepthArt } from "./depth.ts";
 
 export type AsciiShape =
   | "sphere"
@@ -129,6 +131,13 @@ export function shadeChar(diffuse: number): string {
   return ASCII_RAMP[1 + Math.min(8, Math.floor(brightness * 9))];
 }
 
+/**
+ * Visible surfaces of the unit-sized shapes lie between these view depths: the nearest faces sit
+ * near −1.2, silhouettes near 0. A fixed range keeps a turning object's bands steady.
+ */
+const DEPTH_NEAR = -1.2;
+const DEPTH_FAR = 0.3;
+
 /** Rows joined by "\n"; every row is exactly `cols` characters. */
 export function renderAscii({
   shape,
@@ -136,26 +145,37 @@ export function renderAscii({
   rows,
   yaw,
   pitch,
-}: AsciiRenderOptions): string {
+}: AsciiRenderOptions): DepthArt {
   const sdf = (p: Vec3) => SHAPES[shape](rotate(p, yaw, pitch));
   const halfWidth = 1.45;
   // Terminal cells are about twice as tall as wide; keep shapes round.
   const halfHeight = (halfWidth * 2 * rows) / cols;
   const lines: string[] = [];
+  const depths: string[] = [];
 
   for (let row = 0; row < rows; row++) {
     let line = "";
+    let depth = "";
     for (let col = 0; col < cols; col++) {
       const x = ((col + 0.5) / cols) * 2 * halfWidth - halfWidth;
       const y = halfHeight - ((row + 0.5) / rows) * 2 * halfHeight;
-      line += shade(sdf, x, y);
+      const hit = shade(sdf, x, y);
+      line += hit ? hit.char : " ";
+      depth += hit
+        ? depthBand((hit.z - DEPTH_NEAR) / (DEPTH_FAR - DEPTH_NEAR))
+        : " ";
     }
     lines.push(line);
+    depths.push(depth);
   }
-  return lines.join("\n");
+  return { chars: lines.join("\n"), depth: depths.join("\n") };
 }
 
-function shade(sdf: (p: Vec3) => number, x: number, y: number): string {
+function shade(
+  sdf: (p: Vec3) => number,
+  x: number,
+  y: number,
+): { char: string; z: number } | null {
   let z = -3;
   for (let step = 0; step < 80 && z < 3; step++) {
     const d = sdf([x, y, z]);
@@ -169,9 +189,9 @@ function shade(sdf: (p: Vec3) => number, x: number, y: number): string {
         0,
         (nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / n,
       );
-      return shadeChar(diffuse);
+      return { char: shadeChar(diffuse), z };
     }
     z += d;
   }
-  return " ";
+  return null;
 }

@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
+import { AsciiArt } from "../AsciiArt";
 import { renderAscii, type AsciiShape } from "../ascii/renderer";
 import { INSPECTOR_POSE, INSPECTOR_SIZE } from "../ascii/scenes";
 import { useReducedMotion } from "../use-reduced-motion";
@@ -172,7 +173,7 @@ export function RelicInspector({ shape, description }: RelicInspectorProps) {
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
       >
-        {art}
+        <AsciiArt art={art} />
       </pre>
       <figcaption className="sr-only">
         ASCII 3D model: {description}.

@@ -361,3 +361,16 @@ frame; no console errors. Only `BossArt` re-renders per animation frame.
 Headless Chrome (1280 px and 390 px), no input after load: 10 distinct hero frames sampled over
 1.2 s 4 s after Card Mode opens (153 ms per frame); a single still frame under reduced motion; no
 console errors. Card Mode has 0.8 kB of headroom left.
+
+## P9.10 — Depth-cued ASCII (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 79.0 kB (−0.2 kB: combatants' rest/defeated frames moved to their lazy chunks; depth for card glyphs, `AsciiArt`) |
+| All Card Mode chunks | ≤ 120 kB | 106.5 kB (loops grow ~50 % with depth: boss 5.9 kB, hero 7.1 kB) |
+| Relic inspector | ≤ 5 kB | 2.1 kB |
+
+Headless Chrome (light and dark, 1280 px; dark 390 px): card glyphs, the dialog rotation and both
+combatants render as four depth layers; computed band colors fade toward the background in each
+theme (light L 0.62 → 0.80, dark L 0.68 → 0.43); no console errors.

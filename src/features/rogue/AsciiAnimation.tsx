@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SectionId } from "@/domain/types";
+import { AsciiArt } from "./AsciiArt";
+import type { DepthArt } from "./ascii/depth";
 import { frameLoaders } from "./ascii/frame-loaders";
 import { useReducedMotion } from "./use-reduced-motion";
 
@@ -14,7 +16,7 @@ export function AsciiAnimation({ section }: { section: SectionId }) {
   const reducedMotion = useReducedMotion();
   const [loaded, setLoaded] = useState<{
     section: SectionId;
-    frames: readonly string[];
+    frames: readonly DepthArt[];
   } | null>(null);
   const [frame, setFrame] = useState(0);
   const [plays, setPlays] = useState(0);
@@ -54,7 +56,7 @@ export function AsciiAnimation({ section }: { section: SectionId }) {
       className="ascii-art"
       onPointerEnter={() => setPlays((count) => count + 1)}
     >
-      {frames?.[frame] ?? ""}
+      {frames && <AsciiArt art={frames[frame]} />}
     </span>
   );
 }

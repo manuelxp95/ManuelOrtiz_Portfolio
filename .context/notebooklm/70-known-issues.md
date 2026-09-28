@@ -155,8 +155,8 @@ Next step: owner keeps it knowingly or swaps in an original model (same pipeline
 
 Status: Open (Roadmap P9.8, updated P9.9, 2026-09-27)
 Evidence: the models live in git-ignored `resources/`, so CI's `npm run ascii:check` does not cover
-`ascii/models/*` and `ascii/frames/{boss,hero}.generated.ts` (only `npm run ascii:models -- --check`
-locally). `npm run budgets`: Card Mode load 79.2 kB of 80 kB after the hero model.
+`ascii/frames/{boss,hero}.generated.ts` (only `npm run ascii:models -- --check` locally).
+`npm run budgets`: Card Mode load 79.0 kB of 80 kB after depth cueing (ADR-015).
 Impact: a stale boss render could be committed unnoticed; the next Card Mode feature will likely
 exceed the budget.
 Next step: regenerate and check the boss art locally after model/setting changes; decide on a

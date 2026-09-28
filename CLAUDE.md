@@ -80,7 +80,8 @@ depend on a client store.
 Tailwind for layout/utility styling. CSS variables/design tokens for spacing, radii, card
 dimensions, surface/text colors, rarity states, elevation, timing, glow. CSS modules/dedicated
 CSS for complex card effects where Tailwind utilities hurt readability. Prefer CSS over JS for
-effects CSS can do.
+effects CSS can do. Every pseudo-3D ASCII element is depth-cued: its renderer produces `DepthArt`
+and it renders through `AsciiArt` (ADR-015).
 
 ## Code standards
 

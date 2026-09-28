@@ -2,6 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useRef, type PointerEvent } from "react";
 import { cardGlyphs } from "./ascii/glyphs.generated";
 import { BUG, HERO } from "./battle";
+import { AsciiArt } from "./AsciiArt";
 import { buildCardFace } from "./card-face";
 import {
   baseOf,
@@ -31,14 +32,16 @@ export function CardFace({ card, selected }: CardFaceProps) {
       className="card-face"
       data-golden={isGolden(card) || undefined}
     >
-      {buildCardFace({
-        title: face.title,
-        glyph: cardGlyphs[face.glyph],
-        label: face.label,
-        stat: face.stat,
-        selected,
-        type: cardAction(card).type,
-      })}
+      <AsciiArt
+        art={buildCardFace({
+          title: face.title,
+          glyph: cardGlyphs[face.glyph],
+          label: face.label,
+          stat: face.stat,
+          selected,
+          type: cardAction(card).type,
+        })}
+      />
     </span>
   );
 }
