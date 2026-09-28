@@ -42,14 +42,29 @@
   loops instead of restarting it from frame 0 (the visible jump), and a play always ends on a loop
   boundary (the rest frame). Timing uses only animation-frame timestamps.
 
+## Follow-up 2 (owner review, same day): from above, and a continuous loop
+
+- **Pitch sign:** the mesh path applied the tilt forward while the card renderer undoes it, so a
+  positive pitch showed the model from below. `viewMatrix` now uses −pitch: positive = seen from
+  above, the card renderer's convention (pitch 0.55 unchanged).
+- **Continuous loop (exception to CLAUDE.md's "no continuous idle animation loops", owner
+  request):** the boss's animation now loops while the fight is on screen, at 0.75× speed
+  (`BOSS_ANIMATION_SPEED`; 37 ms per frame). It is the only loop in Card Mode: `BossArt.tsx`
+  re-renders only the boss text, once per animation frame (React skips same-index updates), pauses
+  with the tab hidden (animation frames stop) and never runs under reduced motion, which shows the
+  rest frame. The event-driven replay of follow-up 1 is gone. CLAUDE.md names the exception.
+- **Tests:** in jsdom every loop frame is a DOM mutation that makes Testing Library re-run its slow
+  role queries, timing out async queries; the board's component tests mock the frames to one still
+  frame (`src/test/boss-frames.ts`).
+
 ## Alternatives
 
 - Runtime rendering of the mesh in the browser — ships the model (1.2 MB) and costs CPU per frame.
 - An SDF re-modelled by hand, as for the relic — loses the model and its animation.
-- A continuous idle loop of the animation — CLAUDE.md forbids idle loops; events replay it instead.
+- Replaying the animation on events only (the first version) — the owner wanted it alive at rest.
 
 ## Consequences
 
-Card Mode load 78.8 kB gz (+1.1 kB), 1.2 kB under the 80 kB budget; the animation chunk is 3.4 kB
+Card Mode load 78.7 kB gz (+1.0 kB), 1.3 kB under the 80 kB budget; the animation chunk is 3.4 kB
 gz. The character the model depicts is a third-party franchise design (Ariados, Pokémon): the
 CC BY 4.0 license covers the modeller's work, not the character's trademark — flagged to the owner.

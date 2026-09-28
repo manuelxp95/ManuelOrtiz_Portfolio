@@ -528,3 +528,18 @@ Decision:
 - Events during a play extend it by whole loops instead of restarting; plays end on the rest frame;
   timing uses animation-frame timestamps only (a `performance.now()` deadline never ended in jsdom).
 Consequences: Card Mode load 78.8 kB gz (1.2 kB headroom); boss animation chunk 3.4 kB gz.
+
+## Decision: Boss seen from above, continuous loop (Roadmap P9.8 follow-up 2, ADR-013)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-013 (follow-up 2); CLAUDE.md (accessibility & motion); Vitest and headless Chrome
+Decision:
+- Pitch sign fixed in `scripts/ascii/boss.mts`: positive pitch = seen from above (card convention).
+- The boss animation loops continuously at 0.75× speed — an owner-approved exception to "no
+  continuous idle animation loops", named in CLAUDE.md. `BossArt.tsx` re-renders only the boss
+  text; paused with the tab hidden; never under reduced motion.
+- Component tests rendering the board mock the boss frames to one still frame
+  (`src/test/boss-frames.ts`): per-frame DOM mutations made Testing Library's async role queries
+  time out in jsdom.
+Consequences: Card Mode load 78.7 kB gz.

@@ -17,6 +17,7 @@ import {
 } from "../../src/features/rogue/ascii/renderer.ts";
 import {
   BOSS_ANIMATION_FRAMES,
+  BOSS_ANIMATION_SPEED,
   BOSS_MODEL,
   BOSS_SIZE,
   BOSS_VIEW,
@@ -304,14 +305,17 @@ function posedTriangles(time: number, view: Mat4): Triangle[] {
 
 // ---------------------------------------------------------------- rasterizing
 
-/** Rotation from model space to view space: yaw (vertical axis), pitch (tilt), roll. */
+/**
+ * Rotation from model space to view space: yaw (vertical axis), pitch, roll. A positive pitch tips
+ * the top toward the camera — seen from above, the same convention as the card renderer.
+ */
 function viewMatrix(yaw: number, pitch: number, roll = 0): Mat4 {
   const half = (angle: number, axis: 0 | 1 | 2) => {
     const q = [0, 0, 0, Math.cos(angle / 2)];
     q[axis] = Math.sin(angle / 2);
     return compose([0, 0, 0], q, [1, 1, 1]);
   };
-  return multiply(half(roll, 2), multiply(half(pitch, 0), half(yaw, 1)));
+  return multiply(half(roll, 2), multiply(half(-pitch, 0), half(yaw, 1)));
 }
 
 interface Bounds {
@@ -436,7 +440,7 @@ const files = new Map<string, string>([
   ],
   [
     "frames/boss.generated.ts",
-    `${header}/** One loop of the boss model's own animation (${Math.round(duration * 1000)} ms). */\nexport const frames: readonly string[] = [\n${frames.map((f) => `  ${JSON.stringify(f)},`).join("\n")}\n];\n\nexport const frameMs = ${Math.round((duration * 1000) / BOSS_ANIMATION_FRAMES)};\n`,
+    `${header}/** One loop of the boss model's own animation, at ${BOSS_ANIMATION_SPEED}× speed. */\nexport const frames: readonly string[] = [\n${frames.map((f) => `  ${JSON.stringify(f)},`).join("\n")}\n];\n\nexport const frameMs = ${Math.round((duration * 1000) / BOSS_ANIMATION_FRAMES / BOSS_ANIMATION_SPEED)};\n`,
   ],
 ]);
 

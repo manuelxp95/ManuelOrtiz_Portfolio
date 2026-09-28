@@ -58,7 +58,8 @@ Both modes fully usable via keyboard, pointer and touch. Semantic HTML and corre
 button/link/dialog semantics over decorative divs. Never rely solely on color, hover, drag or
 animation to convey state. Visible focus states always. Respect `prefers-reduced-motion` —
 reduced motion must stay functionally complete, not just less pretty. Animate transform/opacity;
-target ~150–300ms unless spring physics justify otherwise; no continuous idle animation loops.
+target ~150–300ms unless spring physics justify otherwise; no continuous idle animation loops
+(one owner-approved exception: the Card Mode boss's model loop, ADR-013).
 
 ## SEO / content
 
