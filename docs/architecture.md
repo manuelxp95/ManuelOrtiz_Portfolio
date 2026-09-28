@@ -184,7 +184,7 @@ into the deck.
 Boss model (Roadmap P9.8, ADR-013): the bug is a skinned glTF model (git-ignored `resources/`)
 converted to ASCII at build time by `scripts/ascii/boss.mts` with the card renderer's light and
 ramp. Committed output: a rest and a defeated frame (Card Mode chunk) and one animation loop (own
-chunk), seen three-quarter from above, head toward the hero. The loop runs continuously at 0.75×
+chunk), seen three-quarter from above, head toward the hero. The loop runs continuously at 0.5×
 speed — the one owner-approved idle loop — and reduced motion shows the rest frame. Card Mode shows
 the model's CC BY 4.0 credit.
 

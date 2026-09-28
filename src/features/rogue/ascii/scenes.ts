@@ -66,4 +66,4 @@ export const BOSS_SIZE = { cols: 48, rows: 20 } as const;
 export const BOSS_VIEW = { yaw: -2.2, pitch: 0.55 } as const;
 export const BOSS_ANIMATION_FRAMES = 24;
 /** Playback speed of the model's animation (1 = as authored). */
-export const BOSS_ANIMATION_SPEED = 0.75;
+export const BOSS_ANIMATION_SPEED = 0.5;

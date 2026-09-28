@@ -543,3 +543,13 @@ Decision:
   (`src/test/boss-frames.ts`): per-frame DOM mutations made Testing Library's async role queries
   time out in jsdom.
 Consequences: Card Mode load 78.7 kB gz.
+
+## Decision: Boss loop at 0.5× speed (Roadmap P9.8 follow-up 3, ADR-013)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-013 (follow-up 3, current settings, "Updating the boss")
+Decision:
+- `BOSS_ANIMATION_SPEED = 0.5`: 56 ms per frame, 1.33 s loop (was 0.75×, 37 ms). Nothing else
+  changes; bundle size unchanged.
+- ADR-013 now lists the boss's current settings and the steps to update or replace the model.

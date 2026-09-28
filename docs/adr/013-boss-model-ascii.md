@@ -57,6 +57,36 @@
   role queries, timing out async queries; the board's component tests mock the frames to one still
   frame (`src/test/boss-frames.ts`).
 
+## Follow-up 3 (owner review, same day): slower loop
+
+- The loop now plays at **0.5×** speed (`BOSS_ANIMATION_SPEED = 0.5`; 56 ms per frame, a
+  1.33 s loop). Frame count, view and bundle size are unchanged; only `frameMs` in the generated
+  loop changed.
+
+## Current settings
+
+| Setting | Value | Where |
+|---|---|---|
+| View | yaw −2.2, pitch 0.55 (three-quarter from above, head toward the hero) | `BOSS_VIEW` |
+| Grid | 48×20 characters | `BOSS_SIZE` |
+| Loop | 24 frames, 0.5× speed (56 ms per frame), continuous | `BOSS_ANIMATION_FRAMES`, `BOSS_ANIMATION_SPEED` |
+| Materials | body 1, limbs 0.75, horns 0.55, sclera 1, pupils 0; eye reflection not drawn | `BOSS_MODEL.albedo` |
+| Credit | "Boppin' Ariados" by zcythe, CC BY 4.0, shown in Card Mode | `BOSS_MODEL` |
+
+All in `src/features/rogue/ascii/scenes.ts`.
+
+## Updating the boss
+
+1. Put the model in `resources/<name>/` (glTF with its `.bin`; git-ignored) and point
+   `BOSS_MODEL.path` at its `.gltf`. Set `BOSS_MODEL.albedo` per material name (materials left out
+   are not drawn) and update the credit fields to the new model's license.
+2. Tune the view with a larger preview, then copy the values into `BOSS_VIEW`:
+   `node scripts/ascii/boss.mts --preview --yaw=-2.2 --pitch=0.55 --cols=72 --rows=30`
+   (positive pitch = seen from above; the head of a model facing +z points left at yaw ≈ −2.2).
+3. `npm run ascii:boss` writes `ascii/boss.generated.ts` and `ascii/frames/boss.generated.ts`;
+   commit both. `npm run ascii:boss -- --check` verifies them locally (CI has no model).
+4. Run `npm run budgets`: the rest and defeated frames count toward the Card Mode load.
+
 ## Alternatives
 
 - Runtime rendering of the mesh in the browser — ships the model (1.2 MB) and costs CPU per frame.
