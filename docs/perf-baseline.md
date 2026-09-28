@@ -327,3 +327,14 @@ Headless Chrome (1280 px and 390 px): the boss animation plays when Card Mode op
 distinct frames sampled) and then rests, unchanged one second later; the art is 240×196 px on
 desktop and 132×107 px on mobile inside its column; no horizontal overflow; no console errors.
 Card Mode has 1.3 kB of headroom left.
+
+### P9.8 follow-up — boss view and smoother loop (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Card Mode load | ≤ 80 kB | 78.8 kB (+0.1 kB: 48×20 rest/defeated frames) |
+| All Card Mode chunks | ≤ 120 kB | 92.5 kB (boss animation chunk 3.4 kB gz, 24 frames) |
+
+Headless Chrome (1280 px and 390 px): 19 distinct frames sampled during the opening play, then the
+art rests (unchanged one second later); boss art 262×218 px desktop, 144×119 px mobile; no
+horizontal overflow; no console errors.

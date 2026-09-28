@@ -516,3 +516,15 @@ Decision:
 - CC BY credit shown in Card Mode. Owner flagged: the model depicts a third-party franchise
   character (Ariados, Pokémon); the license covers the modeller's work only.
 Consequences: Card Mode load 78.7 kB gz (1.3 kB headroom); boss animation chunk 2.3 kB gz.
+
+## Decision: Boss view and smoother loop (Roadmap P9.8 follow-up, ADR-013)
+
+Status: Accepted (project owner review with reference screenshots, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-013 (follow-up section); Vitest and headless Chrome
+Decision:
+- The model faces +z; the first render showed it from behind. New view yaw −2.2, pitch 0.55
+  (three-quarter from above, head toward the hero), grid 48×20, 24 frames per loop.
+- Events during a play extend it by whole loops instead of restarting; plays end on the rest frame;
+  timing uses animation-frame timestamps only (a `performance.now()` deadline never ended in jsdom).
+Consequences: Card Mode load 78.8 kB gz (1.2 kB headroom); boss animation chunk 3.4 kB gz.

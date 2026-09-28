@@ -420,7 +420,8 @@ const bop: Triangle[][] = Array.from({ length: BOSS_ANIMATION_FRAMES }, (_, fram
 // One frame for the whole animation, so the boss never jumps between frames.
 const all = bop.flat();
 const frame = bounds(all);
-const { cols, rows } = BOSS_SIZE;
+const cols = Number(option("cols") ?? BOSS_SIZE.cols);
+const rows = Number(option("rows") ?? BOSS_SIZE.rows);
 const frames = bop.map((triangles) => rasterize(triangles, frame, cols, rows));
 // Defeated: legs up, like a squashed bug.
 const defeatedTriangles = posedTriangles(0, viewMatrix(yaw, pitch, Math.PI));

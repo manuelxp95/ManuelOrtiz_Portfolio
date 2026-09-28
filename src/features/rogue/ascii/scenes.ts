@@ -61,7 +61,7 @@ export const BOSS_MODEL = {
   },
 } as const;
 
-export const BOSS_SIZE = { cols: 44, rows: 18 } as const;
-/** Three-quarter view turned toward the hero on the left. */
-export const BOSS_VIEW = { yaw: -0.6, pitch: 0.35 } as const;
-export const BOSS_ANIMATION_FRAMES = 16;
+export const BOSS_SIZE = { cols: 48, rows: 20 } as const;
+/** Three-quarter view from above: the model faces +z, so this turns its head toward the hero (left). */
+export const BOSS_VIEW = { yaw: -2.2, pitch: 0.55 } as const;
+export const BOSS_ANIMATION_FRAMES = 24;

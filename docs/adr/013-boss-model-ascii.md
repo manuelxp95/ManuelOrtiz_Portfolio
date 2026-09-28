@@ -13,14 +13,14 @@
   model is never committed or shipped.
 - **Build-time conversion** (`scripts/ascii/boss.mts`, `npm run ascii:boss`): dependency-free Node.
   It reads the glTF and its buffer, samples the model's animation (linear keys, normalized-lerp
-  rotations), skins the vertices on the CPU, rasterizes the triangles into a 44×18 character grid
+  rotations), skins the vertices on the CPU, rasterizes the triangles into a 48×20 character grid
   (3×3 subsamples per cell so thin legs survive, nearest depth wins) and shades each cell with the
   card renderer's light and character ramp (`LIGHT`, `shadeChar` in `ascii/renderer.ts`). Per
   material brightness makes the eyes read (sclera bright, pupils dark); the see-through eye
   reflection is left out. View, size, frame count and credit live in `BOSS_*` in `ascii/scenes.ts`;
   `--preview --yaw= --pitch=` prints a frame for tuning.
 - **Output (committed):** `ascii/boss.generated.ts` — the rest frame and a defeated frame (the
-  model turned legs up) — and `ascii/frames/boss.generated.ts`, one 16-frame loop of the animation
+  model turned legs up) — and `ascii/frames/boss.generated.ts`, one 24-frame loop of the animation
   plus its frame time. CI cannot regenerate them (no model there), so `ascii:check` does not cover
   them; `npm run ascii:boss -- --check` does locally.
 - **Playback, like the card objects** (`use-boss-art.ts`): the loop plays twice when the fight
@@ -32,6 +32,16 @@
 - **Credit:** CC BY 4.0 requires attribution, so Card Mode shows "Bug based on “Boppin' Ariados”
   by zcythe (CC BY 4.0), rendered as ASCII" under the board's hint, with links.
 
+## Follow-up (owner review, same day): view and smoothness
+
+- **View:** the model faces +z, so the first render (yaw −0.6) showed it mostly from behind. Matched
+  to the owner's reference screenshots (`resources/screenshots/`): yaw −2.2, pitch 0.55 — a
+  three-quarter view from above, head and horn at the lower left facing the hero, abdomen rising
+  to the upper right. Grid 48×20.
+- **Smoothness:** 24 frames per loop instead of 16; an event during a play extends it by whole
+  loops instead of restarting it from frame 0 (the visible jump), and a play always ends on a loop
+  boundary (the rest frame). Timing uses only animation-frame timestamps.
+
 ## Alternatives
 
 - Runtime rendering of the mesh in the browser — ships the model (1.2 MB) and costs CPU per frame.
@@ -40,6 +50,6 @@
 
 ## Consequences
 
-Card Mode load 78.7 kB gz (+1.0 kB), 1.3 kB under the 80 kB budget; the animation chunk is 2.3 kB
+Card Mode load 78.8 kB gz (+1.1 kB), 1.2 kB under the 80 kB budget; the animation chunk is 3.4 kB
 gz. The character the model depicts is a third-party franchise design (Ariados, Pokémon): the
 CC BY 4.0 license covers the modeller's work, not the character's trademark — flagged to the owner.
