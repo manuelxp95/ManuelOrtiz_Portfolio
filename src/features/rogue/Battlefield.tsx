@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { m, type TargetAndTransition, type Transition } from "motion/react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { BOSS_DEFEATED } from "./ascii/boss.generated";
 import {
   BUG,
   bossIntent,
@@ -19,6 +20,7 @@ import {
   type Target,
 } from "./cards";
 import { modifier, modifierIds } from "./modifiers";
+import { useBossArt } from "./use-boss-art";
 
 export const BATTLEFIELD_ID = "battlefield";
 
@@ -35,24 +37,6 @@ const HERO_ART = String.raw`
    |_____|
    /  |  \
   /   |   \ `.slice(1);
-
-const BUG_ART = String.raw`
-      \       /
-       \ .-. /
-     .-'     '-.
-    /  (o) (o)  \
- --|     ___     |--
- --|    [___]    |--
- --\   .-----.   /--
-    '-._______.-'`.slice(1);
-
-const SQUASHED_ART = String.raw`
-
-        x     x
-     .-----------.
- ___/   x     x   \___
-    '-._________.-'
-     [ BUG  FIXED ]`.slice(1);
 
 /** Where the card lands relative to where it was played from, measured on play or drop. */
 export interface Flight {
@@ -165,6 +149,8 @@ interface CombatantProps {
   /** The bug lunges at the hero when it attacks. */
   lunge: number | null;
   reducedMotion: boolean;
+  /** A pointer reached the art. */
+  onArtEnter?: () => void;
 }
 
 function Combatant({
@@ -182,6 +168,7 @@ function Combatant({
   shakeKey,
   lunge,
   reducedMotion,
+  onArtEnter,
 }: CombatantProps) {
   const action = cardEffect ? cardAction(cardEffect.card) : null;
   const moving = !reducedMotion && (shakeKey !== null || lunge !== null);
@@ -219,6 +206,7 @@ function Combatant({
           key={`art-${shakeKey ?? lunge ?? 0}`}
           aria-hidden="true"
           className="combatant-art"
+          onPointerEnter={onArtEnter}
           initial={false}
           animate={
             !moving
@@ -366,6 +354,12 @@ export function Battlefield({
       : null;
 
   const stats = statsOf(combat);
+  // The boss's own animation plays when the fight opens, when it acts or is hit, and on hover.
+  const [hovers, setHovers] = useState(0);
+  const bossArt = useBossArt(
+    `${bugHit?.count ?? ""}:${playing && cardHit?.damage ? cardHit.count : ""}:${hovers}`,
+    reducedMotion,
+  );
   const bugPopup: Popup | null =
     playing && cardHit && cardHit.damage > 0
       ? {
@@ -452,7 +446,7 @@ export function Battlefield({
           name={BUG.name}
           hp={combat.bugHp}
           maxHp={BUG.maxHp}
-          art={combat.outcome === "won" ? SQUASHED_ART : BUG_ART}
+          art={combat.outcome === "won" ? BOSS_DEFEATED : bossArt}
           statuses={combat.charged ? ["Charged ×2"] : []}
           intent={combat.outcome ? undefined : intentLabel(bossIntent(combat))}
           aimed={aimed === "bug"}
@@ -464,6 +458,7 @@ export function Battlefield({
           }
           lunge={bugHit?.move === "attack" ? bugHit.count : null}
           reducedMotion={reducedMotion}
+          onArtEnter={() => setHovers((count) => count + 1)}
         />
       </div>
       {playing && flight && !reducedMotion && (

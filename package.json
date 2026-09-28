@@ -16,6 +16,7 @@
     "test": "vitest run",
     "ascii": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ascii/generate.mts",
     "ascii:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ascii/generate.mts --check",
+    "ascii:boss": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ascii/boss.mts",
     "budgets": "node scripts/check-budgets.mjs"
   },
   "dependencies": {

@@ -458,6 +458,18 @@ Decision:
 - Hand slots are `m.li layout="position"`; the fan transform moved to an inner `.card-fan`.
 Consequences: Card Mode load 75.0 kB gz (5 kB headroom left under the 80 kB budget).
 
+## Decision: Borderless battlefield, hand overlaps the combatants (Roadmap P9.6)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: commit 326bb3c; docs/architecture.md (Card Mode section); headless Chrome
+Decision:
+- The battlefield has no border and does not clip; the hand rises into it (`--hand-overlap`), so
+  cards may cover the combatants' feet; combatants stand at the bottom of the field, hint/outcome
+  under the turn bar, statuses and effect labels above the art.
+- Drops use `pointerWithin` on a `.drop-zone` above the hand, so a card picked up from the hand is
+  never already over the field; a glow plus the hint text replace the dashed drag border.
+
 ## Decision: Roguelike modifiers every two rounds (Roadmap P9.7, ADR-012)
 
 Status: Accepted (project owner request, 2026-09-27)
@@ -486,3 +498,21 @@ Decision:
   Golden card = own id `gold:<card>`; same section; every effect number ×1.5 rounded up; gold face
   with "★ golden ×1.5" text. Registry gained a `goldenCards` field.
 Consequences: Card Mode load 77.7 kB gz (2.3 kB headroom under the 80 kB budget).
+
+## Decision: Boss from a 3D model rendered as ASCII at build time (Roadmap P9.8, ADR-013)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-013; Vitest and headless Chrome
+Decision:
+- Boss model: skinned glTF in git-ignored `resources/boss_v1/` ("Boppin' Ariados" by zcythe,
+  CC BY 4.0, with its own animation); never committed or shipped.
+- `scripts/ascii/boss.mts` (`npm run ascii:boss`): parse glTF, sample the animation, CPU skinning,
+  rasterize to 44×18 cells (3×3 subsamples), shade with the card renderer's `LIGHT`/`shadeChar`.
+  Output committed: rest + defeated (legs up) frames, and a 16-frame loop in its own chunk. CI's
+  `ascii:check` cannot cover it (no model in CI).
+- Playback like the card objects: plays on events (fight opens, bug acts or is hit, hover), then
+  rests; no idle loop; reduced motion = rest frame.
+- CC BY credit shown in Card Mode. Owner flagged: the model depicts a third-party franchise
+  character (Ariados, Pokémon); the license covers the modeller's work only.
+Consequences: Card Mode load 78.7 kB gz (1.3 kB headroom); boss animation chunk 2.3 kB gz.

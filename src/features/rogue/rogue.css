@@ -50,6 +50,17 @@
   display: none;
 }
 
+.board-credit {
+  margin-top: 0.125rem;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.board-credit a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .hint-touch {
     display: none;
@@ -844,6 +855,12 @@ a.merchant-offer:focus-visible {
   font-size: clamp(0.55rem, 2.3vw, 1rem);
   line-height: 1.15;
   color: var(--text);
+}
+
+/* The boss is a 44×18 render of its model (P9.8): smaller glyphs so it fits beside the hero. */
+.combatant[data-combatant="bug"] .combatant-art {
+  font-size: clamp(0.34rem, 1.3vw, 0.62rem);
+  line-height: 1.1;
 }
 
 .combatant[data-combatant="hero"] .combatant-art,

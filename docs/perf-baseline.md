@@ -314,3 +314,16 @@ modifier's status chip; no console errors. The Card Mode load now has 2.9 kB of 
 Headless Chrome (1280 px and 390 px): the offer cards rise from below the screen one after another
 and settle at the top; picking Gold Standard puts golden cards into the deck, and one later drawn
 into the hand shows the gold face and "★ golden ×1.5"; no console errors.
+
+## P9.8 — Boss model as ASCII (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 78.7 kB (+1.0 kB: rest/defeated frames, playback hook, credit) |
+| All Card Mode chunks | ≤ 120 kB | 91.4 kB (boss animation chunk 2.3 kB gz) |
+
+Headless Chrome (1280 px and 390 px): the boss animation plays when Card Mode opens (14–15
+distinct frames sampled) and then rests, unchanged one second later; the art is 240×196 px on
+desktop and 132×107 px on mobile inside its column; no horizontal overflow; no console errors.
+Card Mode has 1.3 kB of headroom left.

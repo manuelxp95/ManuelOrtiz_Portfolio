@@ -38,3 +38,30 @@ export const RELIC_MODELS: Partial<
 
 export const INSPECTOR_SIZE = { cols: 44, rows: 18 } as const;
 export const INSPECTOR_POSE = { yaw: 0.6, pitch: 0.35 } as const;
+
+/**
+ * The boss (Roadmap P9.8): a skinned glTF model turned into ASCII at build time by
+ * scripts/ascii/boss.mts. The model stays in the git-ignored `resources/` folder; its CC BY 4.0
+ * credit is shown in Card Mode.
+ */
+export const BOSS_MODEL = {
+  path: "resources/boss_v1/scene.gltf",
+  title: "Boppin' Ariados",
+  author: "zcythe",
+  url: "https://sketchfab.com/3d-models/boppin-ariados-d3d9fed0764743a8a4c7b884f801812d",
+  license: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+  /** How bright each material reads (0..1); materials left out are not drawn. */
+  albedo: {
+    MAT_Main: 1,
+    Limbs: 0.75,
+    Horns: 0.55,
+    Sclera: 1,
+    pupil: 0,
+  },
+} as const;
+
+export const BOSS_SIZE = { cols: 44, rows: 18 } as const;
+/** Three-quarter view turned toward the hero on the left. */
+export const BOSS_VIEW = { yaw: -0.6, pitch: 0.35 } as const;
+export const BOSS_ANIMATION_FRAMES = 16;

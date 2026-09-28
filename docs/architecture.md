@@ -181,6 +181,12 @@ stats, so adding a modifier is one entry. The offer cards float at the top of th
 from below it. Gold Standard shuffles golden copies (`gold:<card>`, effect ×1.5) of 3 random cards
 into the deck.
 
+Boss model (Roadmap P9.8, ADR-013): the bug is a skinned glTF model (git-ignored `resources/`)
+converted to ASCII at build time by `scripts/ascii/boss.mts` with the card renderer's light and
+ramp. Committed output: a rest and a defeated frame (Card Mode chunk) and one animation loop (own
+chunk). Like the card objects, the loop plays on events (fight opens, bug acts or is hit, hover),
+then rests; reduced motion shows the rest frame. Card Mode shows the model's CC BY 4.0 credit.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

@@ -28,7 +28,7 @@ export interface AsciiRenderOptions {
   pitch: number;
 }
 
-type Vec3 = [number, number, number];
+export type Vec3 = [number, number, number];
 
 const length = (x: number, y: number, z = 0) => Math.hypot(x, y, z);
 
@@ -113,11 +113,21 @@ function rotate(p: Vec3, yaw: number, pitch: number): Vec3 {
   return [p[0] * cy + z1 * sy, y1, -p[0] * sy + z1 * cy];
 }
 
-const LIGHT: Vec3 = (() => {
+/** Unit vector toward the light, shared with the boss mesh rasterizer (scripts/ascii/boss.mts). */
+export const LIGHT: Vec3 = (() => {
   const v: Vec3 = [-0.45, 0.7, -0.55];
   const n = length(...v);
   return [v[0] / n, v[1] / n, v[2] / n];
 })();
+
+/**
+ * The character for a surface lit with this diffuse term (0..1). Index 1..9: a hit is never blank,
+ * so silhouettes stay readable in shadow.
+ */
+export function shadeChar(diffuse: number): string {
+  const brightness = 0.12 + 0.88 * diffuse;
+  return ASCII_RAMP[1 + Math.min(8, Math.floor(brightness * 9))];
+}
 
 /** Rows joined by "\n"; every row is exactly `cols` characters. */
 export function renderAscii({
@@ -159,10 +169,7 @@ function shade(sdf: (p: Vec3) => number, x: number, y: number): string {
         0,
         (nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / n,
       );
-      const brightness = 0.12 + 0.88 * diffuse;
-      // Index 1..9: a hit is never blank, so silhouettes stay readable in shadow.
-      const index = 1 + Math.min(8, Math.floor(brightness * 9));
-      return ASCII_RAMP[index];
+      return shadeChar(diffuse);
     }
     z += d;
   }

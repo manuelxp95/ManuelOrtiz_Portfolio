@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SECTION_IDS } from "@/domain/types";
+import {
+  BOSS_DEFEATED,
+  BOSS_REST,
+} from "@/features/rogue/ascii/boss.generated";
 import { frameLoaders } from "@/features/rogue/ascii/frame-loaders";
+import {
+  frameMs,
+  frames as bossFrames,
+} from "@/features/rogue/ascii/frames/boss.generated";
 import { cardGlyphs } from "@/features/rogue/ascii/glyphs.generated";
 import { renderAscii } from "@/features/rogue/ascii/renderer";
 import {
@@ -8,6 +16,8 @@ import {
   ANIMATION_PITCH,
   ANIMATION_SIZE,
   ASCII_SCENES,
+  BOSS_ANIMATION_FRAMES,
+  BOSS_SIZE,
   animationYaw,
   GLYPH_POSE,
   GLYPH_SIZE,
@@ -54,5 +64,17 @@ describe("generated art is current (run `npm run ascii` when this fails)", () =>
         }),
       );
     }
+  });
+});
+
+describe("boss art (P9.8)", () => {
+  it("is one loop of fixed-size frames that rests on its first frame", () => {
+    expect(bossFrames).toHaveLength(BOSS_ANIMATION_FRAMES);
+    for (const frame of [...bossFrames, BOSS_DEFEATED])
+      expectGrid(frame, BOSS_SIZE.cols, BOSS_SIZE.rows);
+    expect(BOSS_REST).toBe(bossFrames[0]);
+    expect(new Set(bossFrames).size).toBeGreaterThan(1);
+    expect(BOSS_DEFEATED).not.toBe(BOSS_REST);
+    expect(frameMs).toBeGreaterThan(0);
   });
 });
