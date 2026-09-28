@@ -1,7 +1,8 @@
 import { useDroppable } from "@dnd-kit/core";
 import { m, type TargetAndTransition, type Transition } from "motion/react";
 import { useEffect, type ReactNode } from "react";
-import { BOSS_DEFEATED } from "./ascii/boss.generated";
+import * as bossArt from "./ascii/models/boss.generated";
+import * as heroArt from "./ascii/models/hero.generated";
 import {
   BUG,
   bossIntent,
@@ -20,23 +21,12 @@ import {
   type Target,
 } from "./cards";
 import { modifier, modifierIds } from "./modifiers";
-import { BossArt } from "./BossArt";
+import { ModelArt } from "./ModelArt";
 
 export const BATTLEFIELD_ID = "battlefield";
 
 /** How long a played card's effect runs before its dialog opens (any tap, Enter or Escape skips). */
 export const EFFECT_MS = 900;
-
-/** Placeholder hero until the owner's model is converted to ASCII (ADR-009). */
-const HERO_ART = String.raw`
-    .---.
-   ( o o )
-    \ - /
-  .-'---'-.
- / |  M  | \
-   |_____|
-   /  |  \
-  /   |   \ `.slice(1);
 
 /** Where the card lands relative to where it was played from, measured on play or drop. */
 export interface Flight {
@@ -419,7 +409,17 @@ export function Battlefield({
           name={HERO.name}
           hp={combat.heroHp}
           maxHp={stats.maxHp}
-          art={HERO_ART}
+          art={
+            combat.outcome === "lost" ? (
+              heroArt.defeated
+            ) : (
+              <ModelArt
+                model="hero"
+                rest={heroArt.rest}
+                reducedMotion={reducedMotion}
+              />
+            )
+          }
           statuses={heroStatuses}
           aimed={aimed === "hero"}
           defeated={combat.outcome === "lost"}
@@ -438,9 +438,13 @@ export function Battlefield({
           maxHp={BUG.maxHp}
           art={
             combat.outcome === "won" ? (
-              BOSS_DEFEATED
+              bossArt.defeated
             ) : (
-              <BossArt reducedMotion={reducedMotion} />
+              <ModelArt
+                model="boss"
+                rest={bossArt.rest}
+                reducedMotion={reducedMotion}
+              />
             )
           }
           statuses={combat.charged ? ["Charged ×2"] : []}

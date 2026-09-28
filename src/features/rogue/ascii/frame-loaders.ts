@@ -1,4 +1,5 @@
 import type { SectionId } from "@/domain/types";
+import type { AsciiModelId } from "./scenes";
 
 type FrameModule = Promise<{ frames: readonly string[] }>;
 
@@ -11,4 +12,12 @@ export const frameLoaders: Record<SectionId, () => FrameModule> = {
   education: () => import("./frames/education.generated"),
   contact: () => import("./frames/contact.generated"),
   cv: () => import("./frames/cv.generated"),
+};
+
+type ModelFrameModule = Promise<{ frames: readonly string[]; frameMs: number }>;
+
+/** Each combatant's animation loop is its own chunk, fetched when the battlefield mounts. */
+export const modelFrameLoaders: Record<AsciiModelId, () => ModelFrameModule> = {
+  boss: () => import("./frames/boss.generated"),
+  hero: () => import("./frames/hero.generated"),
 };

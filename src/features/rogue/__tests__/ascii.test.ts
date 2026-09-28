@@ -1,23 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { SECTION_IDS } from "@/domain/types";
 import {
-  BOSS_DEFEATED,
-  BOSS_REST,
-} from "@/features/rogue/ascii/boss.generated";
-import { frameLoaders } from "@/features/rogue/ascii/frame-loaders";
-import {
-  frameMs,
-  frames as bossFrames,
-} from "@/features/rogue/ascii/frames/boss.generated";
+  frameLoaders,
+  modelFrameLoaders,
+} from "@/features/rogue/ascii/frame-loaders";
+import * as bossArt from "@/features/rogue/ascii/models/boss.generated";
+import * as heroArt from "@/features/rogue/ascii/models/hero.generated";
 import { cardGlyphs } from "@/features/rogue/ascii/glyphs.generated";
 import { renderAscii } from "@/features/rogue/ascii/renderer";
 import {
   ANIMATION_FRAMES,
   ANIMATION_PITCH,
   ANIMATION_SIZE,
+  ASCII_MODELS,
   ASCII_SCENES,
-  BOSS_ANIMATION_FRAMES,
-  BOSS_SIZE,
   animationYaw,
   GLYPH_POSE,
   GLYPH_SIZE,
@@ -67,14 +63,21 @@ describe("generated art is current (run `npm run ascii` when this fails)", () =>
   });
 });
 
-describe("boss art (P9.8)", () => {
-  it("is one loop of fixed-size frames that rests on its first frame", () => {
-    expect(bossFrames).toHaveLength(BOSS_ANIMATION_FRAMES);
-    for (const frame of [...bossFrames, BOSS_DEFEATED])
-      expectGrid(frame, BOSS_SIZE.cols, BOSS_SIZE.rows);
-    expect(BOSS_REST).toBe(bossFrames[0]);
-    expect(new Set(bossFrames).size).toBeGreaterThan(1);
-    expect(BOSS_DEFEATED).not.toBe(BOSS_REST);
-    expect(frameMs).toBeGreaterThan(0);
-  });
+describe("combatant model art (P9.8–P9.9)", () => {
+  const statics = { boss: bossArt, hero: heroArt };
+  it.each(Object.keys(ASCII_MODELS) as (keyof typeof ASCII_MODELS)[])(
+    "%s: one loop of fixed-size frames that rests on its first frame",
+    async (id) => {
+      const model = ASCII_MODELS[id];
+      const { frames, frameMs } = await modelFrameLoaders[id]();
+      const { rest, defeated } = statics[id];
+      expect(frames).toHaveLength(model.frames);
+      for (const frame of [...frames, defeated])
+        expectGrid(frame, model.size.cols, model.size.rows);
+      expect(rest).toBe(frames[0]);
+      expect(new Set(frames).size).toBeGreaterThan(1);
+      expect(defeated).not.toBe(rest);
+      expect(frameMs).toBeGreaterThan(0);
+    },
+  );
 });

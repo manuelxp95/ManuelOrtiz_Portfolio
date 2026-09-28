@@ -181,12 +181,14 @@ stats, so adding a modifier is one entry. The offer cards float at the top of th
 from below it. Gold Standard shuffles golden copies (`gold:<card>`, effect ×1.5) of 3 random cards
 into the deck.
 
-Boss model (Roadmap P9.8, ADR-013): the bug is a skinned glTF model (git-ignored `resources/`)
-converted to ASCII at build time by `scripts/ascii/boss.mts` with the card renderer's light and
-ramp. Committed output: a rest and a defeated frame (Card Mode chunk) and one animation loop (own
-chunk), seen three-quarter from above, head toward the hero. The loop runs continuously at 0.5×
-speed — the one owner-approved idle loop — and reduced motion shows the rest frame. Card Mode shows
-the model's CC BY 4.0 credit.
+Combatant models (Roadmap P9.8–P9.9, ADR-013/014): the bug and the hero are skinned glTF models
+(git-ignored `resources/`) registered in `ASCII_MODELS` and converted to ASCII at build time by
+`scripts/ascii/models.mts` with the card renderer's light and ramp. Committed output per model: a
+rest and a defeated frame (Card Mode chunk) and one animation loop (own chunk, played by
+`ModelArt.tsx`). The bug is seen three-quarter from above, head toward the hero, looping at 0.5×;
+the hero three-quarter toward the bug, near eye level, looping its IDLE at 1×. These loops are the
+one owner-approved idle animation; reduced motion shows the rest frames. Card Mode shows both
+models' CC BY 4.0 credits.
 
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns

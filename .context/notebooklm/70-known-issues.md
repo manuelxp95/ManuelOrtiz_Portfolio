@@ -140,3 +140,24 @@ Evidence: `preloadSectionPanel` in `src/features/rogue/sections/SectionPanel.tsx
 
 Status: Open (Roadmap P9, 2026-09-27)
 Evidence: `docs/audit-checklist.md` — NVDA smoke test and a physical phone pass are marked manual.
+
+## Issue: Boss model depicts a third-party franchise character
+
+Status: Open (Roadmap P9.8, 2026-09-27) — owner decision pending before production release
+Evidence: `resources/boss_v1/license.txt`: "Boppin' Ariados" by zcythe, CC BY 4.0. Ariados is a
+Pokémon (Nintendo/Game Freak); CC BY covers the modeller's work, not the character's trademark.
+ADR-013 consequences; CLAUDE.md asks for an original design language.
+Impact: Trademark/IP exposure on a public professional portfolio.
+Next step: owner keeps it knowingly or swaps in an original model (same pipeline, ADR-013
+"Updating the boss").
+
+## Issue: CI cannot verify the combatant ASCII art; Card Mode budget nearly spent
+
+Status: Open (Roadmap P9.8, updated P9.9, 2026-09-27)
+Evidence: the models live in git-ignored `resources/`, so CI's `npm run ascii:check` does not cover
+`ascii/models/*` and `ascii/frames/{boss,hero}.generated.ts` (only `npm run ascii:models -- --check`
+locally). `npm run budgets`: Card Mode load 79.2 kB of 80 kB after the hero model.
+Impact: a stale boss render could be committed unnoticed; the next Card Mode feature will likely
+exceed the budget.
+Next step: regenerate and check the boss art locally after model/setting changes; decide on a
+budget raise or a trim before adding more Card Mode code.

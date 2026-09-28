@@ -25,7 +25,7 @@ import {
   usePortfolioStore,
 } from "@/state/portfolio-store";
 import { parseSectionHash } from "@/state/section-hash";
-import { BOSS_MODEL } from "./ascii/scenes";
+import { ASCII_MODELS } from "./ascii/scenes";
 import { boardReducer, createBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
@@ -290,17 +290,28 @@ export function RogueBoard() {
               &gt; click a card to play it, or drag it onto the bug_
             </span>
           </p>
-          {/* CC BY 4.0 asks for the credit wherever the model is shown. */}
+          {/* CC BY 4.0 asks for the credit wherever a model is shown. */}
           <p className="board-credit">
-            Bug based on{" "}
-            <a href={BOSS_MODEL.url} target="_blank" rel="noreferrer">
-              &ldquo;{BOSS_MODEL.title}&rdquo;
-            </a>{" "}
-            by {BOSS_MODEL.author} (
-            <a href={BOSS_MODEL.licenseUrl} target="_blank" rel="noreferrer">
-              {BOSS_MODEL.license}
-            </a>
-            ), rendered as ASCII
+            {(
+              [
+                ["Hero", ASCII_MODELS.hero.credit],
+                ["bug", ASCII_MODELS.boss.credit],
+              ] as const
+            ).map(([who, credit], index) => (
+              <span key={who}>
+                {index > 0 && "; "}
+                {who} based on{" "}
+                <a href={credit.url} target="_blank" rel="noreferrer">
+                  &ldquo;{credit.title}&rdquo;
+                </a>{" "}
+                by {credit.author} (
+                <a href={credit.licenseUrl} target="_blank" rel="noreferrer">
+                  {credit.license}
+                </a>
+                )
+              </span>
+            ))}
+            , rendered as ASCII
           </p>
         </header>
         {/* dnd-kit only dispatches machine events; the machine decides what a drop means. */}

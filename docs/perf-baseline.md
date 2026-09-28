@@ -349,3 +349,15 @@ horizontal overflow; no console errors.
 Headless Chrome, no input after load: 21–22 distinct boss frames sampled 4 s after Card Mode opens
 (the loop runs by itself, 37 ms per frame); with `prefers-reduced-motion: reduce` a single still
 frame; no console errors. Only `BossArt` re-renders per animation frame.
+
+## P9.9 — Hero model as ASCII (2026-09-27)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 79.2 kB (+0.5 kB: hero rest/defeated frames, model registry, credits) |
+| All Card Mode chunks | ≤ 120 kB | 97.2 kB (hero loop chunk 4.5 kB gz, 64 frames) |
+
+Headless Chrome (1280 px and 390 px), no input after load: 10 distinct hero frames sampled over
+1.2 s 4 s after Card Mode opens (153 ms per frame); a single still frame under reduced motion; no
+console errors. Card Mode has 0.8 kB of headroom left.

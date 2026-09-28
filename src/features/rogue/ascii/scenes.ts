@@ -40,30 +40,79 @@ export const INSPECTOR_SIZE = { cols: 44, rows: 18 } as const;
 export const INSPECTOR_POSE = { yaw: 0.6, pitch: 0.35 } as const;
 
 /**
- * The boss (Roadmap P9.8): a skinned glTF model turned into ASCII at build time by
- * scripts/ascii/boss.mts. The model stays in the git-ignored `resources/` folder; its CC BY 4.0
- * credit is shown in Card Mode.
+ * The combatants (Roadmap P9.8 boss, P9.9 hero): skinned glTF models turned into ASCII at build time
+ * by scripts/ascii/models.mts. The models stay in the git-ignored `resources/` folder; their CC BY
+ * 4.0 credits are shown in Card Mode.
  */
-export const BOSS_MODEL = {
-  path: "resources/boss_v1/scene.gltf",
-  title: "Boppin' Ariados",
-  author: "zcythe",
-  url: "https://sketchfab.com/3d-models/boppin-ariados-d3d9fed0764743a8a4c7b884f801812d",
+export interface AsciiModel {
+  /** glTF source, relative to the repository root. */
+  path: string;
+  credit: {
+    title: string;
+    author: string;
+    url: string;
+    license: string;
+    licenseUrl: string;
+  };
+  /** How bright each material reads (0..1); materials left out are not drawn. */
+  albedo: Readonly<Record<string, number>>;
+  size: { cols: number; rows: number };
+  /** Positive pitch = seen from above. A model facing +z looks left at yaw ≈ −2.2, right at ≈ 2.2. */
+  view: { yaw: number; pitch: number };
+  /** Frames rendered from one loop of the model's animation. */
+  frames: number;
+  /** Playback speed of the animation (1 = as authored). */
+  speed: number;
+  /** Roll of the defeated pose around the view axis, radians. */
+  defeatedRoll: number;
+  /**
+   * Mesh name → node whose inverse matrix brings that mesh's vertices into the skin's bind space.
+   * For exports whose meshes were bound in different spaces (a mesh renders at the wrong scale).
+   */
+  bindShape?: Readonly<Record<string, number>>;
+}
+
+const CC_BY = {
   license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-  /** How bright each material reads (0..1); materials left out are not drawn. */
-  albedo: {
-    MAT_Main: 1,
-    Limbs: 0.75,
-    Horns: 0.55,
-    Sclera: 1,
-    pupil: 0,
-  },
 } as const;
 
-export const BOSS_SIZE = { cols: 48, rows: 20 } as const;
-/** Three-quarter view from above: the model faces +z, so this turns its head toward the hero (left). */
-export const BOSS_VIEW = { yaw: -2.2, pitch: 0.55 } as const;
-export const BOSS_ANIMATION_FRAMES = 24;
-/** Playback speed of the model's animation (1 = as authored). */
-export const BOSS_ANIMATION_SPEED = 0.5;
+export const ASCII_MODELS = {
+  /** Three-quarter from above, head toward the hero; defeated legs up. */
+  boss: {
+    path: "resources/boss_v1/scene.gltf",
+    credit: {
+      title: "Boppin' Ariados",
+      author: "zcythe",
+      url: "https://sketchfab.com/3d-models/boppin-ariados-d3d9fed0764743a8a4c7b884f801812d",
+      ...CC_BY,
+    },
+    albedo: { MAT_Main: 1, Limbs: 0.75, Horns: 0.55, Sclera: 1, pupil: 0 },
+    size: { cols: 48, rows: 20 },
+    view: { yaw: -2.2, pitch: 0.55 },
+    frames: 24,
+    speed: 0.5,
+    defeatedRoll: Math.PI,
+  },
+  /** Three-quarter, turned toward the bug; defeated lying down. */
+  hero: {
+    path: "resources/base_mesh_chibi/scene.gltf",
+    credit: {
+      title: "Base Mesh Chibi",
+      author: "abhishekfarshwan",
+      url: "https://sketchfab.com/3d-models/base-mesh-chibi-699ee2e05bce46749ef93e3330cfb7d4",
+      ...CC_BY,
+    },
+    albedo: { "Material.001": 1 },
+    // The body mesh was exported in the space of its "Body" transform (Object_50); the head's
+    // vertices already match the skin.
+    bindShape: { "Body_Material.001_0": 0.04 },
+    size: { cols: 28, rows: 20 },
+    view: { yaw: 2.0, pitch: 0.1 },
+    frames: 64,
+    speed: 1,
+    defeatedRoll: Math.PI / 2,
+  },
+} as const satisfies Record<string, AsciiModel>;
+
+export type AsciiModelId = keyof typeof ASCII_MODELS;

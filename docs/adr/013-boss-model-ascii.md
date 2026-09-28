@@ -65,27 +65,22 @@
 
 ## Current settings
 
-| Setting | Value | Where |
-|---|---|---|
-| View | yaw −2.2, pitch 0.55 (three-quarter from above, head toward the hero) | `BOSS_VIEW` |
-| Grid | 48×20 characters | `BOSS_SIZE` |
-| Loop | 24 frames, 0.5× speed (56 ms per frame), continuous | `BOSS_ANIMATION_FRAMES`, `BOSS_ANIMATION_SPEED` |
-| Materials | body 1, limbs 0.75, horns 0.55, sclera 1, pupils 0; eye reflection not drawn | `BOSS_MODEL.albedo` |
-| Credit | "Boppin' Ariados" by zcythe, CC BY 4.0, shown in Card Mode | `BOSS_MODEL` |
+Since ADR-014 the boss is the `boss` entry of `ASCII_MODELS` (`src/features/rogue/ascii/scenes.ts`),
+rendered by `scripts/ascii/models.mts` (`npm run ascii:models`) into
+`ascii/models/boss.generated.ts` and `ascii/frames/boss.generated.ts`, played by `ModelArt.tsx`.
 
-All in `src/features/rogue/ascii/scenes.ts`.
+| Setting | Value | Field |
+|---|---|---|
+| View | yaw −2.2, pitch 0.55 (three-quarter from above, head toward the hero) | `view` |
+| Grid | 48×20 characters | `size` |
+| Loop | 24 frames, 0.5× speed (56 ms per frame), continuous | `frames`, `speed` |
+| Defeated | legs up (roll π) | `defeatedRoll` |
+| Materials | body 1, limbs 0.75, horns 0.55, sclera 1, pupils 0; eye reflection not drawn | `albedo` |
+| Credit | "Boppin' Ariados" by zcythe, CC BY 4.0, shown in Card Mode | `credit` |
 
 ## Updating the boss
 
-1. Put the model in `resources/<name>/` (glTF with its `.bin`; git-ignored) and point
-   `BOSS_MODEL.path` at its `.gltf`. Set `BOSS_MODEL.albedo` per material name (materials left out
-   are not drawn) and update the credit fields to the new model's license.
-2. Tune the view with a larger preview, then copy the values into `BOSS_VIEW`:
-   `node scripts/ascii/boss.mts --preview --yaw=-2.2 --pitch=0.55 --cols=72 --rows=30`
-   (positive pitch = seen from above; the head of a model facing +z points left at yaw ≈ −2.2).
-3. `npm run ascii:boss` writes `ascii/boss.generated.ts` and `ascii/frames/boss.generated.ts`;
-   commit both. `npm run ascii:boss -- --check` verifies them locally (CI has no model).
-4. Run `npm run budgets`: the rest and defeated frames count toward the Card Mode load.
+See ADR-014, "Updating or adding a combatant model" (`--model=boss`).
 
 ## Alternatives
 

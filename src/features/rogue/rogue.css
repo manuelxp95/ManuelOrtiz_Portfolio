@@ -857,8 +857,8 @@ a.merchant-offer:focus-visible {
   color: var(--text);
 }
 
-/* The boss is a 44×18 render of its model (P9.8): smaller glyphs so it fits beside the hero. */
-.combatant[data-combatant="bug"] .combatant-art {
+/* Both combatants are renders of their models (P9.8–P9.9): small glyphs so they fit side by side. */
+.combatant-art {
   font-size: clamp(0.34rem, 1.3vw, 0.62rem);
   line-height: 1.1;
 }

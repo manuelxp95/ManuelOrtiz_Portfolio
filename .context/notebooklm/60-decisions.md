@@ -553,3 +553,22 @@ Decision:
 - `BOSS_ANIMATION_SPEED = 0.5`: 56 ms per frame, 1.33 s loop (was 0.75×, 37 ms). Nothing else
   changes; bundle size unchanged.
 - ADR-013 now lists the boss's current settings and the steps to update or replace the model.
+
+## Decision: Hero from a 3D model; one registry for combatant models (Roadmap P9.9, ADR-014)
+
+Status: Accepted (project owner request, 2026-09-27)
+Date: 2026-09-27
+Source: ADR-014; Vitest and headless Chrome
+Decision:
+- Hero model: `resources/base_mesh_chibi/` ("Base Mesh Chibi" by abhishekfarshwan, CC BY 4.0,
+  Mixamo rig, 9.8 s IDLE), git-ignored.
+- Boss-only settings became `ASCII_MODELS` (`boss`, `hero`) in `ascii/scenes.ts`; `boss.mts` became
+  `scripts/ascii/models.mts` (`npm run ascii:models`, `--model=`); outputs
+  `ascii/models/<id>.generated.ts` + `ascii/frames/<id>.generated.ts`; `ModelArt.tsx` replaces
+  `BossArt.tsx`; `modelFrameLoaders`. Boss frames byte-identical.
+- `bindShape` fixes exports whose meshes were bound in different spaces: the hero body mesh is
+  scaled by a fitted 0.04 before skinning (node-matrix rebinding tore the mesh).
+- Hero: 28×20, yaw 2.0, pitch 0.1 (three-quarter toward the bug, per the owner's references),
+  64 frames at 1× (153 ms), defeated lying on its side; loops like the boss (CLAUDE.md exception
+  now covers both combatants).
+Consequences: Card Mode load 79.2 kB gz (0.8 kB headroom); hero loop chunk 4.5 kB gz.

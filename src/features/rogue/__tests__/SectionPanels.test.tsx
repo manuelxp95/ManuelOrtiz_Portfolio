@@ -5,7 +5,10 @@ vi.mock("@/features/rogue/battle", async (importOriginal) =>
   (await import("@/test/card-deal")).dealAllSections(importOriginal),
 );
 vi.mock("@/features/rogue/ascii/frames/boss.generated", async () =>
-  (await import("@/test/boss-frames")).stillBoss(),
+  (await import("@/test/still-models")).stillModel("boss"),
+);
+vi.mock("@/features/rogue/ascii/frames/hero.generated", async () =>
+  (await import("@/test/still-models")).stillModel("hero"),
 );
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
