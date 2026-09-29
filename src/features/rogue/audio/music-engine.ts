@@ -14,7 +14,7 @@ import {
  * all fade, and silence pauses the element in place. Sound effects, when they come, get their own
  * bus beside the music bus, both into one master gain that mute then fades.
  *
- * The board bounces on the track's kick drum: hits come from a beat map made at build time, and a
+ * The board bounces on the track's beats: they come from a beat map tracked at build time, and a
  * timer follows `audio.currentTime` from hit to hit, alternating `data-beat` on the board so CSS
  * restarts its bounce animation. No analysis runs in the browser.
  */
@@ -172,7 +172,7 @@ function pulse(index: number) {
   );
 }
 
-/** Waits for the next kick drum hit of the track and bounces the board on it. */
+/** Waits for the next beat of the track and bounces the board on it. */
 function scheduleBeat() {
   window.clearTimeout(beatTimer);
   if (!graph || !beatTarget || !audible() || hitMs.length === 0) {

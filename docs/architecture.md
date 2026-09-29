@@ -198,8 +198,8 @@ band; CSS fogs farther bands toward the background (`color-mix` with `--bg`, bot
 Card Mode music (Roadmap P9.11, ADR-016): a faint looping track (`public/audio/`, fetched only in
 Card Mode) through a native Web Audio graph (`<audio>` → fade → duck → music bus) in a lazy engine
 chunk (`audio/music-engine.ts`). It fades in on entering, fades out and pauses in place on leaving,
-muting or hiding the tab, and ducks while an upgrade is on offer. The board bounces on the kick
-drum from a build-time beat map (`npm run audio:music`), driven by `data-beat` and CSS only while
+muting or hiding the tab, and ducks while an upgrade is on offer. The board bounces on every beat
+of a build-time beat map (tracked, following the track's drifting tempo) (`npm run audio:music`), driven by `data-beat` and CSS only while
 the music is heard, never under reduced motion or with a section open. The speaker toggle's
 `muted`/`blocked` state lives in `audio/music-settings.ts`, not Zustand. Sound effects later get
 their own bus beside the music bus.

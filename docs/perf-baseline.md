@@ -381,7 +381,7 @@ theme (light L 0.62 → 0.80, dark L 0.68 → 0.43); no console errors.
 |---|---|---|
 | Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
 | Card Mode load | ≤ 80 kB | 79.8 kB (+0.8 kB: music toggle, settings, engine loader) |
-| All Card Mode chunks | ≤ 120 kB | 107.2 kB (audio engine + beat map chunk 2.4 kB gz) |
+| All Card Mode chunks | ≤ 120 kB | 107.2 kB (audio engine + beat map chunk 2.8 kB gz since the tracked beat map, 2026-09-29; was 2.4) |
 | Music track | — | 2.8 MB MP3 (128 kbps), fetched only when Card Mode mounts |
 
 Headless Chrome, production build: with autoplay allowed, the music starts on load and the board

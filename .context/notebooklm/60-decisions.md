@@ -600,8 +600,12 @@ Decision:
   duck gain → music bus (0.28) → speakers, in a lazy engine chunk with the beat map.
 - Enter fades in 1.5 s; leave/mute/hidden tab fade out 0.8 s then pause in place (resume, not
   restart). Upgrade offer ducks to 40 %.
-- Beat map at build time (`npm run audio:music`, ffmpeg): 150 Hz low band onset peaks gated at 55 % of the hardest hit, 158 hits;
-  a fixed BPM grid was rejected because the track's tempo wanders.
+- Beat map at build time (`npm run audio:music`, ffmpeg). Revised 2026-09-29 (owner: bounce too
+  sensitive at times, frozen at others): onset peak picking replaced by a beat tracker (log spectral
+  flux → autocorrelation tempo → Ellis DP, tightness 100), each beat snapped to a kick within
+  ±40 ms; strength 1 no kick / 2 kick / 3 hard kick; 396 beats, 388/392 within 50 ms of beat_this.
+  The track's tempo rises ~127 → ~130 BPM, so a single-BPM grid is rejected; the tracked map is a
+  drifting-tempo grid. beat_this/librosa were references only, not dependencies.
 - Bounce: timer on `audio.currentTime` − output latency toggles `data-beat` a/b; CSS keyframes on
   `translate`/`scale`, shaped as a heartbeat (swell, slight contraction, rest; 300 ms; owner
   follow-up). Only while heard; off under reduced motion and with a section open. Second

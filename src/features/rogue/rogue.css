@@ -1274,11 +1274,11 @@ html:has(.reward-dialog[open]) {
 }
 
 /*
- * Beat bounce (P9.11, ADR-016): the music engine alternates data-beat on the board at every kick
- * drum hit; switching between two identical animations restarts it. `translate` and `scale` are
+ * Beat bounce (P9.11, ADR-016): the music engine alternates data-beat on the board at every beat
+ * of the track; switching between two identical animations restarts it. `translate` and `scale` are
  * their own properties, so they add to the fan's and Motion's transforms instead of replacing them.
  * Each hit is a heartbeat: a quick swell, a slight contraction below rest, then rest. Cards also
- * hop; combatants swell from their feet and land with a small squash. Harder hits beat bigger.
+ * hop; combatants swell from their feet and land with a small squash. Beats on a harder kick beat bigger.
  */
 .rogue-board {
   --beat-ms: 300ms;

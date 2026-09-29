@@ -17,6 +17,13 @@
   graph; an `AudioBuffer` of the 3-minute track would hold ~60 MB of decoded samples.
 - **Mixing:** games route sources into buses (`GainNode`s summed into a master) so music and
   effects mix, fade and mute independently; ducking is a gain ramp on the music bus only.
+- **Beat detection references** (2026-09-29): offline trackers — madmom (RNN + DBN, most accurate
+  in comparisons), beat_this (CPJKU transformer, ISMIR 2024, beats and downbeats without a DBN),
+  librosa `beat_track` (Ellis DP; best at global tempo, beats ~20–60 ms late), Essentia
+  `RhythmExtractor2013`, BeatNet (online, particle filter). Browser: `web-audio-beat-detector` and
+  `realtime-bpm-analyzer` give one BPM (+ offset) per track — no drift. beat_this and librosa served
+  as references here (run locally, never shipped); the tracker itself is ported into the script
+  with no dependency.
 - **Beat sync:** rhythm games follow the audio clock against a precomputed beat map instead of
   analysing audio live (an `AnalyserNode` costs CPU every frame and reacts late). Output latency
   (`AudioContext.outputLatency`) is subtracted so the bounce matches what is heard.
@@ -28,15 +35,25 @@
 - **Asset:** `npm run audio:music` (`scripts/audio/music.mts`, needs `ffmpeg`) re-encodes the
   owner's track (git-ignored `resources/`) to `public/audio/midnight-pixel-garden.mp3` (128 kbps,
   no cover art or tags: 4.2 MB → 2.8 MB), fetched only when Card Mode mounts.
-- **Beat map at build time:** the same script decodes the encoded file (the one browsers play),
-  low-passes it at 150 Hz (the kick drum), takes the rise of the band's log energy per 11.6 ms hop
-  as the onset curve and keeps the peaks standing 0.32 above their moving average, at least 200 ms
-  apart (the bounce's length), that also reach 55 % of the track's hardest hit — without that gate
-  quiet passages bounced on kicks nobody hears (owner review, same day: 305 → 158 hits). Strength
-  1–3 spreads the hits between the gate and the hardest (92/54/12), and the bounce scales with it.
-  Committed as `audio/beats.generated.ts`. A fixed tempo grid was tried and dropped: the track's tempo wanders (~128.8–129.8 BPM),
-  so any grid drifts off the beat within a minute. Breakdowns without kick have no hits, so the
-  board rests there.
+- **Beat map at build time — beat tracking, not onset picking** (revised 2026-09-29, owner review:
+  "at times far too sensitive, at others it doesn't move with the beat at all"). The first map
+  picked kick onsets (150 Hz low band, peaks over a moving average, gated at 55 % of the hardest
+  hit). Checked against two reference trackers, a third of its hits fell between beats (8th-note
+  bass and fills 230 ms apart: too sensitive) and the gate left ten gaps of 3–13 s (no bounce).
+  Onsets are not beats. The script now runs a beat tracker over the encoded file (the one browsers
+  play): spectral flux of the log magnitude (1024-sample FFT, 11.6 ms hop, every frequency votes,
+  so the beat carries through bars without kick) → tempo from its autocorrelation under a
+  log-normal prior around 120 BPM → Ellis' dynamic-programming tracker (as in librosa, tightness
+  100), which places one beat per period and lets the period follow the music. Each beat then
+  snaps onto a kick found within ±40 ms (2.9 ms hop), since the thud is what the eye matches.
+  Strength: 1 no kick (breakdowns bounce softly instead of freezing), 2 a kick, 3 a kick at 80 %+
+  of the typical (90th-percentile) kick. Result: 396 beats (84/187/125); 388 of the 392 beats
+  from beat_this (CPJKU, ISMIR 2024) lie within 50 ms (median 12 ms), as do 349/393 of librosa's.
+  Committed as `audio/beats.generated.ts`.
+- **Why not one tempo:** both reference trackers show the tempo rising steadily from ~127 BPM to
+  ~130 BPM across the track (4/4 throughout), so a single BPM grid drifts up to ±300 ms off the
+  music. The tracked map *is* the tempo approach, with a tempo that is allowed to drift. The loop
+  seam is not beat-exact (the last beat to the first is 326 ms, not ~465).
 - **Engine** (`audio/music-engine.ts`, its own chunk with the beat map, loaded when the board
   mounts): `<audio loop>` → fade gain → duck gain → music bus (0.28, faint) → speakers. Entering
   fades in over 1.5 s; leaving, muting and hiding the tab fade out over 0.8 s and then **pause** the
@@ -72,12 +89,16 @@
 - Howler.js / use-sound — a dependency for features Web Audio has natively, over the budget.
 - Live `AnalyserNode` beat detection — per-frame CPU, late reactions, and false hits from the bass.
 - A fixed BPM grid (a CSS animation with a period) — drifts off a track whose tempo wanders.
+- Onset peak picking (the first beat map) — onsets are not beats: too many between beats, none in
+  quiet passages.
+- Shipping madmom/beat_this output — Python/PyTorch as a build dependency for a 2 kB map; they stay
+  reference tools.
 - An `AudioBuffer` loop (sample-exact, gapless) — ~60 MB of memory for a background track.
 
 ## Consequences
 
 Card Mode load 79.8 kB gz (+0.8 kB: toggle, settings, hook), 0.2 kB under the 80 kB budget; the
-engine and beat map are a separate 2.4 kB gz chunk; the track is 2.8 MB, fetched only in Card Mode.
+engine and beat map are a separate 2.8 kB gz chunk (2.4 kB with the first, onset-picked map); the track is 2.8 MB, fetched only in Card Mode.
 Like the combatant models, the source track is git-ignored, so CI cannot regenerate the beat map;
 `npm run audio:music -- --check` verifies it locally. MP3 encoder padding can leave a very short
 gap at the loop point of `<audio loop>`. The track is AI-generated from the owner's own prompts: no
