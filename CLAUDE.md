@@ -59,7 +59,8 @@ button/link/dialog semantics over decorative divs. Never rely solely on color, h
 animation to convey state. Visible focus states always. Respect `prefers-reduced-motion` —
 reduced motion must stay functionally complete, not just less pretty. Animate transform/opacity;
 target ~150–300ms unless spring physics justify otherwise; no continuous idle animation loops
-(one owner-approved exception: the Card Mode combatants' model loops, ADR-013/014).
+(owner-approved exceptions: the Card Mode combatants' model loops, ADR-013/014, and the beat
+bounce while Card Mode's music is heard, ADR-016).
 
 ## SEO / content
 

@@ -589,3 +589,25 @@ Decision:
   pseudo-3D elements.
 - Combatants' rest/defeated frames moved into their lazy chunks to stay under the Card Mode budget.
 Consequences: Card Mode load 79.0 kB gz; all Card Mode chunks 106.5 kB.
+
+## Decision: Card Mode background music and beat bounce (Roadmap P9.11, ADR-016)
+
+Status: Accepted (project owner request, 2026-09-28)
+Date: 2026-09-28
+Source: ADR-016; CLAUDE.md (Accessibility & motion); Vitest and headless Chrome
+Decision:
+- Native Web Audio, no library (Howler/Tone over budget and unneeded): `<audio loop>` → fade gain →
+  duck gain → music bus (0.28) → speakers, in a lazy engine chunk with the beat map.
+- Enter fades in 1.5 s; leave/mute/hidden tab fade out 0.8 s then pause in place (resume, not
+  restart). Upgrade offer ducks to 40 %.
+- Beat map at build time (`npm run audio:music`, ffmpeg): 150 Hz low band onset peaks gated at 55 % of the hardest hit, 158 hits;
+  a fixed BPM grid was rejected because the track's tempo wanders.
+- Bounce: timer on `audio.currentTime` − output latency toggles `data-beat` a/b; CSS keyframes on
+  `translate`/`scale`, shaped as a heartbeat (swell, slight contraction, rest; 300 ms; owner
+  follow-up). Only while heard; off under reduced motion and with a section open. Second
+  owner-approved exception to "no continuous idle animation loops".
+- Speaker toggle: `aria-pressed` button, choice in localStorage; `muted`/`blocked` in
+  `audio/music-settings.ts`, not Zustand. Autoplay held → first interaction starts it.
+- SFX later: an effects bus beside the music bus under one master gain.
+- Track is AI-generated from the owner's prompts: no author credit shown.
+Consequences: Card Mode load 79.8 kB gz (0.2 kB headroom); track 2.8 MB, Card Mode only.

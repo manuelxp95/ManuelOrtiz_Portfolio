@@ -374,3 +374,19 @@ console errors. Card Mode has 0.8 kB of headroom left.
 Headless Chrome (light and dark, 1280 px; dark 390 px): card glyphs, the dialog rotation and both
 combatants render as four depth layers; computed band colors fade toward the background in each
 theme (light L 0.62 → 0.80, dark L 0.68 → 0.43); no console errors.
+
+## P9.11 — Card Mode music and beat bounce (2026-09-28)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 79.8 kB (+0.8 kB: music toggle, settings, engine loader) |
+| All Card Mode chunks | ≤ 120 kB | 107.2 kB (audio engine + beat map chunk 2.4 kB gz) |
+| Music track | — | 2.8 MB MP3 (128 kbps), fetched only when Card Mode mounts |
+
+Headless Chrome, production build: with autoplay allowed, the music starts on load and the board
+alternates `data-beat` ~13 times in 4 s of a kick-heavy passage; mute stops both the bounce and
+the element (position kept), unmute resumes from it. With a gesture required, nothing plays until
+the first click (on the page or the toggle, which then starts rather than mutes). Leaving Card Mode
+fades out and pauses (7.7 s); re-entering continues from 7.7 s. No console errors.
+Card Mode has 0.2 kB of headroom left.

@@ -26,6 +26,8 @@ import {
 } from "@/state/portfolio-store";
 import { parseSectionHash } from "@/state/section-hash";
 import { ASCII_MODELS } from "./ascii/scenes";
+import { MusicToggle } from "./audio/MusicToggle";
+import { useCardMusic } from "./audio/use-card-music";
 import { boardReducer, createBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
 import { CardDialog } from "./CardDialog";
@@ -196,6 +198,15 @@ export function RogueBoard() {
   );
   const skipReward = useCallback(() => dispatch({ type: "SKIP_REWARD" }), []);
 
+  // Background music (P9.11): the board bounces on its beat unless motion is reduced or a card is
+  // open to read; it steps back while an upgrade is on offer.
+  const [boardElement, setBoardElement] = useState<HTMLElement | null>(null);
+  const reading = state.status === "expanded" || state.status === "closing";
+  useCardMusic({
+    beatTarget: reducedMotion || reading ? null : boardElement,
+    ducked: offer !== null,
+  });
+
   // Escape skips a running effect.
   useEffect(() => {
     if (state.status !== "playing") return;
@@ -263,6 +274,7 @@ export function RogueBoard() {
   return (
     <CardMotion>
       <section
+        ref={setBoardElement}
         aria-labelledby="card-board-heading"
         className="rogue-board rogue-stage"
         onPointerDown={(event) => {
@@ -276,6 +288,7 @@ export function RogueBoard() {
         }}
       >
         <header className="board-header">
+          <MusicToggle />
           <h1 id="card-board-heading" className="text-xl font-bold sm:text-2xl">
             {profile.name}{" "}
             <span className="font-mono text-sm font-normal text-muted sm:text-base">

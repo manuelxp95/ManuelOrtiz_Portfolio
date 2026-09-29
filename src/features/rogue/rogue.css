@@ -1240,3 +1240,115 @@ html:has(.reward-dialog[open]) {
     transform: none;
   }
 }
+
+/* Music (P9.11): the speaker toggle sits at the header's top right. */
+.music-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  transition:
+    border-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.music-toggle:hover,
+.music-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.music-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.board-header:has(.music-toggle) {
+  padding-right: 2.75rem;
+}
+
+/*
+ * Beat bounce (P9.11, ADR-016): the music engine alternates data-beat on the board at every kick
+ * drum hit; switching between two identical animations restarts it. `translate` and `scale` are
+ * their own properties, so they add to the fan's and Motion's transforms instead of replacing them.
+ * Each hit is a heartbeat: a quick swell, a slight contraction below rest, then rest. Cards also
+ * hop; combatants swell from their feet and land with a small squash. Harder hits beat bigger.
+ */
+.rogue-board {
+  --beat-ms: 300ms;
+}
+
+.rogue-board[data-beat="a"] .card-slot:not([data-inspecting]) .section-card {
+  animation: beat-card-a var(--beat-ms) ease-out;
+}
+
+.rogue-board[data-beat="b"] .card-slot:not([data-inspecting]) .section-card {
+  animation: beat-card-b var(--beat-ms) ease-out;
+}
+
+.rogue-board[data-beat="a"] .combatant-body {
+  animation: beat-body-a var(--beat-ms) ease-out;
+}
+
+.rogue-board[data-beat="b"] .combatant-body {
+  animation: beat-body-b var(--beat-ms) ease-out;
+}
+
+.combatant-body {
+  transform-origin: 50% 100%;
+}
+
+@keyframes beat-card-a {
+  15% {
+    translate: 0 calc(var(--beat-strength, 1) * -4px);
+    scale: calc(1 + var(--beat-strength, 1) * 0.035);
+  }
+  45% {
+    translate: 0 0;
+    scale: calc(1 - var(--beat-strength, 1) * 0.012);
+  }
+}
+
+@keyframes beat-card-b {
+  15% {
+    translate: 0 calc(var(--beat-strength, 1) * -4px);
+    scale: calc(1 + var(--beat-strength, 1) * 0.035);
+  }
+  45% {
+    translate: 0 0;
+    scale: calc(1 - var(--beat-strength, 1) * 0.012);
+  }
+}
+
+@keyframes beat-body-a {
+  15% {
+    scale: calc(1 + var(--beat-strength, 1) * 0.045);
+  }
+  45% {
+    scale: calc(1 + var(--beat-strength, 1) * 0.01)
+      calc(1 - var(--beat-strength, 1) * 0.03);
+  }
+}
+
+@keyframes beat-body-b {
+  15% {
+    scale: calc(1 + var(--beat-strength, 1) * 0.045);
+  }
+  45% {
+    scale: calc(1 + var(--beat-strength, 1) * 0.01)
+      calc(1 - var(--beat-strength, 1) * 0.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rogue-board[data-beat] .section-card,
+  .rogue-board[data-beat] .combatant-body {
+    animation: none;
+  }
+}
