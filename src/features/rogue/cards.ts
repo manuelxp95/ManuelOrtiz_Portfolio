@@ -105,6 +105,9 @@ export type Target = "bug" | "hero";
 export type EffectKind =
   "summon" | "buff" | "combo" | "burst" | "runes" | "coins" | "scroll";
 
+/** What a played card does to the environment (P9.12, ADR-017); each layer reacts by its depth. */
+export type EnvironmentEffect = "quake";
+
 export interface CardAction {
   type: CardType;
   target: Target;
@@ -123,6 +126,7 @@ export interface CardAction {
   dodge?: boolean;
   /** Pulls cards of this kind from the deck into the hand. */
   draw?: { from: "project" | "skill"; count: number };
+  environment?: EnvironmentEffect;
 }
 
 const sectionActions: Record<SectionId, CardAction> = {
@@ -149,6 +153,7 @@ const sectionActions: Record<SectionId, CardAction> = {
     verb: `${experience.length}-hit combo`,
     tokens: experience.map((entry) => String(entry.startYear)),
     attack: { hits: experience.length, perHit: 4 },
+    environment: "quake",
   },
   projects: {
     type: "skill",
@@ -181,6 +186,7 @@ const sectionActions: Record<SectionId, CardAction> = {
     verb: "Résumé scroll",
     tokens: ["≡", "≡", "≡"],
     attack: { hits: 1, perHit: 15 },
+    environment: "quake",
   },
 };
 

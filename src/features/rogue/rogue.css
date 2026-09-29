@@ -767,19 +767,137 @@ a.merchant-offer:focus-visible {
 }
 
 .battlefield {
+  /*
+   * The horizon (P9.12): the line the combatants stand on, well above the hand so they are seen
+   * whole. The environment's layers stand on it or hang down from it.
+   */
+  --horizon: calc(var(--hand-overlap) + clamp(2rem, 11dvh, 6.5rem));
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* The combatants stand on the hand: its cards cover their feet, and a lifted card more. */
   justify-content: flex-end;
   height: 100%;
-  padding-bottom: calc(var(--hand-overlap) * 0.4);
+  padding-bottom: var(--horizon);
   background: radial-gradient(
     ellipse at 50% 40%,
     var(--surface),
     var(--bg) 70%
   );
+}
+
+/*
+ * Environment (P9.12, ADR-017): depth-cued ASCII layers of server-room ruins. Each spans 120 % of
+ * the field (cols × 0.6em), so the camera can move without showing an edge. The camera is three
+ * inputs summed in CSS — the pointer (set by Environment.tsx), the aimed target, and nothing else
+ * while idle — and each layer moves by it times its parallax. Farther layers mix toward the
+ * background by their depth, on top of their own depth bands. Behind the combatants, or in front of them
+ * but under the hand (DOM order, no z-index).
+ */
+.battlefield {
+  --aim-x: 0;
+  --cam-x: calc(var(--pointer-x, 0) * 0.6 + var(--aim-x));
+  --cam-y: calc(var(--pointer-y, 0) * 0.4);
+}
+
+.battlefield[data-aim="bug"] {
+  --aim-x: 0.8;
+}
+
+.battlefield[data-aim="hero"] {
+  --aim-x: -0.8;
+}
+
+.environment {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.env-layer {
+  position: absolute;
+  left: 50%;
+  font-family: var(--card-mono);
+  font-size: calc(100cqw * 1.2 / (var(--cols) * 0.6));
+  line-height: 1;
+  /* Even the nearest layer steps back from the combatants: 55 % fog, up to 91 % far away. */
+  color: color-mix(
+    in oklab,
+    var(--text) calc(45% - var(--depth) * 40%),
+    var(--bg)
+  );
+  translate: calc(-50% - var(--cam-x) * var(--parallax) * 7cqw)
+    calc(var(--cam-y) * var(--parallax) * -2cqh);
+  transition: translate 600ms ease-out;
+}
+
+.env-layer[data-anchor="above-horizon"] {
+  bottom: var(--horizon);
+}
+
+.env-layer[data-anchor="below-horizon"] {
+  top: calc(100% - var(--horizon));
+}
+
+.env-layer[data-anchor="bottom"] {
+  bottom: 0;
+}
+
+/* A quake shakes every layer, the nearer the harder, as the card's hit lands. `transform` adds
+   to the camera's `translate`. The a/b keys restart it for a second quake in a row. */
+.battlefield[data-env-effect="quake"][data-env-key="a"] .env-layer {
+  animation: env-quake-a 500ms ease-out 450ms;
+}
+
+.battlefield[data-env-effect="quake"][data-env-key="b"] .env-layer {
+  animation: env-quake-b 500ms ease-out 450ms;
+}
+
+@keyframes env-quake-a {
+  15% {
+    transform: translate(
+      calc(var(--parallax) * -0.6rem),
+      calc(var(--parallax) * 0.4rem)
+    );
+  }
+  35% {
+    transform: translate(
+      calc(var(--parallax) * 0.5rem),
+      calc(var(--parallax) * -0.3rem)
+    );
+  }
+  60% {
+    transform: translate(calc(var(--parallax) * -0.25rem), 0);
+  }
+}
+
+@keyframes env-quake-b {
+  15% {
+    transform: translate(
+      calc(var(--parallax) * -0.6rem),
+      calc(var(--parallax) * 0.4rem)
+    );
+  }
+  35% {
+    transform: translate(
+      calc(var(--parallax) * 0.5rem),
+      calc(var(--parallax) * -0.3rem)
+    );
+  }
+  60% {
+    transform: translate(calc(var(--parallax) * -0.25rem), 0);
+  }
+}
+
+/* Reduced motion: the scene stands still — no camera, no quake. */
+@media (prefers-reduced-motion: reduce) {
+  .env-layer {
+    translate: -50% 0;
+    transition: none;
+    animation: none !important;
+  }
 }
 
 /* The drop target stops above the hand (and a hovered card's lift), so a card picked up from the

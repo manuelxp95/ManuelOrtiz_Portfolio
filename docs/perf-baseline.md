@@ -390,3 +390,18 @@ the element (position kept), unmute resumes from it. With a gesture required, no
 the first click (on the page or the toggle, which then starts rather than mutes). Leaving Card Mode
 fades out and pauses (7.7 s); re-entering continues from 7.7 s. No console errors.
 Card Mode has 0.2 kB of headroom left.
+
+## P9.12 — Card Mode environment (2026-09-29)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 80 kB | 79.9 kB (+0.1 kB: environment loader, effect attributes) |
+| Environment (new) | ≤ 8 kB | 3.0 kB (presenter + five layers of art, one chunk) |
+| All Card Mode chunks | ≤ 120 kB | 110.3 kB |
+
+Headless Chrome, production build (light and dark 1280 px, dark 390 px): five layers render behind
+and in front of the combatants, which now stand above the hand. A pointer at the left edge shifts
+the layers right by 4 → 42 px (far → foreground); aiming at the bug pans them the other way.
+Résumé scroll sets `data-env-effect="quake"` and runs `env-quake-a` on every layer. No console
+errors. Card Mode has 0.1 kB of headroom left.

@@ -28,6 +28,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { experience, projects } from "@/content";
 import { SECTION_IDS } from "@/domain/types";
 import { HERO } from "@/features/rogue/battle";
+import { ENVIRONMENT_LAYERS } from "@/features/rogue/ascii/environment";
 import { RogueBoard } from "@/features/rogue/RogueBoard";
 import {
   consumePendingModeFocus,
@@ -499,5 +500,82 @@ describe("the deck (P9.4)", () => {
         document.getElementById(id)!.closest<HTMLElement>(".card-fan > div")!
           .style.opacity,
       ).not.toBe("0");
+  });
+});
+
+describe("environment (P9.12)", () => {
+  const field = () => document.querySelector<HTMLElement>(".battlefield")!;
+  const layers = () => [
+    ...document.querySelectorAll<HTMLElement>(".env-layer"),
+  ];
+
+  /** jsdom reports no fine pointer; the parallax only follows one. */
+  function withFinePointer() {
+    const base = window.matchMedia;
+    window.matchMedia = (query: string) =>
+      query === "(pointer: fine)"
+        ? { ...base(query), matches: true }
+        : base(query);
+    return () => {
+      window.matchMedia = base;
+    };
+  }
+
+  it("draws every layer, decorative, behind the combatants except the front ones", async () => {
+    render(<RogueBoard />);
+    await waitFor(() =>
+      expect(layers()).toHaveLength(ENVIRONMENT_LAYERS.length),
+    );
+    const combatants = document.querySelector(".combatants")!;
+    for (const layer of ENVIRONMENT_LAYERS) {
+      const element = document.querySelector(`[data-layer="${layer.id}"]`)!;
+      expect(element.closest('[aria-hidden="true"]')).not.toBeNull();
+      const after =
+        combatants.compareDocumentPosition(element) &
+        Node.DOCUMENT_POSITION_FOLLOWING;
+      expect(Boolean(after)).toBe(layer.front);
+    }
+  });
+
+  it("a card that quakes marks the field while its effect plays; others do not", async () => {
+    render(<RogueBoard />);
+    fireEvent.click(card("education"));
+    expect(field().hasAttribute("data-env-effect")).toBe(false);
+    fireEvent.click(field());
+    fireEvent.click(await screen.findByRole("button", { name: /close/i }));
+    await waitFor(() => expect(openDialog()).toBeNull());
+
+    fireEvent.click(card("cv"));
+    expect(field().getAttribute("data-env-effect")).toBe("quake");
+    await waitFor(() => expect(openDialog()).not.toBeNull());
+    expect(field().hasAttribute("data-env-effect")).toBe(false);
+  });
+
+  it("the camera follows a fine pointer", async () => {
+    const restore = withFinePointer();
+    try {
+      render(<RogueBoard />);
+      await waitFor(() => expect(layers().length).toBeGreaterThan(0));
+      fireEvent.pointerMove(window, { clientX: 0, clientY: 0 });
+      await waitFor(() =>
+        expect(field().style.getPropertyValue("--pointer-x")).toBe("-1.000"),
+      );
+    } finally {
+      restore();
+    }
+  });
+
+  it("stands still under reduced motion", async () => {
+    setReducedMotion(true);
+    const restore = withFinePointer();
+    try {
+      render(<RogueBoard />);
+      await waitFor(() => expect(layers().length).toBeGreaterThan(0));
+      fireEvent.pointerMove(window, { clientX: 0, clientY: 0 });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(field().style.getPropertyValue("--pointer-x")).toBe("");
+    } finally {
+      restore();
+    }
   });
 });

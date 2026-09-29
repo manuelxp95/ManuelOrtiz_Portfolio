@@ -204,6 +204,15 @@ the music is heard, never under reduced motion or with a section open. The speak
 `muted`/`blocked` state lives in `audio/music-settings.ts`, not Zustand. Sound effects later get
 their own bus beside the music bus.
 
+Card Mode environment (Roadmap P9.12, ADR-017): the server-room ruins behind and around the
+combatants as depth-cued ASCII layers, listed farthest first in `ascii/environment.ts` (depth,
+parallax, front/back, anchor, size) and raymarched at build time (`npm run ascii:env`). Each layer
+is fogged by its depth on top of its own bands. `Environment.tsx` is its own chunk, rendered before
+the combatants (back) and after them (front), under the hand. The combatants stand on `--horizon`,
+well above the hand. The camera is CSS (`--cam-x/y` from the pointer and the aimed target, times
+each layer's parallax); cards declare environment effects (`CardAction.environment`, `"quake"` so
+far), which CSS plays on every layer. Nothing moves while idle or under reduced motion.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

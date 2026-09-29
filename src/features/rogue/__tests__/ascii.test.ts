@@ -11,6 +11,8 @@ import {
   flatArt,
   type DepthArt,
 } from "@/features/rogue/ascii/depth";
+import { ENVIRONMENT_LAYERS } from "@/features/rogue/ascii/environment";
+import { environmentArt } from "@/features/rogue/ascii/frames/environment.generated";
 import { renderAscii } from "@/features/rogue/ascii/renderer";
 import {
   ANIMATION_FRAMES,
@@ -118,6 +120,31 @@ describe("combatant model art (P9.8–P9.9)", () => {
       );
       expect(defeated.chars).not.toBe(rest.chars);
       expect(frameMs).toBeGreaterThan(0);
+    },
+  );
+});
+
+describe("environment layers (P9.12)", () => {
+  it("are listed farthest first, each nearer layer moving more", () => {
+    const ids = ENVIRONMENT_LAYERS.map((layer) => layer.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (let i = 1; i < ENVIRONMENT_LAYERS.length; i++) {
+      expect(ENVIRONMENT_LAYERS[i].depth).toBeLessThan(
+        ENVIRONMENT_LAYERS[i - 1].depth,
+      );
+      expect(ENVIRONMENT_LAYERS[i].parallax).toBeGreaterThan(
+        ENVIRONMENT_LAYERS[i - 1].parallax,
+      );
+    }
+  });
+
+  it.each(ENVIRONMENT_LAYERS.map((layer) => [layer.id, layer] as const))(
+    "%s: depth-cued art of its declared size, with relief",
+    (id, layer) => {
+      const art = environmentArt[id];
+      expectGrid(art, layer.size.cols, layer.size.rows);
+      expect(art.chars.replace(/\s/g, "").length).toBeGreaterThan(50);
+      expect(new Set(art.depth.replace(/\s/g, "")).size).toBeGreaterThan(1);
     },
   );
 });

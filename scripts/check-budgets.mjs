@@ -17,6 +17,8 @@ const BUDGETS = {
   panel: 10 * KB,
   /** P8 relic inspector (runtime ASCII renderer), loaded only on "View relic in 3D". */
   inspector: 5 * KB,
+  /** P9.12 environment (layer art + presenter), fetched when the battlefield mounts. */
+  environment: 8 * KB,
   /** Every Card Mode-only chunk together (Card Mode load + ASCII rotations + panels + inspector). */
   rogueTotal: 120 * KB,
 };
@@ -28,6 +30,7 @@ const PANEL_MARKERS = {
   contact: "merchant-offers",
 };
 const INSPECTOR_MARKER = "relic-inspector-art";
+const ENVIRONMENT_MARKER = "env-layer";
 const THREE_MARKERS = ["WebGLRenderer", "THREE.REVISION", "three.module"];
 
 const next = ".next";
@@ -78,13 +81,29 @@ const inspectorHolders = chunks.filter((file) => source(file).includes(INSPECTOR
 const inspector = groupOf(INSPECTOR_MARKER).filter(
   (file) => !rogueChunks.includes(file) && !panelChunks.includes(file),
 );
+const environmentHolders = chunks.filter((file) => source(file).includes(ENVIRONMENT_MARKER));
+const environment = groupOf(ENVIRONMENT_MARKER).filter(
+  (file) =>
+    !rogueChunks.includes(file) &&
+    !panelChunks.includes(file) &&
+    !inspector.includes(file) &&
+    !rotationChunks.includes(file),
+);
+const environmentArt = rotationChunks.filter((file) => environmentHolders.includes(file));
 const threeChunks = chunks.filter((file) =>
   THREE_MARKERS.some((marker) => source(file).includes(marker)),
 );
 
 const criticalJs = initial.reduce((sum, file) => sum + gz(file), 0);
 const rogueChunk = total(rogueChunks);
-const rogueTotal = total([...rogueChunks, ...rotationChunks, ...panelChunks, ...inspector]);
+const environmentBytes = total([...environment, ...environmentArt]);
+const rogueTotal = total([
+  ...rogueChunks,
+  ...rotationChunks,
+  ...panelChunks,
+  ...inspector,
+  ...environment,
+]);
 
 const checks = [
   ["Critical JS (/)", criticalJs <= BUDGETS.criticalJs, `${kb(criticalJs)} ≤ ${kb(BUDGETS.criticalJs)}`],
@@ -100,6 +119,16 @@ const checks = [
     "Relic inspector only on demand",
     !inspectorHolders.some((f) => initial.includes(f) || rogueChunks.includes(f) || panelChunks.includes(f)),
     "not in the initial, Card Mode or panel loads",
+  ],
+  [
+    "Environment",
+    environmentHolders.length > 0 && environmentBytes <= BUDGETS.environment,
+    `${kb(environmentBytes)} ≤ ${kb(BUDGETS.environment)}`,
+  ],
+  [
+    "Environment only with the battlefield",
+    !environmentHolders.some((f) => initial.includes(f) || rogueChunks.includes(f)),
+    "not in the initial or Card Mode loads",
   ],
   ["Card Mode total", rogueTotal <= BUDGETS.rogueTotal, `${kb(rogueTotal)} ≤ ${kb(BUDGETS.rogueTotal)} (${rotationChunks.length} rotation chunks)`],
   ["Three.js bytes anywhere", threeChunks.length === 0, `${threeChunks.length} chunk(s)`],

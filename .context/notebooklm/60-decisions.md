@@ -615,3 +615,26 @@ Decision:
 - SFX later: an effects bus beside the music bus under one master gain.
 - Track is AI-generated from the owner's prompts: no author credit shown.
 Consequences: Card Mode load 79.8 kB gz (0.2 kB headroom); track 2.8 MB, Card Mode only.
+
+## Decision: Card Mode environment — parallax layers of depth-cued ASCII (Roadmap P9.12, ADR-017)
+
+Status: Accepted (project owner request, 2026-09-29)
+Date: 2026-09-29
+Source: ADR-017; owner choices (server-room ruins, pointer + event parallax, quake demo); Vitest and
+headless Chrome
+Decision:
+- Scalable registry `ENVIRONMENT_LAYERS` (farthest first: far, mid, near, ground, foreground) with
+  depth, parallax, front/back, anchor (above/below the horizon, or the bottom) and size; a new layer
+  = registry entry + scene + `npm run ascii:env` (checked in CI).
+- Build-time SDF raymarching to `DepthArt` (fixed seed): oblique parallel camera for backgrounds,
+  perspective for the floor; ADR-015 extended — a layer's color is fogged by its depth (55–91 %)
+  on top of its own bands.
+- `Environment.tsx` in its own chunk (3.0 kB gz), rendered back (before the combatants) and front
+  (after them); DOM order stacks it under the hand and the played card, no new z-index.
+- Combatants moved up: `--horizon` = hand overlap + clamp(2rem, 11dvh, 6.5rem) is the field's
+  bottom padding and the layers' anchor.
+- Camera in CSS: pointer (fine pointers, one style write per frame while moving) + aimed target;
+  translate by −cam × parallax. No idle loop. Reduced motion pins every layer.
+- Effects: `CardAction.environment` (`"quake"` on Résumé scroll and the experience combo) →
+  `data-env-effect` + a/b key on the field → CSS `transform` shake scaled by parallax.
+Consequences: Card Mode load 79.9 kB gz (0.1 kB headroom); all Card Mode chunks 110.3 kB of 120.

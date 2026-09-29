@@ -1,6 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { m, type TargetAndTransition, type Transition } from "motion/react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   BUG,
   bossIntent,
@@ -22,6 +22,8 @@ import { modifier, modifierIds } from "./modifiers";
 import { ModelArt } from "./ModelArt";
 
 export const BATTLEFIELD_ID = "battlefield";
+
+type EnvironmentModule = typeof import("./Environment");
 
 /** How long a played card's effect runs before its dialog opens (any tap, Enter or Escape skips). */
 export const EFFECT_MS = 900;
@@ -325,6 +327,14 @@ export function Battlefield({
   const bossActing = combat.boss === "acting";
   const cardHit = hit?.by === "card" ? hit : null;
   const bugHit = hit?.by === "bug" && bossActing ? hit : null;
+  const [environment, setEnvironment] = useState<EnvironmentModule | null>(
+    null,
+  );
+
+  // The environment and its art are their own chunk (P9.12): the field works without them.
+  useEffect(() => {
+    import("./Environment").then(setEnvironment, () => {});
+  }, []);
 
   useEffect(() => {
     if (!playing) return;
@@ -396,10 +406,18 @@ export function Battlefield({
       data-candidate={candidate || undefined}
       data-playing={playing ?? undefined}
       data-boss={combat.boss}
+      data-aim={aimed ?? undefined}
+      data-env-effect={
+        (playing && cardAction(playing).environment) || undefined
+      }
+      data-env-key={cardHit && cardHit.count % 2 ? "a" : "b"}
       className="battlefield"
       onClick={onActivate}
     >
       <div ref={setNodeRef} aria-hidden="true" className="drop-zone" />
+      {environment && (
+        <environment.Environment part="back" reducedMotion={reducedMotion} />
+      )}
       <p className="turn-bar font-mono">{turnText}</p>
       <div className="combatants">
         <Combatant
@@ -450,6 +468,9 @@ export function Battlefield({
           reducedMotion={reducedMotion}
         />
       </div>
+      {environment && (
+        <environment.Environment part="front" reducedMotion={reducedMotion} />
+      )}
       {playing && flight && !reducedMotion && (
         <m.div
           key={`flight-${cardHit?.count}`}
