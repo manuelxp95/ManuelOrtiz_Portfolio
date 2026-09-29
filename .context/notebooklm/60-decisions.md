@@ -636,6 +636,10 @@ Decision:
   server-farm dome skyline), conduits (WCP_4 elevated data conduits), neon-grid ground (kept by owner
   choice), foreground (WCP_5 toppled rack, network poles). Authored in reference px, heights ×0.75 to
   fit the wider sky. Combatant art max 0.62rem → 0.41rem (two thirds on desktop).
+- Revised 2026-09-29 (owner: combatants lost in the scenery): readability first — towers (WCP_2)
+  and conduits (WCP_4) dropped, four layers left (far, skyline, ground, foreground); per-scene
+  glyph budgets from the light end of the ramp (combatants alone use dense glyphs); flat backdrop
+  silhouettes; a background-colored halo behind each combatant. Environment chunk 2.0 kB gz.
 - `Environment.tsx` in its own chunk (3.0 kB gz), rendered back (before the combatants) and front
   (after them); DOM order stacks it under the hand and the played card, no new z-index.
 - Combatants moved up: `--horizon` = hand overlap + clamp(2rem, 11dvh, 6.5rem) is the field's

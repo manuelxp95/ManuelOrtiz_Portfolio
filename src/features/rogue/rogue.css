@@ -800,9 +800,7 @@ a.merchant-offer:focus-visible {
 .battlefield {
   /* Retro-futurist neon, one hue per layer so they read apart (owner direction, P9.12). */
   --env-far: #4338ca;
-  --env-towers: #7c3aed;
   --env-skyline: #c026d3;
-  --env-conduits: #2563eb;
   --env-ground: #db2777;
   --env-foreground: #ea580c;
   --aim-x: 0;
@@ -813,9 +811,7 @@ a.merchant-offer:focus-visible {
 @media (prefers-color-scheme: dark) {
   .battlefield {
     --env-far: #818cf8;
-    --env-towers: #a78bfa;
     --env-skyline: #e879f9;
-    --env-conduits: #60a5fa;
     --env-ground: #f472b6;
     --env-foreground: #fb923c;
   }
@@ -825,16 +821,8 @@ a.merchant-offer:focus-visible {
   --env-color: var(--env-far);
 }
 
-.env-layer[data-layer="towers"] {
-  --env-color: var(--env-towers);
-}
-
 .env-layer[data-layer="skyline"] {
   --env-color: var(--env-skyline);
-}
-
-.env-layer[data-layer="conduits"] {
-  --env-color: var(--env-conduits);
 }
 
 .env-layer[data-layer="ground"] {
@@ -1033,9 +1021,26 @@ a.merchant-offer:focus-visible {
 
 .combatant-body {
   position: relative;
+  /* Its halo paints behind the art but over the environment. */
+  isolation: isolate;
   display: grid;
   place-items: center;
   margin-top: 0.25rem;
+}
+
+/* A halo of the background behind each combatant (P9.12): the scenery fades out around them, so
+   their silhouettes read against it. */
+.combatant-body::before {
+  content: "";
+  position: absolute;
+  inset: -20% -30%;
+  z-index: -1;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--bg) 88%, transparent) 55%,
+    transparent
+  );
+  pointer-events: none;
 }
 
 .combatant-art {

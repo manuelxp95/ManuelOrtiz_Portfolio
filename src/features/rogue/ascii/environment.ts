@@ -27,46 +27,29 @@ export interface EnvironmentLayer {
 }
 
 /**
- * Farthest first: the order they are drawn in. The four backdrops follow the owner's parallax
- * references (`resources/parallax/WCP_1…5.png`, 1 farthest), turned from a ruined city into ruined
- * server infrastructure; the neon floor between them is where the combatants stand.
+ * Farthest first: the order they are drawn in. The backdrops and the foreground follow the owner's
+ * parallax references (`resources/parallax/WCP_1…5.png`, 1 farthest), turned from a ruined city
+ * into ruined server infrastructure; the neon floor is where the combatants stand. WCP_2 and WCP_4
+ * were dropped: two more busy layers behind the combatants hid them.
  */
 export const ENVIRONMENT_LAYERS = [
   /** WCP_1: leaning server monoliths, one stepped tower, antenna wreckage. */
   {
     id: "far",
-    depth: 0.95,
-    parallax: 0.08,
+    depth: 0.9,
+    parallax: 0.1,
     front: false,
     anchor: "above-horizon",
     size: { cols: 200, rows: 26 },
   },
-  /** WCP_2: two data silos, racks on stilts, collapsed cable-tray ramps. */
-  {
-    id: "towers",
-    depth: 0.8,
-    parallax: 0.18,
-    front: false,
-    anchor: "above-horizon",
-    size: { cols: 180, rows: 21 },
-  },
   /** WCP_3: a server-farm skyline around a domed core, debris spikes to the right. */
   {
     id: "skyline",
-    depth: 0.62,
-    parallax: 0.3,
+    depth: 0.6,
+    parallax: 0.35,
     front: false,
     anchor: "above-horizon",
     size: { cols: 160, rows: 12 },
-  },
-  /** WCP_4: elevated data conduits on pylons, crossing and curving. */
-  {
-    id: "conduits",
-    depth: 0.45,
-    parallax: 0.45,
-    front: false,
-    anchor: "above-horizon",
-    size: { cols: 150, rows: 10 },
   },
   /** The neon-grid floor the combatants stand on. */
   {

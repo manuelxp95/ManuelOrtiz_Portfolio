@@ -37,6 +37,21 @@
   layers. Scenes are authored in reference pixels (100 px to a world unit), with heights squeezed
   to 75 %: the sky above the combatants is far wider than the references' (≈ 3.7 : 1 against
   2.16 : 1) and the tallest towers must stay under the turn bar.
+- **Readability first: four layers, light glyphs, a halo** (revised 2026-09-29, owner review: the
+  combatants got lost in the scenery; "we may have to drop some layers"). Game-art readability
+  rules — the playable elements hold the strongest value contrast, the background is atmosphere
+  with less contrast, saturation and detail (atmospheric perspective), and fewer busy parallax
+  layers — translated to ASCII, where a glyph's density is its value (`@#%` dark/heavy, `.:` light):
+  - `towers` (WCP_2) and `conduits` (WCP_4) are dropped: the silos stood right behind the hero and
+    the conduits crossed the combatants' legs. Four layers remain: `far`, `skyline`, the neon
+    `ground` and the `foreground`.
+  - Each scene has a glyph budget from the light end of the ramp: far `.:-`, skyline `.:-=`, ground
+    `.:-`, foreground up to `+`. The combatants alone use the dense glyphs, so they carry the
+    heaviest value on screen.
+  - Backdrops are flat silhouettes (no grille or rubble texture); only the foreground keeps detail.
+  - A halo of the background color (radial, 88 % → transparent) sits behind each combatant's art
+    (`.combatant-body::before`, isolated so it stays over the scenery): the scenery fades out
+    around them.
 - **Combatants at two thirds** on desktop (owner review: too large on a standard browser):
   `.combatant-art` tops out at 0.41rem instead of 0.62rem; phones keep their minimum size.
 - **Hue tells the layers apart, brightness tells their depth** (revised 2026-09-29, owner review:
@@ -88,6 +103,7 @@
 ## Consequences
 
 Card Mode load 79.9 kB gz (+0.1 kB: the loader and the effect attributes), 0.1 kB under budget;
-the environment chunk is 3.0 kB gz (six layers); all Card Mode chunks 110.4 kB of 120. The combatants no longer
+the environment chunk is 2.0 kB gz (four layers; 3.0 kB with six); all Card Mode chunks
+109.4 kB of 120. The combatants no longer
 have their feet under the cards (P9.6's overlap now reaches the foreground layer only). On narrow
 phones the layers scale with the width, so the scene is small but complete.

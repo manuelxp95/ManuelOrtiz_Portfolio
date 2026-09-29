@@ -16,7 +16,7 @@ import {
 } from "../../src/features/rogue/ascii/environment.ts";
 import {
   LIGHT,
-  shadeChar,
+  ASCII_RAMP,
   type Vec3,
 } from "../../src/features/rogue/ascii/renderer.ts";
 
@@ -100,6 +100,11 @@ interface Scene {
    */
   near: number;
   far: number;
+  /**
+   * How many glyphs of the ramp (`.:-=+*#%@`, lightest first) the scene may use. Scenery keeps to
+   * the light end, so the combatants — the full ramp — carry the densest glyphs on screen.
+   */
+  glyphs: number;
 }
 
 type Camera =
@@ -132,8 +137,10 @@ const U = (px: number) => px / 100;
 const V = (px: number) => (px * 0.75) / 100;
 const HALF_WIDTH = 5.4;
 
-/** Grille rows every 10 reference px: vents and rack faces on every structure. */
+/** Grille rows every 10 reference px: rack faces, kept for the nearest layer only. */
 const grille = (local: Vec3) => (fract(local[1] * 10) < 0.25 ? 0.5 : 0.9);
+/** Backdrops read as flat silhouettes: detail competes with the combatants. */
+const flat = () => 0.75;
 
 interface BlockOptions {
   /** Height of its base above the ground line, px. */
@@ -168,7 +175,7 @@ function block(
         ? Math.max(body, l[1] - (2 * h - V(cut)) - slope * l[0])
         : body;
     },
-    albedo: (p) => grille(local(p)),
+    albedo: flat,
   };
 }
 
@@ -183,7 +190,7 @@ function silo(
   const centre: Vec3 = [X(x), V(base + height / 2), z];
   return {
     sdf: (p) => column(sub(p, centre), U(radius), V(height) / 2),
-    albedo: (p) => grille(sub(p, centre)),
+    albedo: flat,
   };
 }
 
@@ -239,11 +246,11 @@ function terrain(base: number, bumps: number, seed: number, z = 0.35): Part {
     // Scaled down: the bumps make the height field steeper than a true distance.
     sdf: (p) =>
       Math.max((p[1] - height(p[0])) * 0.5, Math.abs(p[2] - z) - 0.45),
-    albedo: (p) => (fract(p[0] * 3.7 + p[1] * 5.3) < 0.3 ? 0.4 : 0.6),
+    albedo: () => 0.5,
   };
 }
 
-const backdrop = (parts: Part[], bottom: number): Scene => ({
+const backdrop = (parts: Part[], bottom: number, glyphs: number): Scene => ({
   parts,
   camera: {
     kind: "ortho",
@@ -255,6 +262,7 @@ const backdrop = (parts: Part[], bottom: number): Scene => ({
   },
   near: -0.2,
   far: 0.9,
+  glyphs,
 });
 
 /** WCP_1: leaning server monoliths, a stepped tower, antenna wreckage on a snapped one. */
@@ -291,83 +299,7 @@ function farScene(): Scene {
       block(922, 45, 85, { lean: 0.1 }),
     ],
     -0.15,
-  );
-}
-
-/** WCP_2: two data silos, racks on stilts wired to a pole, collapsed cable-tray ramps. */
-function towersScene(): Scene {
-  const hole: Vec3 = [X(398), V(200), 0.3];
-  const siloB = silo(415, 45, 245);
-  const post = (x0: number, x1: number, top: number) =>
-    wire(
-      [
-        [x0, 0],
-        [x1, top],
-      ],
-      2.5,
-    );
-  return backdrop(
-    [
-      terrain(6, 12, 202),
-      silo(280, 40, 160),
-      silo(280, 33, 90, 160),
-      wire(
-        [
-          [318, 150],
-          [321, 120],
-          [317, 100],
-        ],
-        2.5,
-        0.05,
-      ),
-      {
-        ...siloB,
-        sdf: (p) =>
-          Math.max(siloB.sdf(p), -box(sub(p, hole), [0.14, 0.07, 0.6])),
-      },
-      wire(
-        [
-          [420, 245],
-          [421, 272],
-        ],
-        2.5,
-      ),
-      block(440, 12, 10, { base: 245 }),
-      block(350, 55, 45),
-      block(58, 26, 25, { base: 20 }),
-      post(48, 50, 20),
-      post(68, 66, 20),
-      block(125, 70, 25),
-      block(128, 16, 16, { base: 25 }),
-      post(215, 210, 48),
-      sagging([160, 24], [211, 44], 8, 1.5),
-      block(577, 40, 30),
-      block(577, 30, 25, { base: 30 }),
-      post(640, 628, 46),
-      wire(
-        [
-          [700, 20],
-          [740, 44],
-          [800, 50],
-        ],
-        5,
-      ),
-      post(735, 735, 42),
-      post(762, 762, 47),
-      post(790, 790, 49),
-      wire(
-        [
-          [838, 56],
-          [900, 46],
-          [1000, 5],
-        ],
-        5,
-      ),
-      post(860, 860, 52),
-      post(912, 912, 42),
-      post(930, 930, 36),
-    ],
-    -0.15,
+    3,
   );
 }
 
@@ -430,98 +362,7 @@ function skylineScene(): Scene {
       ...spikes,
     ],
     -0.2,
-  );
-}
-
-/** WCP_4: elevated data conduits on pylons — a straight run, an arch over it, a lower sweep. */
-function conduitsScene(): Scene {
-  const deck: [number, number][] = [
-    [0, 110],
-    [120, 100],
-    [250, 92],
-    [540, 88],
-    [720, 90],
-    [900, 95],
-    [1080, 112],
-  ];
-  const deckAt = (x: number) => {
-    const i = Math.max(1, deck.findIndex(([px]) => px >= x));
-    const [[x0, y0], [x1, y1]] = [deck[i - 1], deck[i]];
-    return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
-  };
-  const pylons = [
-    20, 80, 175, 285, 320, 418, 428, 545, 575, 668, 852, 925, 988, 1060,
-  ];
-  return backdrop(
-    [
-      wire(deck, 10, 0.25, 0.85),
-      wire(
-        [
-          [250, 95],
-          [320, 120],
-          [430, 135],
-          [560, 130],
-          [660, 112],
-          [720, 95],
-        ],
-        8,
-        0.3,
-        0.85,
-      ),
-      wire(
-        [
-          [200, 55],
-          [260, 70],
-          [420, 78],
-          [600, 82],
-          [800, 88],
-          [930, 100],
-        ],
-        9,
-        0.6,
-        0.7,
-      ),
-      ...pylons.map((x) =>
-        wire(
-          [
-            [x, 0],
-            [x, deckAt(x)],
-          ],
-          5,
-          0.3,
-          0.6,
-        ),
-      ),
-      ...pylons.map((x) =>
-        wire(
-          [
-            [x - 9, 32],
-            [x + 9, 32],
-          ],
-          2.5,
-          0.3,
-          0.6,
-        ),
-      ),
-      wire(
-        [
-          [180, 100],
-          [180, 112],
-        ],
-        3,
-      ),
-      block(182, 18, 9, { base: 112 }),
-      block(815, 35, 14, { base: 94 }),
-      wire(
-        [
-          [805, 108],
-          [800, 118],
-        ],
-        2.5,
-      ),
-      block(932, 16, 8, { base: 100 }),
-    ],
-    0,
+    4,
   );
 }
 
@@ -577,6 +418,7 @@ function foregroundScene(): Scene {
       dangling(645, 105, 80),
     ],
     -0.4,
+    5,
   );
 }
 
@@ -604,7 +446,7 @@ function groundScene(): Scene {
           p[2] < 20 &&
           (fract(p[0]) < 0.07 + 0.01 * p[2] || fract(p[2]) < 0.03 + 0.006 * p[2]);
         const crack = Math.abs(Math.sin(p[0] * 1.7 + p[2] * 0.9) * 3 - p[2] * 0.2) < 0.05;
-        if (seam) return 0.95;
+        if (seam) return 0.8;
         return crack ? 0.35 : 0.08;
       },
     },
@@ -626,14 +468,13 @@ function groundScene(): Scene {
     camera: { kind: "perspective", height: 1.6, pitch: 0.42, focal: 36 },
     near: 2,
     far: 40,
+    glyphs: 3,
   };
 }
 
 const SCENES: Record<EnvironmentLayerId, () => Scene> = {
   far: farScene,
-  towers: towersScene,
   skyline: skylineScene,
-  conduits: conduitsScene,
   ground: groundScene,
   foreground: foregroundScene,
 };
@@ -715,7 +556,12 @@ function renderLayer(scene: Scene, cols: number, rows: number): DepthArt {
         dir = [v[0] / n, v[1] / n, v[2] / n];
       }
       const hit = march(scene, origin, dir);
-      line += hit ? shadeChar(Math.min(1, hit.light)) : " ";
+      // Within the scene's glyph budget; a hit is never blank.
+      line += hit
+        ? ASCII_RAMP[
+            1 + Math.min(scene.glyphs - 1, Math.floor(Math.min(1, hit.light) * scene.glyphs))
+          ]
+        : " ";
       const t = !hit
         ? 0
         : camera.kind === "ortho"

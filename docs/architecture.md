@@ -205,8 +205,9 @@ the music is heard, never under reduced motion or with a section open. The speak
 their own bus beside the music bus.
 
 Card Mode environment (Roadmap P9.12, ADR-017): ruined server infrastructure behind and around
-the combatants as six depth-cued ASCII layers (four backdrops and a foreground laid out on the
-owner's parallax references, plus the neon floor), listed farthest first in `ascii/environment.ts` (depth,
+the combatants as four depth-cued ASCII layers (two backdrops and a foreground laid out on the
+owner's parallax references, plus the neon floor; scenery keeps to light glyphs and a halo sits
+behind each combatant, so they read first), listed farthest first in `ascii/environment.ts` (depth,
 parallax, front/back, anchor, size) and raymarched at build time (`npm run ascii:env`). Each layer
 has its own retro neon hue (`--env-<id>`), dimmed by its depth on top of its own bands. `Environment.tsx` is its own chunk, rendered before
 the combatants (back) and after them (front), under the hand. The combatants stand on `--horizon`,
