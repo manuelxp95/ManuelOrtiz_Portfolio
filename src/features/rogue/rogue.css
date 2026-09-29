@@ -779,25 +779,70 @@ a.merchant-offer:focus-visible {
   justify-content: flex-end;
   height: 100%;
   padding-bottom: var(--horizon);
-  background: radial-gradient(
-    ellipse at 50% 40%,
-    var(--surface),
-    var(--bg) 70%
-  );
+  /* A retro sunset glows on the horizon behind the farthest layer (P9.12). */
+  background:
+    radial-gradient(
+      ellipse 55% 30% at 50% calc(100% - var(--horizon)),
+      color-mix(in oklab, var(--env-skyline) 22%, transparent),
+      transparent
+    ),
+    radial-gradient(ellipse at 50% 40%, var(--surface), var(--bg) 70%);
 }
 
 /*
  * Environment (P9.12, ADR-017): depth-cued ASCII layers of server-room ruins. Each spans 120 % of
  * the field (cols × 0.6em), so the camera can move without showing an edge. The camera is three
  * inputs summed in CSS — the pointer (set by Environment.tsx), the aimed target, and nothing else
- * while idle — and each layer moves by it times its parallax. Farther layers mix toward the
- * background by their depth, on top of their own depth bands. Behind the combatants, or in front of them
- * but under the hand (DOM order, no z-index).
+ * while idle — and each layer moves by it times its parallax. Each layer has its own neon hue and
+ * dims toward the background by its depth, on top of its own depth bands. Behind the combatants,
+ * or in front of them but under the hand (DOM order, no z-index).
  */
 .battlefield {
+  /* Retro-futurist neon, one hue per layer so they read apart (owner direction, P9.12). */
+  --env-far: #4338ca;
+  --env-towers: #7c3aed;
+  --env-skyline: #c026d3;
+  --env-conduits: #2563eb;
+  --env-ground: #db2777;
+  --env-foreground: #ea580c;
   --aim-x: 0;
   --cam-x: calc(var(--pointer-x, 0) * 0.6 + var(--aim-x));
   --cam-y: calc(var(--pointer-y, 0) * 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .battlefield {
+    --env-far: #818cf8;
+    --env-towers: #a78bfa;
+    --env-skyline: #e879f9;
+    --env-conduits: #60a5fa;
+    --env-ground: #f472b6;
+    --env-foreground: #fb923c;
+  }
+}
+
+.env-layer[data-layer="far"] {
+  --env-color: var(--env-far);
+}
+
+.env-layer[data-layer="towers"] {
+  --env-color: var(--env-towers);
+}
+
+.env-layer[data-layer="skyline"] {
+  --env-color: var(--env-skyline);
+}
+
+.env-layer[data-layer="conduits"] {
+  --env-color: var(--env-conduits);
+}
+
+.env-layer[data-layer="ground"] {
+  --env-color: var(--env-ground);
+}
+
+.env-layer[data-layer="foreground"] {
+  --env-color: var(--env-foreground);
 }
 
 .battlefield[data-aim="bug"] {
@@ -822,10 +867,10 @@ a.merchant-offer:focus-visible {
   font-family: var(--card-mono);
   font-size: calc(100cqw * 1.2 / (var(--cols) * 0.6));
   line-height: 1;
-  /* Even the nearest layer steps back from the combatants: 55 % fog, up to 91 % far away. */
+  /* Each layer glows in its own hue, dimmer the farther it is: 90 % bright near, 31 % far away. */
   color: color-mix(
     in oklab,
-    var(--text) calc(45% - var(--depth) * 40%),
+    var(--env-color, var(--text)) calc(90% - var(--depth) * 65%),
     var(--bg)
   );
   translate: calc(-50% - var(--cam-x) * var(--parallax) * 7cqw)
@@ -1000,9 +1045,10 @@ a.merchant-offer:focus-visible {
   color: var(--text);
 }
 
-/* Both combatants are renders of their models (P9.8–P9.9): small glyphs so they fit side by side. */
+/* Both combatants are renders of their models (P9.8–P9.9): small glyphs so they fit side by side.
+   On desktop two thirds of their P9.9 size (P9.12), so the scene breathes; phones keep the floor. */
 .combatant-art {
-  font-size: clamp(0.34rem, 1.3vw, 0.62rem);
+  font-size: clamp(0.34rem, 0.87vw, 0.41rem);
   line-height: 1.1;
 }
 

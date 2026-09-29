@@ -26,32 +26,49 @@ export interface EnvironmentLayer {
   readonly size: { readonly cols: number; readonly rows: number };
 }
 
-/** Farthest first: the order they are drawn in. */
+/**
+ * Farthest first: the order they are drawn in. The four backdrops follow the owner's parallax
+ * references (`resources/parallax/WCP_1…5.png`, 1 farthest), turned from a ruined city into ruined
+ * server infrastructure; the neon floor between them is where the combatants stand.
+ */
 export const ENVIRONMENT_LAYERS = [
+  /** WCP_1: leaning server monoliths, one stepped tower, antenna wreckage. */
   {
     id: "far",
-    depth: 0.9,
-    parallax: 0.1,
+    depth: 0.95,
+    parallax: 0.08,
     front: false,
     anchor: "above-horizon",
     size: { cols: 200, rows: 26 },
   },
+  /** WCP_2: two data silos, racks on stilts, collapsed cable-tray ramps. */
   {
-    id: "mid",
-    depth: 0.7,
-    parallax: 0.25,
+    id: "towers",
+    depth: 0.8,
+    parallax: 0.18,
     front: false,
     anchor: "above-horizon",
-    size: { cols: 170, rows: 20 },
+    size: { cols: 180, rows: 21 },
   },
+  /** WCP_3: a server-farm skyline around a domed core, debris spikes to the right. */
   {
-    id: "near",
-    depth: 0.5,
+    id: "skyline",
+    depth: 0.62,
+    parallax: 0.3,
+    front: false,
+    anchor: "above-horizon",
+    size: { cols: 160, rows: 12 },
+  },
+  /** WCP_4: elevated data conduits on pylons, crossing and curving. */
+  {
+    id: "conduits",
+    depth: 0.45,
     parallax: 0.45,
     front: false,
     anchor: "above-horizon",
-    size: { cols: 140, rows: 22 },
+    size: { cols: 150, rows: 10 },
   },
+  /** The neon-grid floor the combatants stand on. */
   {
     id: "ground",
     depth: 0.25,
@@ -60,13 +77,14 @@ export const ENVIRONMENT_LAYERS = [
     anchor: "below-horizon",
     size: { cols: 150, rows: 16 },
   },
+  /** WCP_5: a toppled rack on its stand, two network poles with a sagging cable. */
   {
     id: "foreground",
     depth: 0,
     parallax: 1,
     front: true,
     anchor: "bottom",
-    size: { cols: 110, rows: 9 },
+    size: { cols: 120, rows: 10 },
   },
 ] as const satisfies readonly EnvironmentLayer[];
 

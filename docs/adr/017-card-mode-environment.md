@@ -23,13 +23,32 @@
   parallel (oblique) camera, turned and tilted so racks, towers and pillars show two or three faces;
   the floor uses a perspective camera so its tiles shrink toward the horizon. Bands come from the
   hit's depth within each scene's own range; shading reuses the card renderer's light and ramp
-  (`LIGHT`, `shadeChar`). Scenes: far — broken data towers; mid — rows of racks, some leaning or
-  fallen; near — snapped fluted pillars with sagging cables and hollow rack frames, clear of the
-  combatants; ground — a raised floor with missing tiles, cracks and debris; foreground — rubble, a
-  cable coil and a panel at the sides.
-- **Depth reads as fog twice** (ADR-015 extended): each layer's color is the text color mixed toward
-  the background by its depth — 55 % fog for the nearest up to 91 % for the farthest — and its own
-  bands fog further on top. Even the nearest layer stays behind the combatants in contrast.
+  (`LIGHT`, `shadeChar`).
+- **Six layers on the owner's references** (revised 2026-09-29): the owner supplied five parallax
+  silhouettes of a ruined city (`resources/parallax/WCP_1…5.png`, git-ignored; 1 farthest — order
+  confirmed by the owner, and it matches their tones and ground lines: darker and lower is nearer).
+  The four backdrops and the foreground follow their composition, turned into ruined server
+  infrastructure: `far` (WCP_1) leaning server monoliths, a stepped tower, antenna wreckage;
+  `towers` (WCP_2) two data silos, racks on stilts wired to a pole, collapsed cable-tray ramps;
+  `skyline` (WCP_3) a server-farm skyline around a domed core, spikes of wreckage; `conduits`
+  (WCP_4) elevated data conduits on pylons; `foreground` (WCP_5) a toppled rack on its stand and two
+  network poles with a sagging line. Each backdrop stands on its own rubble mass, as in the
+  references. The neon-grid floor stays as the combatants' ground (owner choice), making six
+  layers. Scenes are authored in reference pixels (100 px to a world unit), with heights squeezed
+  to 75 %: the sky above the combatants is far wider than the references' (≈ 3.7 : 1 against
+  2.16 : 1) and the tallest towers must stay under the turn bar.
+- **Combatants at two thirds** on desktop (owner review: too large on a standard browser):
+  `.combatant-art` tops out at 0.41rem instead of 0.62rem; phones keep their minimum size.
+- **Hue tells the layers apart, brightness tells their depth** (revised 2026-09-29, owner review:
+  "the layers can't be told apart — it looks like a heap of letters"; direction: retro-futurist
+  80s colors, the farther the dimmer). Each layer has its own neon token on the battlefield
+  (`--env-far` indigo, `--env-towers` violet, `--env-skyline` fuchsia, `--env-conduits` electric
+  blue, `--env-ground` hot pink, `--env-foreground` amber-orange; deeper shades in the light theme, brighter in the dark) and is
+  mixed toward the background by its depth — 90 % of its hue for the nearest down to 31 % for the
+  farthest — while its own bands fog further on top (ADR-015 extended). The floor became a neon
+  grid: bright seams on dark tiles, fading out toward the horizon, and a sunset glow sits on the
+  horizon behind the farthest layer. The combatants keep the neutral text color and the accent, so
+  they stay apart from every hue. A new layer adds a `--env-<id>` token and its `data-layer` rule.
 - **Presenter** (`Environment.tsx`): its own chunk with the art, imported when the battlefield
   mounts; the field works without it. Rendered twice by `Battlefield`: `part="back"` before the
   combatants and `part="front"` after them, so DOM order stacks them (behind / in front of the
@@ -69,6 +88,6 @@
 ## Consequences
 
 Card Mode load 79.9 kB gz (+0.1 kB: the loader and the effect attributes), 0.1 kB under budget;
-the environment chunk is 3.0 kB gz; all Card Mode chunks 110.3 kB of 120. The combatants no longer
+the environment chunk is 3.0 kB gz (six layers); all Card Mode chunks 110.4 kB of 120. The combatants no longer
 have their feet under the cards (P9.6's overlap now reaches the foreground layer only). On narrow
 phones the layers scale with the width, so the scene is small but complete.

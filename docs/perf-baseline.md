@@ -397,7 +397,7 @@ Card Mode has 0.2 kB of headroom left.
 |---|---|---|
 | Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
 | Card Mode load | ≤ 80 kB | 79.9 kB (+0.1 kB: environment loader, effect attributes) |
-| Environment (new) | ≤ 8 kB | 3.0 kB (presenter + five layers of art, one chunk) |
+| Environment (new) | ≤ 8 kB | 3.0 kB (presenter + layer art, one chunk; six layers after the reference rework) |
 | All Card Mode chunks | ≤ 120 kB | 110.3 kB |
 
 Headless Chrome, production build (light and dark 1280 px, dark 390 px): five layers render behind

@@ -627,8 +627,15 @@ Decision:
   depth, parallax, front/back, anchor (above/below the horizon, or the bottom) and size; a new layer
   = registry entry + scene + `npm run ascii:env` (checked in CI).
 - Build-time SDF raymarching to `DepthArt` (fixed seed): oblique parallel camera for backgrounds,
-  perspective for the floor; ADR-015 extended — a layer's color is fogged by its depth (55–91 %)
-  on top of its own bands.
+  perspective for the floor.
+- Revised 2026-09-29 (owner: layers indistinguishable): one retro 80s neon hue per layer
+  (`--env-<id>` tokens per theme), dimmed by depth (90 % near → 31 % far) on top of its own bands;
+  neon-grid floor (bright seams, dark tiles); sunset glow on the horizon.
+- Revised 2026-09-29 (owner references `resources/parallax/WCP_1…5.png`, 1 farthest): six layers —
+  far (WCP_1 server monoliths), towers (WCP_2 data silos, cable-tray ramps), skyline (WCP_3
+  server-farm dome skyline), conduits (WCP_4 elevated data conduits), neon-grid ground (kept by owner
+  choice), foreground (WCP_5 toppled rack, network poles). Authored in reference px, heights ×0.75 to
+  fit the wider sky. Combatant art max 0.62rem → 0.41rem (two thirds on desktop).
 - `Environment.tsx` in its own chunk (3.0 kB gz), rendered back (before the combatants) and front
   (after them); DOM order stacks it under the hand and the played card, no new z-index.
 - Combatants moved up: `--horizon` = hand overlap + clamp(2rem, 11dvh, 6.5rem) is the field's

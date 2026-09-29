@@ -56,10 +56,6 @@ function capsule(p: Vec3, a: Vec3, b: Vec3, radius: number): number {
   return hypot(pa[0] - ba[0] * h, pa[1] - ba[1] * h, pa[2] - ba[2] * h) - radius;
 }
 
-function torusFlat(p: Vec3, major: number, minor: number): number {
-  return hypot(hypot(p[0], p[2]) - major, p[1]) - minor;
-}
-
 const sub = (p: Vec3, c: Vec3): Vec3 => [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
 
 /** Rotation around the z axis (a lean left or right), then the y axis (a turn). */
@@ -122,157 +118,466 @@ type Camera =
   /** A real perspective, for the floor: tiles shrink toward the horizon. */
   | { kind: "perspective"; height: number; pitch: number; focal: number };
 
-/** Server racks: front grille rows and a frame; `h` is the rack's half height. */
-const rackAlbedo = (local: Vec3, h: number) => {
-  if (Math.abs(local[1]) > h - 0.08) return 0.55;
-  return fract(local[1] * 5) < 0.3 ? 0.45 : 1;
-};
+/**
+ * The backdrops are laid out on the owner's references (`resources/parallax/WCP_*.png`, 1080 ×
+ * 500 px): positions and sizes are given in their pixels, 100 px to a world unit, x from the
+ * image's centre and y up from each layer's ground line (heights scaled by `V`).
+ */
+const X = (px: number) => (px - 540) / 100;
+const U = (px: number) => px / 100;
+/**
+ * Heights are squeezed to three quarters: the sky above the combatants is far wider than the
+ * references' (≈ 3.7 : 1 against 2.16 : 1), and the tallest towers must stay under the turn bar.
+ */
+const V = (px: number) => (px * 0.75) / 100;
+const HALF_WIDTH = 5.4;
 
-function farScene(): Scene {
-  const next = random(11);
-  const parts: Part[] = [];
-  for (let x = -17; x <= 17; x += 1.4 + next() * 1.4) {
-    const w = 0.35 + next() * 0.45;
-    const d = 0.4 + next() * 0.4;
-    const h = 0.8 + next() * 1.9;
-    const z = 9 + next() * 6;
-    const lean = next() < 0.2 ? (next() - 0.5) * 0.5 : 0;
-    const centre: Vec3 = [x, h, z];
-    // A broken tower: its top sliced off at a slant.
-    const cut = next() < 0.45 ? 0.3 + next() * 0.6 : 0;
-    const slope = (next() - 0.5) * 1.2;
-    parts.push({
-      sdf: (p) => {
-        const local = turn(sub(p, centre), lean);
-        const body = box(local, [w, h, d]);
-        return cut ? Math.max(body, local[1] - (h - cut) - slope * local[0]) : body;
-      },
-      // Floors of the tower, like windows gone dark.
-      albedo: (p) => (fract(p[1] * 2.2) < 0.25 ? 0.45 : 0.85),
-    });
-  }
+/** Grille rows every 10 reference px: vents and rack faces on every structure. */
+const grille = (local: Vec3) => (fract(local[1] * 10) < 0.25 ? 0.5 : 0.9);
+
+interface BlockOptions {
+  /** Height of its base above the ground line, px. */
+  base?: number;
+  /** Lean around its foot, radians (positive leans left). */
+  lean?: number;
+  /** Depth into the scene (z of its centre) and its thickness, world units. */
+  z?: number;
+  depth?: number;
+  /** Snapped off: this many px sliced from the top, at this slope. */
+  cut?: number;
+  slope?: number;
+}
+
+/** A tower, rack or wall standing on the ground line (or on `base`). */
+function block(
+  x: number,
+  width: number,
+  height: number,
+  options: BlockOptions = {},
+): Part {
+  const { base = 0, lean = 0, z = 0.3, depth = 0.4, cut = 0, slope = 0 } =
+    options;
+  const foot: Vec3 = [X(x), V(base), z];
+  const [w, h] = [U(width) / 2, V(height) / 2];
+  const local = (p: Vec3) => turn(sub(p, foot), lean);
   return {
-    parts,
-    camera: { kind: "ortho", halfWidth: 17, bottom: 0, focus: 12, yaw: 0.35, pitch: 0.08 },
-    near: 8,
-    far: 16,
+    sdf: (p) => {
+      const l = local(p);
+      const body = box([l[0], l[1] - h, l[2]], [w, h, depth / 2]);
+      return cut
+        ? Math.max(body, l[1] - (2 * h - V(cut)) - slope * l[0])
+        : body;
+    },
+    albedo: (p) => grille(local(p)),
   };
 }
 
-function midScene(): Scene {
-  const next = random(23);
-  const parts: Part[] = [];
-  for (const row of [0, 1]) {
-    for (let x = -12 + row * 0.5; x <= 12; x += 1.05) {
-      const roll = next();
-      if (roll < 0.35) continue;
-      const z = 4 + row * 2.2 + next() * 0.3;
-      if (roll < 0.45) {
-        // Fallen on its side.
-        const centre: Vec3 = [x, 0.38, z];
-        const yaw = (next() - 0.5) * 0.8;
-        parts.push({
-          sdf: (p) => box(turn(sub(p, centre), 0, yaw), [1.1, 0.38, 0.45]),
-          albedo: (p) => rackAlbedo(turn(sub(p, centre), 0, yaw), 0.38),
-        });
-        continue;
+/** A round silo or dome core: a vertical cylinder from `base` px up `height` px. */
+function silo(
+  x: number,
+  radius: number,
+  height: number,
+  base = 0,
+  z = 0.3,
+): Part {
+  const centre: Vec3 = [X(x), V(base + height / 2), z];
+  return {
+    sdf: (p) => column(sub(p, centre), U(radius), V(height) / 2),
+    albedo: (p) => grille(sub(p, centre)),
+  };
+}
+
+/** Cables, poles, beams: a round line through points given as [x px, y px]. */
+function wire(
+  points: [number, number][],
+  radius: number,
+  z = 0.2,
+  albedo = 0.8,
+): Part {
+  const world = points.map(([x, y]): Vec3 => [X(x), V(y), z]);
+  return {
+    sdf: (p) => {
+      let d = Infinity;
+      for (let i = 0; i + 1 < world.length; i++) {
+        d = Math.min(d, capsule(p, world[i], world[i + 1], U(radius)));
       }
-      const h = 1 + next() * 0.25;
-      const lean = roll < 0.6 ? (next() - 0.5) * 0.7 : 0;
-      // Leaning racks pivot on their bottom edge.
-      const base: Vec3 = [x, 0, z];
-      parts.push({
-        sdf: (p) => {
-          const local = turn(sub(p, base), lean);
-          return box([local[0], local[1] - h, local[2]], [0.4, h, 0.45]);
-        },
-        albedo: (p) => {
-          const local = turn(sub(p, base), lean);
-          return rackAlbedo([local[0], local[1] - h, local[2]], h);
-        },
-      });
-    }
-  }
-  return {
-    parts,
-    camera: { kind: "ortho", halfWidth: 12, bottom: -0.1, focus: 5, yaw: 0.3, pitch: 0.12 },
-    near: 3.4,
-    far: 7.2,
+      return d;
+    },
+    albedo: () => albedo,
   };
 }
 
-function nearScene(): Scene {
-  const next = random(37);
-  const parts: Part[] = [];
-  const pillars: { x: number; top: number }[] = [];
-  // Clear of the combatants (about x = ±4): at the sides, and one between them.
-  for (const x of [-7.1, -5.6, 0, 6.3, 7.3]) {
-    const px = x + (next() - 0.5) * 0.6;
-    const half = 0.9 + next() * 1.1;
-    const r = 0.38 + next() * 0.12;
-    const slope = (next() - 0.5) * 1.4;
-    const centre: Vec3 = [px, half, 3 + next() * 1.2];
-    pillars.push({ x: px, top: 2 * half - 0.3 });
-    parts.push({
-      sdf: (p) => {
-        const local = sub(p, centre);
-        // Snapped off: the top sliced at a slant, with a rough edge.
-        const rough = 0.12 * Math.sin(local[0] * 11) * Math.sin(local[2] * 9);
-        return Math.max(
-          column(local, r, half),
-          local[1] - half + 0.4 - slope * local[0] + rough,
-        );
-      },
-      // Fluted: vertical grooves around the shaft, and the stones' joints.
-      albedo: (p) => {
-        const local = sub(p, centre);
-        const angle = Math.atan2(local[2], local[0]);
-        const groove = fract((angle / (2 * Math.PI)) * 10) < 0.25;
-        return groove || fract(local[1] * 0.9) < 0.07 ? 0.5 : 1;
-      },
-    });
-  }
-  // Cables sagging between close pillars (never across a combatant).
-  for (let i = 0; i + 1 < pillars.length; i++) {
-    const [a, b] = [pillars[i], pillars[i + 1]];
-    if (b.x - a.x > 3) continue;
-    const top = Math.min(a.top, b.top);
-    const sag = 0.8 + next() * 0.8;
-    const points: Vec3[] = Array.from({ length: 9 }, (_, k) => {
-      const s = k / 8;
-      return [a.x + (b.x - a.x) * s, top - sag * (1 - (2 * s - 1) ** 2), 3.4];
-    });
-    parts.push({
-      sdf: (p) => {
-        let d = Infinity;
-        for (let k = 0; k + 1 < points.length; k++) {
-          d = Math.min(d, capsule(p, points[k], points[k + 1], 0.06));
-        }
-        return d;
-      },
-      albedo: () => 0.7,
-    });
-  }
-  // Half-buried rack frames beside the pillars.
-  for (const x of [-2.2, 2.4]) {
-    const centre: Vec3 = [x + (next() - 0.5), 0.5, 5.2];
-    const yaw = (next() - 0.5) * 0.6;
-    parts.push({
-      sdf: (p) => {
-        const local = turn(sub(p, centre), 0, yaw);
-        const shell = box(local, [0.55, 0.9, 0.5]);
-        const hollow = box([local[0], local[1], local[2] - 0.2], [0.45, 0.8, 0.5]);
-        return Math.max(shell, -hollow);
-      },
-      albedo: (p) => rackAlbedo(turn(sub(p, centre), 0, yaw), 0.9),
-    });
-  }
+/** A cable hanging between two points, sagging `sag` px at its middle. */
+function sagging(
+  from: [number, number],
+  to: [number, number],
+  sag: number,
+  radius: number,
+  z = 0.2,
+): Part {
+  const points = Array.from({ length: 9 }, (_, k): [number, number] => {
+    const s = k / 8;
+    return [
+      from[0] + (to[0] - from[0]) * s,
+      from[1] + (to[1] - from[1]) * s - sag * (1 - (2 * s - 1) ** 2),
+    ];
+  });
+  return wire(points, radius, z, 0.7);
+}
+
+/** The rubble each backdrop stands on: a bumpy mass from below the frame up to about `base` px. */
+function terrain(base: number, bumps: number, seed: number, z = 0.35): Part {
+  const next = random(seed);
+  const phase = [next() * 6, next() * 6, next() * 6];
+  const height = (x: number) =>
+    V(base) +
+    V(bumps) *
+      (0.5 * Math.sin(x * 1.3 + phase[0]) +
+        0.3 * Math.sin(x * 3.1 + phase[1]) +
+        0.2 * Math.sin(x * 7.7 + phase[2]));
   return {
-    parts,
-    camera: { kind: "ortho", halfWidth: 9, bottom: -0.1, focus: 3.5, yaw: 0.22, pitch: 0.14 },
-    near: 2.4,
-    far: 6,
+    // Scaled down: the bumps make the height field steeper than a true distance.
+    sdf: (p) =>
+      Math.max((p[1] - height(p[0])) * 0.5, Math.abs(p[2] - z) - 0.45),
+    albedo: (p) => (fract(p[0] * 3.7 + p[1] * 5.3) < 0.3 ? 0.4 : 0.6),
   };
+}
+
+const backdrop = (parts: Part[], bottom: number): Scene => ({
+  parts,
+  camera: {
+    kind: "ortho",
+    halfWidth: HALF_WIDTH,
+    bottom,
+    focus: 0.3,
+    yaw: 0.22,
+    pitch: 0.06,
+  },
+  near: -0.2,
+  far: 0.9,
+});
+
+/** WCP_1: leaning server monoliths, a stepped tower, antenna wreckage on a snapped one. */
+function farScene(): Scene {
+  return backdrop(
+    [
+      terrain(4, 8, 101),
+      block(40, 45, 110, { lean: 0.3, cut: 20, slope: 0.6 }),
+      block(168, 50, 95),
+      block(168, 20, 15, { base: 95 }),
+      block(270, 50, 110, { lean: 0.12 }),
+      block(365, 85, 220),
+      block(365, 65, 30, { base: 220 }),
+      block(365, 40, 32, { base: 250 }),
+      block(512, 85, 200, { lean: -0.03, cut: 12, slope: -0.3 }),
+      wire(
+        [
+          [492, 200],
+          [500, 222],
+          [512, 205],
+          [520, 226],
+        ],
+        2.5,
+      ),
+      wire(
+        [
+          [528, 200],
+          [534, 238],
+        ],
+        2.5,
+      ),
+      block(742, 95, 70, { cut: 18, slope: 0.4 }),
+      block(870, 40, 120, { cut: 10, slope: 0.8 }),
+      block(922, 45, 85, { lean: 0.1 }),
+    ],
+    -0.15,
+  );
+}
+
+/** WCP_2: two data silos, racks on stilts wired to a pole, collapsed cable-tray ramps. */
+function towersScene(): Scene {
+  const hole: Vec3 = [X(398), V(200), 0.3];
+  const siloB = silo(415, 45, 245);
+  const post = (x0: number, x1: number, top: number) =>
+    wire(
+      [
+        [x0, 0],
+        [x1, top],
+      ],
+      2.5,
+    );
+  return backdrop(
+    [
+      terrain(6, 12, 202),
+      silo(280, 40, 160),
+      silo(280, 33, 90, 160),
+      wire(
+        [
+          [318, 150],
+          [321, 120],
+          [317, 100],
+        ],
+        2.5,
+        0.05,
+      ),
+      {
+        ...siloB,
+        sdf: (p) =>
+          Math.max(siloB.sdf(p), -box(sub(p, hole), [0.14, 0.07, 0.6])),
+      },
+      wire(
+        [
+          [420, 245],
+          [421, 272],
+        ],
+        2.5,
+      ),
+      block(440, 12, 10, { base: 245 }),
+      block(350, 55, 45),
+      block(58, 26, 25, { base: 20 }),
+      post(48, 50, 20),
+      post(68, 66, 20),
+      block(125, 70, 25),
+      block(128, 16, 16, { base: 25 }),
+      post(215, 210, 48),
+      sagging([160, 24], [211, 44], 8, 1.5),
+      block(577, 40, 30),
+      block(577, 30, 25, { base: 30 }),
+      post(640, 628, 46),
+      wire(
+        [
+          [700, 20],
+          [740, 44],
+          [800, 50],
+        ],
+        5,
+      ),
+      post(735, 735, 42),
+      post(762, 762, 47),
+      post(790, 790, 49),
+      wire(
+        [
+          [838, 56],
+          [900, 46],
+          [1000, 5],
+        ],
+        5,
+      ),
+      post(860, 860, 52),
+      post(912, 912, 42),
+      post(930, 930, 36),
+    ],
+    -0.15,
+  );
+}
+
+/** WCP_3: a server-farm skyline around a domed core; spikes of wreckage to the right. */
+function skylineScene(): Scene {
+  const next = random(303);
+  const spikes: Part[] = [];
+  for (let x = 660; x < 1075; x += 18 + next() * 30) {
+    const lean = (next() - 0.5) * 20;
+    spikes.push(
+      wire(
+        [
+          [x, 0],
+          [x + lean, 10 + next() * 25],
+        ],
+        2.5,
+        0.1 + next() * 0.4,
+      ),
+    );
+  }
+  const blocks: [number, number, number][] = [
+    [60, 30, 18],
+    [140, 28, 25],
+    [210, 40, 35],
+    [268, 80, 58],
+    [330, 38, 28],
+    [365, 20, 12],
+    [408, 32, 65],
+    [462, 65, 40],
+    [553, 60, 52],
+    [610, 50, 25],
+  ];
+  return backdrop(
+    [
+      terrain(6, 10, 303),
+      silo(283, 25, 90),
+      wire(
+        [
+          [283, 90],
+          [283, 106],
+        ],
+        25,
+      ),
+      wire(
+        [
+          [296, 125],
+          [301, 140],
+        ],
+        2.5,
+      ),
+      ...blocks.map(([x, w, h]) => block(x, w, h)),
+      wire(
+        [
+          [40, 0],
+          [42, 28],
+        ],
+        2.5,
+      ),
+      sagging([880, 22], [915, 22], -14, 2.5, 0.2),
+      ...spikes,
+    ],
+    -0.2,
+  );
+}
+
+/** WCP_4: elevated data conduits on pylons — a straight run, an arch over it, a lower sweep. */
+function conduitsScene(): Scene {
+  const deck: [number, number][] = [
+    [0, 110],
+    [120, 100],
+    [250, 92],
+    [540, 88],
+    [720, 90],
+    [900, 95],
+    [1080, 112],
+  ];
+  const deckAt = (x: number) => {
+    const i = Math.max(1, deck.findIndex(([px]) => px >= x));
+    const [[x0, y0], [x1, y1]] = [deck[i - 1], deck[i]];
+    return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+  };
+  const pylons = [
+    20, 80, 175, 285, 320, 418, 428, 545, 575, 668, 852, 925, 988, 1060,
+  ];
+  return backdrop(
+    [
+      wire(deck, 10, 0.25, 0.85),
+      wire(
+        [
+          [250, 95],
+          [320, 120],
+          [430, 135],
+          [560, 130],
+          [660, 112],
+          [720, 95],
+        ],
+        8,
+        0.3,
+        0.85,
+      ),
+      wire(
+        [
+          [200, 55],
+          [260, 70],
+          [420, 78],
+          [600, 82],
+          [800, 88],
+          [930, 100],
+        ],
+        9,
+        0.6,
+        0.7,
+      ),
+      ...pylons.map((x) =>
+        wire(
+          [
+            [x, 0],
+            [x, deckAt(x)],
+          ],
+          5,
+          0.3,
+          0.6,
+        ),
+      ),
+      ...pylons.map((x) =>
+        wire(
+          [
+            [x - 9, 32],
+            [x + 9, 32],
+          ],
+          2.5,
+          0.3,
+          0.6,
+        ),
+      ),
+      wire(
+        [
+          [180, 100],
+          [180, 112],
+        ],
+        3,
+      ),
+      block(182, 18, 9, { base: 112 }),
+      block(815, 35, 14, { base: 94 }),
+      wire(
+        [
+          [805, 108],
+          [800, 118],
+        ],
+        2.5,
+      ),
+      block(932, 16, 8, { base: 100 }),
+    ],
+    0,
+  );
+}
+
+/** WCP_5: a toppled rack on its stand, dangling cables; two network poles with a sagging line. */
+function foregroundScene(): Scene {
+  const panel: Vec3 = [X(162), V(47), 0.3];
+  const tilt = -0.1;
+  const line = (x0: number, y0: number, x1: number, y1: number, radius = 4) =>
+    wire(
+      [
+        [x0, y0],
+        [x1, y1],
+      ],
+      radius,
+    );
+  const dangling = (x: number, from: number, to: number) =>
+    wire(
+      [
+        [x, from],
+        [x + 3, to],
+      ],
+      3,
+      0.1,
+      0.6,
+    );
+  return backdrop(
+    [
+      terrain(0, 10, 505),
+      {
+        sdf: (p) => box(turn(sub(p, panel), tilt), [U(52), V(40), 0.18]),
+        albedo: (p) => grille(turn(sub(p, panel), tilt)),
+      },
+      line(135, -5, 140, 12),
+      line(178, -5, 173, 9),
+      line(90, -5, 125, 22),
+      ...[126, 150, 170, 190].map((x) => {
+        const top = 88 + (x - 126) * 0.1;
+        return line(x, top, x, top + 12, 3);
+      }),
+      dangling(214, 16, -8),
+      dangling(222, 14, -4),
+      dangling(230, 12, -10),
+      line(465, -5, 457, 100, 5),
+      line(435, 92, 483, 97),
+      line(625, -3, 612, 108, 5),
+      line(583, 98, 645, 105),
+      sagging([478, 95], [590, 100], 18, 2),
+      dangling(438, 92, 55),
+      dangling(443, 93, 45),
+      dangling(472, 95, 62),
+      dangling(592, 99, 66),
+      dangling(638, 104, 72),
+      dangling(645, 105, 80),
+    ],
+    -0.4,
+  );
 }
 
 function groundScene(): Scene {
@@ -292,14 +597,15 @@ function groundScene(): Scene {
         return Math.max(p[1], -pit);
       },
       albedo: (p) => {
-        if (p[1] < -0.01) return 0.04;
-        // Tile seams fade with distance before they alias into noise.
-        const seamWidth = 0.06 + 0.012 * p[2];
+        if (p[1] < -0.01) return 0.03;
+        // A neon grid: bright seams on dark tiles, gone with distance before they alias.
+        // Lines across the view thin out less than those running toward the horizon.
         const seam =
-          p[2] < 14 &&
-          (fract(p[0]) < seamWidth || fract(p[2]) < seamWidth);
+          p[2] < 20 &&
+          (fract(p[0]) < 0.07 + 0.01 * p[2] || fract(p[2]) < 0.03 + 0.006 * p[2]);
         const crack = Math.abs(Math.sin(p[0] * 1.7 + p[2] * 0.9) * 3 - p[2] * 0.2) < 0.05;
-        return seam || crack ? 0.06 : 0.2;
+        if (seam) return 0.95;
+        return crack ? 0.35 : 0.08;
       },
     },
   ];
@@ -323,47 +629,11 @@ function groundScene(): Scene {
   };
 }
 
-function foregroundScene(): Scene {
-  const next = random(71);
-  const parts: Part[] = [];
-  for (let i = 0; i < 12; i++) {
-    const side = i % 2 ? 1 : -1;
-    const centre: Vec3 = [side * (2.4 + next() * 3.2), 0.1, next() * 1.5];
-    const size = 0.2 + next() * 0.4;
-    const roll = next() * Math.PI;
-    const yaw = next() * Math.PI;
-    parts.push({
-      sdf: (p) => box(turn(sub(p, centre), roll, yaw), [size, size * 0.7, size * 0.9]),
-      albedo: (p) => (fract((p[0] + p[1]) * 4) < 0.15 ? 0.4 : 0.7),
-    });
-  }
-  // A coil of cable on the left, a broken rack panel on the right.
-  const coil: Vec3 = [-4.3, 0.12, 0.6];
-  parts.push({
-    sdf: (p) =>
-      Math.min(
-        torusFlat(sub(p, coil), 0.55, 0.09),
-        torusFlat(sub(p, [coil[0] + 0.1, coil[1] + 0.16, coil[2]]), 0.45, 0.09),
-      ),
-    albedo: () => 0.75,
-  });
-  const panel: Vec3 = [4.6, 0.3, 0.8];
-  parts.push({
-    sdf: (p) => box(turn(sub(p, panel), 0.35, 0.5), [0.7, 0.1, 0.45]),
-    albedo: (p) => rackAlbedo(turn(sub(p, panel), 0.35, 0.5), 0.1),
-  });
-  return {
-    parts,
-    camera: { kind: "ortho", halfWidth: 6, bottom: -0.25, focus: 0.8, yaw: 0.15, pitch: 0.5 },
-    near: -0.8,
-    far: 2.4,
-  };
-}
-
 const SCENES: Record<EnvironmentLayerId, () => Scene> = {
   far: farScene,
-  mid: midScene,
-  near: nearScene,
+  towers: towersScene,
+  skyline: skylineScene,
+  conduits: conduitsScene,
   ground: groundScene,
   foreground: foregroundScene,
 };
