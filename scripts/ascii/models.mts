@@ -19,6 +19,7 @@ import {
 } from "../../src/features/rogue/ascii/renderer.ts";
 import {
   depthBand,
+  withSilhouette,
   type DepthArt,
 } from "../../src/features/rogue/ascii/depth.ts";
 import {
@@ -497,9 +498,12 @@ function render(id: string, model: AsciiModel): Rendered {
   );
   // One frame for the whole animation, so the model never jumps between frames.
   const frame = bounds(posed.flat());
-  const frames = withDepth(posed.map((triangles) => rasterize(triangles, frame, cols, rows)));
+  // Opaque (P9.12): the scenery never shows through a combatant.
+  const frames = withDepth(posed.map((triangles) => rasterize(triangles, frame, cols, rows))).map(
+    withSilhouette,
+  );
   const fallen = posedTriangles(0, viewMatrix(yaw, pitch, model.defeatedRoll));
-  const [defeated] = withDepth([rasterize(fallen, bounds(fallen), cols, rows)]);
+  const defeated = withSilhouette(withDepth([rasterize(fallen, bounds(fallen), cols, rows)])[0]);
   const frameMs = Math.round((duration * 1000) / model.frames / model.speed);
   // One chunk per model: its loop (the first frame is its rest) and its defeated pose.
   const files = new Map([

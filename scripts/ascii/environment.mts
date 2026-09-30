@@ -8,7 +8,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { depthBand, type DepthArt } from "../../src/features/rogue/ascii/depth.ts";
+import {
+  depthBand,
+  withSilhouette,
+  type DepthArt,
+} from "../../src/features/rogue/ascii/depth.ts";
 import {
   CELL_ASPECT,
   ENVIRONMENT_LAYERS,
@@ -573,7 +577,8 @@ function renderLayer(scene: Scene, cols: number, rows: number): DepthArt {
     lines.push(line.trimEnd().padEnd(cols));
     depths.push(depth.trimEnd().padEnd(cols));
   }
-  return { chars: lines.join("\n"), depth: depths.join("\n") };
+  // Opaque (P9.12): a nearer layer hides what lies behind it.
+  return withSilhouette({ chars: lines.join("\n"), depth: depths.join("\n") });
 }
 
 // --- Output ------------------------------------------------------------------------------------

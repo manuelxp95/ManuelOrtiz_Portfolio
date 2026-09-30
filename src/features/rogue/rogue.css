@@ -236,6 +236,11 @@
   white-space: pre;
 }
 
+/* An opaque art's silhouette (P9.12): full blocks in the background color, under the bands. */
+.ascii-depth > [data-silhouette] {
+  color: var(--bg);
+}
+
 .ascii-depth > [data-band="1"] {
   color: color-mix(in oklab, currentColor 76%, var(--bg));
 }
@@ -953,8 +958,10 @@ a.merchant-offer:focus-visible {
   opacity: 1;
 }
 
-/* Duel (P9.2): hero on the left, bug on the right. */
+/* Duel (P9.2): hero on the left, bug on the right. Positioned so it paints over the environment's
+   back layers (absolute, earlier in the DOM), names and bars included (P9.12). */
 .combatants {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: end;
@@ -1021,26 +1028,9 @@ a.merchant-offer:focus-visible {
 
 .combatant-body {
   position: relative;
-  /* Its halo paints behind the art but over the environment. */
-  isolation: isolate;
   display: grid;
   place-items: center;
   margin-top: 0.25rem;
-}
-
-/* A halo of the background behind each combatant (P9.12): the scenery fades out around them, so
-   their silhouettes read against it. */
-.combatant-body::before {
-  content: "";
-  position: absolute;
-  inset: -20% -30%;
-  z-index: -1;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in oklab, var(--bg) 88%, transparent) 55%,
-    transparent
-  );
-  pointer-events: none;
 }
 
 .combatant-art {

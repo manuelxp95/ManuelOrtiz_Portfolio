@@ -397,8 +397,8 @@ Card Mode has 0.2 kB of headroom left.
 |---|---|---|
 | Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
 | Card Mode load | ≤ 80 kB | 79.9 kB (+0.1 kB: environment loader, effect attributes) |
-| Environment (new) | ≤ 8 kB | 2.0 kB (presenter + layer art, one chunk; four layers since the readability pass, 3.0 kB with six) |
-| All Card Mode chunks | ≤ 120 kB | 109.4 kB (110.3 kB with six layers) |
+| Environment (new) | ≤ 8 kB | 2.5 kB (presenter + layer art with silhouettes, one chunk; four layers) |
+| All Card Mode chunks | ≤ 120 kB | 112.8 kB (combatant frames and layers carry opaque silhouettes) |
 
 Headless Chrome, production build (light and dark 1280 px, dark 390 px): five layers render behind
 and in front of the combatants, which now stand above the hand. A pointer at the left edge shifts

@@ -37,7 +37,7 @@
   layers. Scenes are authored in reference pixels (100 px to a world unit), with heights squeezed
   to 75 %: the sky above the combatants is far wider than the references' (≈ 3.7 : 1 against
   2.16 : 1) and the tallest towers must stay under the turn bar.
-- **Readability first: four layers, light glyphs, a halo** (revised 2026-09-29, owner review: the
+- **Readability first: four layers, light glyphs** (revised 2026-09-29, owner review: the
   combatants got lost in the scenery; "we may have to drop some layers"). Game-art readability
   rules — the playable elements hold the strongest value contrast, the background is atmosphere
   with less contrast, saturation and detail (atmospheric perspective), and fewer busy parallax
@@ -49,9 +49,19 @@
     `.:-`, foreground up to `+`. The combatants alone use the dense glyphs, so they carry the
     heaviest value on screen.
   - Backdrops are flat silhouettes (no grille or rubble texture); only the foreground keeps detail.
-  - A halo of the background color (radial, 88 % → transparent) sits behind each combatant's art
-    (`.combatant-body::before`, isolated so it stays over the scenery): the scenery fades out
-    around them.
+- **Opaque silhouettes, exactly on the outline** (revised 2026-09-29, owner direction: the
+  combatants and each layer's elements must not be see-through — a background fill under their
+  characters, following the contour exactly, never an aura). `DepthArt` gains an optional
+  `silhouette`: a full block (`█`, which covers a whole character cell) on every cell inside the
+  outline, blank outside. "Outside" is every blank cell reachable from the grid's border through
+  blank neighbours, so enclosed gaps fill while gaps open to the edge (between legs) stay clear.
+  `AsciiArt` paints it under the depth bands in `--bg`, so a nearer layer hides what lies behind it
+  and the scenery never shows through a combatant. Computed at build time (`withSilhouette` in
+  `models.mts` and `environment.mts`): the runtime only draws a string, which keeps the Card Mode
+  load at 79.9 kB (the in-browser version cost 0.3 kB and broke the 80 kB budget). Card art has
+  no silhouette and is unchanged. `.combatants` is positioned so names and bars paint over the
+  back layers' silhouettes. (It replaced a same-day halo — a radial fade of the background behind
+  each combatant — which read as an aura.)
 - **Combatants at two thirds** on desktop (owner review: too large on a standard browser):
   `.combatant-art` tops out at 0.41rem instead of 0.62rem; phones keep their minimum size.
 - **Hue tells the layers apart, brightness tells their depth** (revised 2026-09-29, owner review:
@@ -103,7 +113,7 @@
 ## Consequences
 
 Card Mode load 79.9 kB gz (+0.1 kB: the loader and the effect attributes), 0.1 kB under budget;
-the environment chunk is 2.0 kB gz (four layers; 3.0 kB with six); all Card Mode chunks
-109.4 kB of 120. The combatants no longer
+the environment chunk is 2.5 kB gz with silhouettes (four layers); all Card Mode chunks
+112.8 kB of 120 (the combatants' frames carry their silhouettes). The combatants no longer
 have their feet under the cards (P9.6's overlap now reaches the foreground layer only). On narrow
 phones the layers scale with the width, so the scene is small but complete.

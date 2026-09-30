@@ -9,6 +9,8 @@ import {
   DEPTH_BANDS,
   depthLayers,
   flatArt,
+  silhouette,
+  SOLID,
   type DepthArt,
 } from "@/features/rogue/ascii/depth";
 import { ENVIRONMENT_LAYERS } from "@/features/rogue/ascii/environment";
@@ -48,6 +50,19 @@ describe("depth-cued ASCII (ADR-015)", () => {
       "   \n d ",
       "   \nc  ",
       " b \n   ",
+    ]);
+  });
+
+  it("an opaque silhouette follows the outline: enclosed blanks fill, open gaps stay clear", () => {
+    const shape = flatArt(
+      ["     ", " ### ", " # # ", " ### ", " # # "].join("\n"),
+    );
+    expect(silhouette(shape).split("\n")).toEqual([
+      "     ",
+      ` ${SOLID.repeat(3)} `,
+      ` ${SOLID.repeat(3)} `,
+      ` ${SOLID.repeat(3)} `,
+      ` ${SOLID} ${SOLID} `,
     ]);
   });
 
@@ -113,8 +128,11 @@ describe("combatant model art (P9.8–P9.9)", () => {
       const { frames, frameMs, defeated } = await modelFrameLoaders[id]();
       const rest = frames[0];
       expect(frames).toHaveLength(model.frames);
-      for (const frame of [...frames, defeated])
+      for (const frame of [...frames, defeated]) {
         expectGrid(frame, model.size.cols, model.size.rows);
+        // Opaque (P9.12): the scenery never shows through a combatant.
+        expect(frame.silhouette).toBe(silhouette(frame));
+      }
       expect(new Set(frames.map((frame) => frame.chars)).size).toBeGreaterThan(
         1,
       );
@@ -145,6 +163,7 @@ describe("environment layers (P9.12)", () => {
       expectGrid(art, layer.size.cols, layer.size.rows);
       expect(art.chars.replace(/\s/g, "").length).toBeGreaterThan(50);
       expect(new Set(art.depth.replace(/\s/g, "")).size).toBeGreaterThan(1);
+      expect(art.silhouette).toBe(silhouette(art));
     },
   );
 });
