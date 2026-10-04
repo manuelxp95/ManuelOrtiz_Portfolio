@@ -573,7 +573,7 @@ No meaningful absolute numbers exist until P0 measures the scaffold; budgets bel
 | Three.js/R3F bytes in critical or rogue chunks | **hard** | 0 |
 | Both renderers actively running simultaneously | **hard** | never |
 | Critical route First Load JS | target | ≤ baseline + 20 kB gz (lock number in P5 CI) |
-| Rogue chunk (board + Motion) | target | ≤ 80 kB gz |
+| Rogue chunk (board + Motion) | target | ≤ 85 kB gz (80 until P9.13, ADR-018) |
 | Drag sub-chunk | target | ≤ 15 kB gz |
 | Total rogue-side JS (all chunks, P7 done) | target | ≤ 120 kB gz |
 | Section panel chunks (P7) | target | ≤ 10 kB gz each |

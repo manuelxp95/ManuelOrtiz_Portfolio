@@ -655,3 +655,25 @@ Decision:
 - Effects: `CardAction.environment` (`"quake"` on Résumé scroll and the experience combo) →
   `data-env-effect` + a/b key on the field → CSS `transform` shake scaled by parallax.
 Consequences: Card Mode load 79.9 kB gz (0.1 kB headroom); all Card Mode chunks 110.3 kB of 120.
+
+## Decision: Card Mode intro and saved game (Roadmap P9.13, ADR-018)
+
+Status: Accepted (project owner request, 2026-10-04)
+Date: 2026-10-04
+Source: ADR-018; owner choices ("BUG DETECTED", synthesized alarm, ~4 s, once per device, the last
+game on every return, a restart button at the top, budget raised); Vitest and headless Chrome
+Decision:
+- Intro on one clock (`CardIntro.tsx` + `rogue.css`, `data-intro="alert|assemble"` on the board):
+  bug alert 0–1.2 s, bursts open to 1.6 s, bug 1.6 s, hero 2.0 s, deck 2.4 s, opening hand dealt
+  from 2.6 s, HP bars/statuses/turn bar 3.5 s, done 3.9 s. CSS entrances, transform/opacity only;
+  beat bounce off while it runs.
+- Skip: "Skip intro" button, Escape, any press — finishes every board animation at once.
+- Once per device (`card-mode-intro-seen`, localStorage); a hash open or reduced motion skips it
+  and still marks it seen.
+- Alarm synthesized on a new effects bus in `music-engine.ts` (ADR-016 growth path): three sawtooth
+  siren sweeps, ~1.2 s; silent when muted/hidden, dropped if the browser holds the audio.
+- Saved game (`board-storage.ts`, `card-mode-board`, versioned): deck, hand, read sections, combat,
+  seed; restored idle with no last hit; invalid or outdated saves dropped. Not in Zustand.
+- Header "Restart" → `NEW_GAME` (fresh board, read sections cleared) + intro replay.
+- Card Mode load budget 80 → 85 kB (owner decision).
+Consequences: Card Mode load 81.0 kB gz; all Card Mode chunks 113.9 kB of 120.

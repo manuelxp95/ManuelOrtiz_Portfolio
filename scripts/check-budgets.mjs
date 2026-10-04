@@ -11,8 +11,11 @@ const KB = 1024;
 const BUDGETS = {
   /** P0 baseline 129.9 kB + 20 kB. */
   criticalJs: 149.9 * KB,
-  /** Card Mode load (board, cards, dialog, section bodies, dnd-kit, Motion): every JS chunk of it. */
-  rogueChunk: 80 * KB,
+  /**
+   * Card Mode load (board, cards, dialog, section bodies, dnd-kit, Motion): every JS chunk of it.
+   * 80 kB until P9.13 (ADR-018), raised by the owner when the intro and the saved game needed room.
+   */
+  rogueChunk: 85 * KB,
   /** Each P7 section panel, beyond what the Card Mode load already brought. */
   panel: 10 * KB,
   /** P8 relic inspector (runtime ASCII renderer), loaded only on "View relic in 3D". */

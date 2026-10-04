@@ -216,6 +216,15 @@ well above the hand. The camera is CSS (`--cam-x/y` from the pointer and the aim
 each layer's parallax); cards declare environment effects (`CardAction.environment`, `"quake"` so
 far), which CSS plays on every layer. Nothing moves while idle or under reduced motion.
 
+Intro and saved game (Roadmap P9.13, ADR-018): the first Card Mode entry on a device opens with a
+"BUG DETECTED" alert and a synthesized alarm (the first sound effect, on its own bus beside the
+music), then the encounter assembles on one CSS clock driven by `data-intro` on the board — bug,
+hero, deck, the opening hand dealt from it, HP bars last (~4 s). "Skip intro", Escape or any press
+ends it at once; a section hash or reduced motion skips it. The game itself (deck, hand, read
+sections, combat, seed) is saved to `localStorage` (`board-storage.ts`, versioned and validated)
+and restored idle on every return; "Restart" in the board header deals a new game and replays the
+intro. Zustand is unchanged.
+
 Library responsibilities: dnd-kit owns gesture recognition and drop semantics; Motion owns
 JS-driven transforms/springs (entrances, layout slides — added in P7); the state machine owns
 truth — library events only dispatch transitions. Effects CSS can do (hover lift, dialog open/close)

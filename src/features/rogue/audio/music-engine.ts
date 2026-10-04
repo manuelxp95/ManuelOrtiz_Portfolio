@@ -11,8 +11,8 @@ import {
  * Graph: <audio> → fade → duck → music bus → speakers. The track streams through a media element
  * (a decoded 3-minute buffer would hold ~60 MB) and loops there. Fades and ducking are gain ramps
  * on their own nodes, so they never fight each other; entering, leaving, muting and hiding the tab
- * all fade, and silence pauses the element in place. Sound effects, when they come, get their own
- * bus beside the music bus, both into one master gain that mute then fades.
+ * all fade, and silence pauses the element in place. Sound effects (P9.13: the intro's alarm) are
+ * synthesized into their own bus beside the music bus.
  *
  * The board bounces on the track's beats: they come from a beat map tracked at build time, and a
  * timer follows `audio.currentTime` from hit to hit, alternating `data-beat` on the board so CSS
@@ -25,6 +25,11 @@ const TRACK_URL = "/audio/midnight-pixel-garden.mp3";
 const MUSIC_VOLUME = 0.28;
 /** While an upgrade is on offer the music steps back to this share of its volume. */
 const DUCKED = 0.4;
+
+/** Effects are synthesized; a sawtooth siren is loud, so the bus sits low. */
+const EFFECTS_VOLUME = 0.1;
+/** An alarm that can't start this soon (the browser still holds the audio) is dropped, not delayed. */
+const ALARM_LATE_MS = 500;
 
 const FADE_IN_S = 1.5;
 const FADE_OUT_S = 0.8;
@@ -52,6 +57,7 @@ interface Graph {
   element: HTMLAudioElement;
   fade: GainNode;
   duck: GainNode;
+  effects: GainNode;
 }
 
 let graph: Graph | null = null;
@@ -79,6 +85,8 @@ function createGraph(): Graph | null {
     .connect(duck)
     .connect(bus)
     .connect(context.destination);
+  const effects = new GainNode(context, { gain: EFFECTS_VOLUME });
+  effects.connect(context.destination);
   for (const event of ["playing", "pause", "seeked"]) {
     element.addEventListener(event, scheduleBeat);
   }
@@ -90,7 +98,7 @@ function createGraph(): Graph | null {
     mutedSeen = musicSettings().muted;
     sync();
   });
-  return { context, element, fade, duck };
+  return { context, element, fade, duck, effects };
 }
 
 /** Moves a gain to `value` over `seconds`, from wherever a running ramp has it now. */
@@ -215,6 +223,38 @@ export function leaveCardMode() {
 export function startMusic() {
   setBlocked(false);
   sync();
+}
+
+/**
+ * The intro's alarm (P9.13): three rising and falling siren sweeps, ~1.2 s, synthesized (no
+ * asset). Silent when muted or hidden; dropped when the browser holds the audio.
+ */
+export function playAlarm() {
+  if (!graph || musicSettings().muted || document.hidden) return;
+  const { context, effects } = graph;
+  const asked = performance.now();
+  void context.resume().then(() => {
+    if (performance.now() - asked > ALARM_LATE_MS) return;
+    const start = context.currentTime;
+    const siren = new OscillatorNode(context, { type: "sawtooth" });
+    const tone = new BiquadFilterNode(context, {
+      type: "lowpass",
+      frequency: 2000,
+    });
+    const level = new GainNode(context, { gain: 0 });
+    siren.connect(tone).connect(level).connect(effects);
+    for (let sweep = 0; sweep < 3; sweep++) {
+      const at = start + sweep * 0.4;
+      siren.frequency.setValueAtTime(620, at);
+      siren.frequency.linearRampToValueAtTime(1080, at + 0.2);
+      siren.frequency.linearRampToValueAtTime(620, at + 0.4);
+    }
+    level.gain.linearRampToValueAtTime(1, start + 0.03);
+    level.gain.setValueAtTime(1, start + 1.1);
+    level.gain.linearRampToValueAtTime(0, start + 1.2);
+    siren.start(start);
+    siren.stop(start + 1.25);
+  });
 }
 
 /** An upgrade is on offer: the music steps back while the visitor decides. */

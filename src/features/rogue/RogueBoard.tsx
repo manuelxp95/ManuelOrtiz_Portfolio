@@ -27,9 +27,23 @@ import {
 import { parseSectionHash } from "@/state/section-hash";
 import { ASCII_MODELS } from "./ascii/scenes";
 import { MusicToggle } from "./audio/MusicToggle";
-import { useCardMusic } from "./audio/use-card-music";
+import { playAlarm, useCardMusic } from "./audio/use-card-music";
 import { boardReducer, createBoardState } from "./battle";
 import { BATTLEFIELD_ID, Battlefield, type Flight } from "./Battlefield";
+import {
+  introSeen,
+  loadBoard,
+  markIntroSeen,
+  saveBoard,
+} from "./board-storage";
+import {
+  ALARM_AT_MS,
+  ALERT_MS,
+  CardIntro,
+  INTRO_DEAL_S,
+  INTRO_MS,
+  type IntroPhase,
+} from "./CardIntro";
 import { CardDialog } from "./CardDialog";
 import {
   baseOf,
@@ -92,10 +106,25 @@ export function RogueBoard() {
   const reducedMotion = useReducedMotion();
   const pile = useRef<HTMLDivElement>(null);
   const pileRect = useCallback(() => pile.current?.getBoundingClientRect(), []);
-  // Each visit deals a new hand; the seed keeps every later shuffle a pure reducer step.
-  const [board, dispatch] = useReducer(boardReducer, undefined, () =>
-    createBoardState(Math.floor(Math.random() * 2 ** 32)),
+  // The fight left last time continues (P9.13); otherwise a new hand is dealt, and the seed keeps
+  // every later shuffle a pure reducer step. The intro plays on a device's first visit, unless it
+  // opens a section directly or motion is reduced.
+  const [initial] = useState(() => {
+    const saved = loadBoard();
+    return {
+      board: saved ?? createBoardState(Math.floor(Math.random() * 2 ** 32)),
+      intro:
+        !introSeen() &&
+        !reducedMotion &&
+        !parseSectionHash(window.location.hash),
+    };
+  });
+  const [board, dispatch] = useReducer(boardReducer, initial.board);
+  const [intro, setIntro] = useState<IntroPhase | null>(
+    initial.intro ? "alert" : null,
   );
+  /** Bumped by "Restart", so the new hand is dealt from the deck again. */
+  const [game, setGame] = useState(0);
   const state = board.card;
   const [flight, setFlight] = useState<Flight | null>(null);
   const cards = useRef(new Map<CardId, HTMLButtonElement>());
@@ -198,14 +227,68 @@ export function RogueBoard() {
   );
   const skipReward = useCallback(() => dispatch({ type: "SKIP_REWARD" }), []);
 
+  const { deck, played, combat, seed } = board;
+  useEffect(() => {
+    saveBoard({ deck, hand, played, combat, seed });
+  }, [deck, hand, played, combat, seed]);
+
+  useEffect(markIntroSeen, []);
+
   // Background music (P9.11): the board bounces on its beat unless motion is reduced or a card is
   // open to read; it steps back while an upgrade is on offer.
   const [boardElement, setBoardElement] = useState<HTMLElement | null>(null);
   const reading = state.status === "expanded" || state.status === "closing";
   useCardMusic({
-    beatTarget: reducedMotion || reading ? null : boardElement,
+    // The intro's entrances and the bounce would share the same elements' animations.
+    beatTarget: reducedMotion || reading || intro ? null : boardElement,
     ducked: offer !== null,
   });
+
+  // The intro (P9.13): the alert and its alarm, then the encounter assembles on rogue.css's clock.
+  useEffect(() => {
+    if (intro === "alert") {
+      const alarm = window.setTimeout(playAlarm, ALARM_AT_MS);
+      const breach = window.setTimeout(() => setIntro("assemble"), ALERT_MS);
+      return () => {
+        window.clearTimeout(alarm);
+        window.clearTimeout(breach);
+      };
+    }
+    if (intro === "assemble") {
+      const done = window.setTimeout(() => setIntro(null), INTRO_MS - ALERT_MS);
+      return () => window.clearTimeout(done);
+    }
+  }, [intro]);
+
+  /** Ends the intro at once: every entrance and the opening deal's flights jump to their end. */
+  const skipIntro = useCallback(() => {
+    for (const animation of boardElement?.getAnimations?.({ subtree: true }) ??
+      []) {
+      try {
+        animation.finish();
+      } catch {
+        // An endless animation has no end to jump to; it simply keeps running.
+      }
+    }
+    setIntro(null);
+  }, [boardElement]);
+
+  useEffect(() => {
+    if (!intro) return;
+    const skip = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") skipIntro();
+    };
+    window.addEventListener("keydown", skip);
+    return () => window.removeEventListener("keydown", skip);
+  }, [intro, skipIntro]);
+
+  /** "Restart": a new game, introduced again. */
+  function restart() {
+    if (intro) return;
+    dispatch({ type: "NEW_GAME" });
+    setGame((count) => count + 1);
+    if (!reducedMotion) setIntro("alert");
+  }
 
   // Escape skips a running effect.
   useEffect(() => {
@@ -277,7 +360,9 @@ export function RogueBoard() {
         ref={setBoardElement}
         aria-labelledby="card-board-heading"
         className="rogue-board rogue-stage"
+        data-intro={intro ?? undefined}
         onPointerDown={(event) => {
+          if (intro) skipIntro();
           // A tap anywhere but a card or the battlefield drops a lifted card back into the hand.
           const target = event.target as Element;
           if (
@@ -288,7 +373,30 @@ export function RogueBoard() {
         }}
       >
         <header className="board-header">
-          <MusicToggle />
+          <div className="board-tools">
+            <button
+              type="button"
+              aria-label="Restart"
+              aria-disabled={intro !== null || undefined}
+              title="Restart the fight with a new deal"
+              className="board-tool"
+              onClick={restart}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+            <MusicToggle />
+          </div>
           <h1 id="card-board-heading" className="text-xl font-bold sm:text-2xl">
             {profile.name}{" "}
             <span className="font-mono text-sm font-normal text-muted sm:text-base">
@@ -386,6 +494,7 @@ export function RogueBoard() {
           <div className="hand-row">
             <DeckPile ref={pile} count={board.deck.length} />
             <ul
+              key={game}
               aria-label="Hand"
               className="card-hand"
               style={{ "--hand-count": hand.length } as CSSProperties}
@@ -412,7 +521,11 @@ export function RogueBoard() {
                   <div className="card-fan">
                     <DrawnCard
                       pile={pileRect}
-                      delay={board.lastHit ? DRAW_AFTER_PLAY_S : index * 0.09}
+                      delay={
+                        board.lastHit
+                          ? DRAW_AFTER_PLAY_S
+                          : (intro ? INTRO_DEAL_S : 0) + index * 0.09
+                      }
                     >
                       <SectionCard
                         ref={(element) => {
@@ -455,6 +568,7 @@ export function RogueBoard() {
             )}
           </DragOverlay>
         </DndContext>
+        {intro && <CardIntro phase={intro} onSkip={skipIntro} />}
         <CardDialog state={state} onClose={close} onClosed={closed} />
         <RewardDialog
           offer={offer}

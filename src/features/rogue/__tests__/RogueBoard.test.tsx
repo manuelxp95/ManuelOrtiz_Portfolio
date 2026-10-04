@@ -29,6 +29,8 @@ import { experience, projects } from "@/content";
 import { SECTION_IDS } from "@/domain/types";
 import { HERO } from "@/features/rogue/battle";
 import { ENVIRONMENT_LAYERS } from "@/features/rogue/ascii/environment";
+import { markIntroSeen } from "@/features/rogue/board-storage";
+import { ALERT_MS, INTRO_MS } from "@/features/rogue/CardIntro";
 import { RogueBoard } from "@/features/rogue/RogueBoard";
 import {
   consumePendingModeFocus,
@@ -50,6 +52,9 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  // A new game every test, past the intro (its own tests clear the flag).
+  window.localStorage.clear();
+  markIntroSeen();
   window.history.replaceState(null, "", "/");
   usePortfolioStore.setState({ mode: "rogue", activeSection: "about" });
   consumePendingModeFocus();
@@ -577,5 +582,108 @@ describe("environment (P9.12)", () => {
     } finally {
       restore();
     }
+  });
+});
+
+describe("intro and saved game (P9.13)", () => {
+  const bugHp = () =>
+    document.querySelector('[data-combatant="bug"] .combatant-hp-text')
+      ?.textContent;
+  const board = () => document.querySelector<HTMLElement>(".rogue-board")!;
+  const firstVisit = () => window.localStorage.clear();
+
+  afterEach(() => vi.useRealTimers());
+
+  it("plays once per device: the alert, then the encounter assembles, then the fight", () => {
+    firstVisit();
+    vi.useFakeTimers();
+    render(<RogueBoard />);
+    expect(screen.getByRole("alert").textContent).toContain("BUG DETECTED");
+    expect(board().dataset.intro).toBe("alert");
+    act(() => vi.advanceTimersByTime(ALERT_MS));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(board().dataset.intro).toBe("assemble");
+    act(() => vi.advanceTimersByTime(INTRO_MS - ALERT_MS));
+    expect(board().dataset.intro).toBeUndefined();
+    expect(screen.queryByRole("button", { name: "Skip intro" })).toBeNull();
+    cleanup();
+    render(<RogueBoard />);
+    expect(board().dataset.intro).toBeUndefined();
+  });
+
+  it("Skip intro, Escape or a press anywhere ends it at once", () => {
+    firstVisit();
+    render(<RogueBoard />);
+    fireEvent.click(screen.getByRole("button", { name: "Skip intro" }));
+    expect(board().dataset.intro).toBeUndefined();
+
+    firstVisit();
+    cleanup();
+    render(<RogueBoard />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(board().dataset.intro).toBeUndefined();
+
+    firstVisit();
+    cleanup();
+    render(<RogueBoard />);
+    fireEvent.pointerDown(board());
+    expect(board().dataset.intro).toBeUndefined();
+  });
+
+  it("is skipped by a deep link or reduced motion, and counts as seen", () => {
+    firstVisit();
+    window.history.replaceState(null, "", "/#projects");
+    usePortfolioStore.setState({ activeSection: "projects" });
+    render(<RogueBoard />);
+    expect(board().dataset.intro).toBeUndefined();
+    cleanup();
+    window.history.replaceState(null, "", "/");
+    render(<RogueBoard />);
+    expect(board().dataset.intro).toBeUndefined();
+
+    firstVisit();
+    cleanup();
+    setReducedMotion(true);
+    render(<RogueBoard />);
+    expect(board().dataset.intro).toBeUndefined();
+  });
+
+  it("re-entering Card Mode continues the fight where it was left", () => {
+    setReducedMotion(true);
+    render(<RogueBoard />);
+    fireEvent.click(card("cv"));
+    expect(bugHp()).toContain("HP 85/100");
+    const hand = () =>
+      [...document.querySelectorAll(".card-hand .section-card")].map(
+        (button) => button.id,
+      );
+    const held = hand();
+    cleanup();
+    // Back through the site header, not a deep link: no card opens.
+    window.history.replaceState(null, "", "/");
+    render(<RogueBoard />);
+    expect(bugHp()).toContain("HP 85/100");
+    expect(hand()).toEqual(held);
+    expect(openDialog()).toBeNull();
+  });
+
+  it("Restart deals a new game and replays the intro", () => {
+    setReducedMotion(true);
+    render(<RogueBoard />);
+    fireEvent.click(card("cv"));
+    fireEvent.keyDown(openDialog()!, { key: "Escape" });
+    setReducedMotion(false);
+    cleanup();
+    render(<RogueBoard />);
+    expect(bugHp()).toContain("HP 85/100");
+    fireEvent.click(screen.getByRole("button", { name: "Restart" }));
+    expect(bugHp()).toContain("HP 100/100");
+    expect(board().dataset.intro).toBe("alert");
+    // Restart waits for the running intro.
+    expect(
+      screen
+        .getByRole("button", { name: "Restart" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 });

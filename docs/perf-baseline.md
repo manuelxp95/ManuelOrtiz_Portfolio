@@ -405,3 +405,17 @@ and in front of the combatants, which now stand above the hand. A pointer at the
 the layers right by 4 → 42 px (far → foreground); aiming at the bug pans them the other way.
 Résumé scroll sets `data-env-effect="quake"` and runs `env-quake-a` on every layer. No console
 errors. Card Mode has 0.1 kB of headroom left.
+
+## P9.13 — Card Mode intro and saved game (2026-10-04)
+
+| Check | Budget | Measured |
+|---|---|---|
+| Critical JS (`/`) | ≤ 149.9 kB | 142.0 kB (unchanged) |
+| Card Mode load | ≤ 85 kB (was 80, ADR-018) | 81.0 kB (+1.1 kB: intro overlay, saved game, restart) |
+| All Card Mode chunks | ≤ 120 kB | 113.9 kB (alarm synthesis in the audio engine chunk) |
+
+Headless Chrome, production build, 1280 px dark: a real click on the mode toggle starts the intro
+(`data-intro="alert"` at 0.4 s with the "BUG DETECTED" alert and "Skip intro"); `assemble` from
+1.6 s (bug at 1.9 s; hero, deck and the hand mid-deal at 2.9 s); intro over by 4.5 s with HP bars,
+intent and turn bar shown. `card-mode-intro-seen` and `card-mode-board` stored; a reload lands on
+the board with no intro. No console errors.

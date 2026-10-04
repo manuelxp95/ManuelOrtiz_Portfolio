@@ -30,6 +30,11 @@ function withEngine(use: (engine: Engine) => void) {
   loadMusicEngine().then(use, () => {});
 }
 
+/** The intro's alarm (P9.13), on the effects bus once the engine has loaded. */
+export function playAlarm() {
+  withEngine((music) => music.playAlarm());
+}
+
 interface CardMusicOptions {
   /** The element that bounces on the beat, or null (reduced motion, a card open) for none. */
   beatTarget: HTMLElement | null;

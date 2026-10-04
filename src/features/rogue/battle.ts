@@ -190,6 +190,8 @@ export type BoardEvent =
   | { type: "BOSS_DONE" }
   /** "Play again" after a win or a loss: the fight restarts with a fresh deal. */
   | { type: "RESET_BATTLE" }
+  /** The header's "Restart": a new game from scratch, read sections included (P9.13). */
+  | { type: "NEW_GAME" }
   /** The hero takes one of the offered modifiers; the fight resumes. */
   | { type: "PICK_MODIFIER"; id: ModifierId }
   /** The hero declines the offer; the fight resumes. */
@@ -474,6 +476,8 @@ export function boardReducer(state: BoardState, event: BoardEvent): BoardState {
         lastHit: null,
         ...deal(state.seed),
       };
+    case "NEW_GAME":
+      return createBoardState(state.seed);
   }
 
   const card = cardReducer(state.card, event);
